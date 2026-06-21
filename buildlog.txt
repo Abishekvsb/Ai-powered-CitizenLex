@@ -1,0 +1,191 @@
+time="2026-06-19T15:40:30+05:30" level=warning msg="C:\\Users\\Abish\\OneDrive\\Desktop\\cit app\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image citapp-backend Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 561B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 481B 0.0s done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/maven:3.8.5-openjdk-17
+#3 DONE 1.9s
+
+#4 [internal] load metadata for docker.io/library/eclipse-temurin:17-jre-alpine
+#4 DONE 1.9s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B 0.0s done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [build 1/6] FROM docker.io/library/maven:3.8.5-openjdk-17@sha256:3a9c30b3af6278a8ae0007d3a3bf00fff80ec3ed7ae4eb9bfa1772853101549b
+#7 resolve docker.io/library/maven:3.8.5-openjdk-17@sha256:3a9c30b3af6278a8ae0007d3a3bf00fff80ec3ed7ae4eb9bfa1772853101549b 0.1s done
+#7 DONE 0.1s
+
+#8 [stage-1 1/3] FROM docker.io/library/eclipse-temurin:17-jre-alpine@sha256:b0ae54a36f82e04dc6c45e40ca5c55762e20b9a0858ee457faf557d440a9b571
+#8 resolve docker.io/library/eclipse-temurin:17-jre-alpine@sha256:b0ae54a36f82e04dc6c45e40ca5c55762e20b9a0858ee457faf557d440a9b571
+#8 resolve docker.io/library/eclipse-temurin:17-jre-alpine@sha256:b0ae54a36f82e04dc6c45e40ca5c55762e20b9a0858ee457faf557d440a9b571 0.1s done
+#8 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 4.22kB 0.0s done
+#6 DONE 0.0s
+
+#9 [build 2/6] WORKDIR /app
+#9 CACHED
+
+#10 [build 3/6] COPY pom.xml .
+#10 CACHED
+
+#11 [build 4/6] RUN mvn dependency:go-offline -B
+#11 CACHED
+
+#12 [build 5/6] COPY src ./src
+#12 CACHED
+
+#13 [build 6/6] RUN mvn package -DskipTests -B
+#13 1.781 [INFO] Scanning for projects...
+#13 2.078 [INFO] 
+#13 2.079 [INFO] -----------------------< com.citizenlex:backend >-----------------------
+#13 2.079 [INFO] Building CitizenLex Backend 0.0.1-SNAPSHOT
+#13 2.079 [INFO] --------------------------------[ jar ]---------------------------------
+#13 2.644 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.pom
+#13 4.312 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.pom (19 kB at 11 kB/s)
+#13 4.352 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/jboss/logging/logging-parent/1.0.1.Final/logging-parent-1.0.1.Final.pom
+#13 4.508 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/jboss/logging/logging-parent/1.0.1.Final/logging-parent-1.0.1.Final.pom (6.0 kB at 36 kB/s)
+#13 4.588 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/fasterxml/classmate/1.6.0/classmate-1.6.0.pom
+#13 4.744 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/fasterxml/classmate/1.6.0/classmate-1.6.0.pom (6.6 kB at 43 kB/s)
+#13 4.748 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/fasterxml/oss-parent/55/oss-parent-55.pom
+#13 4.909 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/fasterxml/oss-parent/55/oss-parent-55.pom (24 kB at 146 kB/s)
+#13 4.915 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.13/byte-buddy-1.14.13.pom
+#13 5.065 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.13/byte-buddy-1.14.13.pom (16 kB at 105 kB/s)
+#13 5.081 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-parent/1.14.13/byte-buddy-parent-1.14.13.pom
+#13 5.251 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-parent/1.14.13/byte-buddy-parent-1.14.13.pom (63 kB at 369 kB/s)
+#13 5.281 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-runtime/4.0.5/jaxb-runtime-4.0.5.pom
+#13 5.423 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-runtime/4.0.5/jaxb-runtime-4.0.5.pom (11 kB at 76 kB/s)
+#13 5.432 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/mvn/jaxb-runtime-parent/4.0.5/jaxb-runtime-parent-4.0.5.pom
+#13 5.604 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/mvn/jaxb-runtime-parent/4.0.5/jaxb-runtime-parent-4.0.5.pom (1.2 kB at 6.9 kB/s)
+#13 5.609 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/mvn/jaxb-parent/4.0.5/jaxb-parent-4.0.5.pom
+#13 5.762 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/mvn/jaxb-parent/4.0.5/jaxb-parent-4.0.5.pom (35 kB at 229 kB/s)
+#13 5.781 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/jaxb-bom-ext/4.0.5/jaxb-bom-ext-4.0.5.pom
+#13 5.950 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/jaxb-bom-ext/4.0.5/jaxb-bom-ext-4.0.5.pom (3.5 kB at 19 kB/s)
+#13 5.960 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-core/4.0.5/jaxb-core-4.0.5.pom
+#13 6.130 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-core/4.0.5/jaxb-core-4.0.5.pom (3.7 kB at 22 kB/s)
+#13 6.143 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.pom
+#13 6.302 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.pom (4.0 kB at 25 kB/s)
+#13 6.314 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-activation-project/2.0.2/angus-activation-project-2.0.2.pom
+#13 6.482 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-activation-project/2.0.2/angus-activation-project-2.0.2.pom (21 kB at 124 kB/s)
+#13 6.491 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/txw2/4.0.5/txw2-4.0.5.pom
+#13 6.649 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/txw2/4.0.5/txw2-4.0.5.pom (1.8 kB at 11 kB/s)
+#13 6.654 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/mvn/jaxb-txw-parent/4.0.5/jaxb-txw-parent-4.0.5.pom
+#13 6.786 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/sun/xml/bind/mvn/jaxb-txw-parent/4.0.5/jaxb-txw-parent-4.0.5.pom (1.2 kB at 9.1 kB/s)
+#13 6.839 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons-runtime/4.1.2/istack-commons-runtime-4.1.2.pom
+#13 6.983 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons-runtime/4.1.2/istack-commons-runtime-4.1.2.pom (1.6 kB at 11 kB/s)
+#13 6.987 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons/4.1.2/istack-commons-4.1.2.pom
+#13 7.375 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons/4.1.2/istack-commons-4.1.2.pom (26 kB at 68 kB/s)
+#13 7.509 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.pom
+#13 7.663 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.pom (16 kB at 102 kB/s)
+#13 7.668 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/apache/commons/commons-parent/66/commons-parent-66.pom
+#13 7.843 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/commons/commons-parent/66/commons-parent-66.pom (77 kB at 440 kB/s)
+#13 7.860 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/apache/apache/31/apache-31.pom
+#13 8.006 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/apache/31/apache-31.pom (24 kB at 162 kB/s)
+#13 8.015 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/junit/junit-bom/5.10.1/junit-bom-5.10.1.pom
+#13 8.131 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/junit/junit-bom/5.10.1/junit-bom-5.10.1.pom (5.6 kB at 48 kB/s)
+#13 8.226 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.13/byte-buddy-agent-1.14.13.pom
+#13 8.384 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.13/byte-buddy-agent-1.14.13.pom (10 kB at 66 kB/s)
+#13 8.504 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar
+#13 8.509 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/fasterxml/classmate/1.6.0/classmate-1.6.0.jar
+#13 8.509 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.13/byte-buddy-1.14.13.jar
+#13 8.510 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-core/4.0.5/jaxb-core-4.0.5.jar
+#13 8.511 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-runtime/4.0.5/jaxb-runtime-4.0.5.jar
+#13 8.707 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar (59 kB at 290 kB/s)
+#13 8.707 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.jar
+#13 8.904 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/fasterxml/classmate/1.6.0/classmate-1.6.0.jar (69 kB at 172 kB/s)
+#13 8.904 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/txw2/4.0.5/txw2-4.0.5.jar
+#13 9.092 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-core/4.0.5/jaxb-core-4.0.5.jar (139 kB at 238 kB/s)
+#13 9.092 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons-runtime/4.1.2/istack-commons-runtime-4.1.2.jar
+#13 9.138 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/txw2/4.0.5/txw2-4.0.5.jar (73 kB at 117 kB/s)
+#13 9.138 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar
+#13 9.323 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.jar (27 kB at 33 kB/s)
+#13 9.323 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar
+#13 9.334 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/com/sun/istack/istack-commons-runtime/4.1.2/istack-commons-runtime-4.1.2.jar (26 kB at 31 kB/s)
+#13 9.334 [INFO] Downloading from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.13/byte-buddy-agent-1.14.13.jar
+#13 9.488 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar (69 kB at 70 kB/s)
+#13 9.704 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.13/byte-buddy-agent-1.14.13.jar (257 kB at 215 kB/s)
+#13 9.704 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/org/glassfish/jaxb/jaxb-runtime/4.0.5/jaxb-runtime-4.0.5.jar (920 kB at 769 kB/s)
+#13 9.782 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar (365 kB at 287 kB/s)
+#13 10.31 [INFO] Downloaded from central: https://repo.maven.apache.org/maven2/net/bytebuddy/byte-buddy/1.14.13/byte-buddy-1.14.13.jar (4.2 MB at 2.3 MB/s)
+#13 10.33 [INFO] 
+#13 10.33 [INFO] --- maven-resources-plugin:3.3.1:resources (default-resources) @ backend ---
+#13 10.48 [INFO] Copying 1 resource from src/main/resources to target/classes
+#13 10.50 [INFO] Copying 0 resource from src/main/resources to target/classes
+#13 10.51 [INFO] 
+#13 10.51 [INFO] --- maven-compiler-plugin:3.11.0:compile (default-compile) @ backend ---
+#13 10.68 [INFO] Changes detected - recompiling the module! :dependency
+#13 10.68 [INFO] Compiling 44 source files with javac [debug release 17] to target/classes
+#13 11.40 [INFO] -------------------------------------------------------------
+#13 11.40 [ERROR] COMPILATION ERROR : 
+#13 11.40 [INFO] -------------------------------------------------------------
+#13 11.40 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[164,1] illegal character: '`'
+#13 11.40 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[164,2] illegal character: '`'
+#13 11.40 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[164,3] illegal character: '`'
+#13 11.40 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,1] illegal character: '`'
+#13 11.40 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,2] illegal character: '`'
+#13 11.40 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,3] illegal character: '`'
+#13 11.40 [INFO] 6 errors 
+#13 11.40 [INFO] -------------------------------------------------------------
+#13 11.40 [INFO] ------------------------------------------------------------------------
+#13 11.40 [INFO] BUILD FAILURE
+#13 11.40 [INFO] ------------------------------------------------------------------------
+#13 11.41 [INFO] Total time:  9.645 s
+#13 11.41 [INFO] Finished at: 2026-06-19T10:10:43Z
+#13 11.41 [INFO] ------------------------------------------------------------------------
+#13 11.41 [ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project backend: Compilation failure: Compilation failure: 
+#13 11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[164,1] illegal character: '`'
+#13 11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[164,2] illegal character: '`'
+#13 11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[164,3] illegal character: '`'
+#13 11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,1] illegal character: '`'
+#13 11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,2] illegal character: '`'
+#13 11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,3] illegal character: '`'
+#13 11.41 [ERROR] -> [Help 1]
+#13 11.41 [ERROR] 
+#13 11.41 [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+#13 11.41 [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+#13 11.41 [ERROR] 
+#13 11.41 [ERROR] For more information about the errors and possible solutions, please read the following articles:
+#13 11.41 [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+#13 ERROR: process "/bin/sh -c mvn package -DskipTests -B" did not complete successfully: exit code: 1
+------
+ > [build 6/6] RUN mvn package -DskipTests -B:
+11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,1] illegal character: '`'
+11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,2] illegal character: '`'
+11.41 [ERROR] /app/src/main/java/com/citizenlex/services/GeminiService.java:[193,3] illegal character: '`'
+11.41 [ERROR] -> [Help 1]
+11.41 [ERROR] 
+11.41 [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+11.41 [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+11.41 [ERROR] 
+11.41 [ERROR] For more information about the errors and possible solutions, please read the following articles:
+11.41 [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+------
+Dockerfile:8
+
+--------------------
+
+   6 |     RUN mvn dependency:go-offline -B
+
+   7 |     COPY src ./src
+
+   8 | >>> RUN mvn package -DskipTests -B
+
+   9 |     
+
+  10 |     # Stage 2: Run the Spring Boot application
+
+--------------------
+
+failed to solve: process "/bin/sh -c mvn package -DskipTests -B" did not complete successfully: exit code: 1
+

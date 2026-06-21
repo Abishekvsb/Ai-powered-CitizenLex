@@ -1,0 +1,56 @@
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: citizenlex-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: CitizenLexDB
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: citizenlex-backend
+    restart: always
+    ports:
+      - "8080:8080"
+
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+    env_file:
+      - .env
+
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - app.gemini.key=${GEMINI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: citizenlex-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
