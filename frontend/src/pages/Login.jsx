@@ -9,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -34,59 +35,97 @@ export default function Login() {
   };
 
   return (
-    <div className="container py-5 position-relative">
+    <div className="auth-page-wrapper">
       <ThreeDBackground />
-      <div className="row justify-content-center py-5">
-        <div className="col-md-5">
-          <div className="glass-panel p-4 p-md-5 text-start fade-in-el">
-            <h2 className="text-center mb-4 fw-bold">Sign In to CitizenLex</h2>
-            
-            {error && (
-              <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                <div>{error}</div>
-              </div>
-            )}
+      <div className="auth-content-wrapper">
+        <div className="auth-card fade-in-el">
 
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Email Address</label>
+          {/* Logo / Brand */}
+          <div className="text-center mb-5">
+            <div className="auth-logo-icon mx-auto mb-3">
+              <i className="bi bi-balance2"></i>
+            </div>
+            <h1 className="auth-brand-title">CitizenLex</h1>
+            <p className="auth-brand-subtitle">Your AI-powered legal companion</p>
+          </div>
+
+          <h2 className="auth-heading mb-1">Welcome back</h2>
+          <p className="text-secondary mb-4 small">Sign in to access your legal dashboard</p>
+
+          {error && (
+            <div className="alert alert-danger d-flex align-items-center mb-4 border-0" role="alert"
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: '10px' }}>
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              <div>{error}</div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label className="form-label fw-semibold small text-secondary">Email Address</label>
+              <div className="input-group-auth">
+                <i className="bi bi-envelope input-icon"></i>
                 <input
+                  id="login-email"
                   type="email"
-                  className="form-control form-glass-control"
+                  className="form-control form-glass-control ps-5"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-              <div className="mb-4">
-                <label className="form-label fw-bold">Password</label>
+            </div>
+
+            <div className="mb-4">
+              <label className="form-label fw-semibold small text-secondary">Password</label>
+              <div className="input-group-auth">
+                <i className="bi bi-lock input-icon"></i>
                 <input
-                  type="password"
-                  className="form-control form-glass-control"
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-control form-glass-control ps-5 pe-5"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  className="input-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                </button>
               </div>
-              
-              <button type="submit" className="btn btn-glass w-100 py-3 d-flex justify-content-center align-items-center" disabled={loading}>
-                {loading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Authenticating...
-                  </>
-                ) : (
-                  'Login'
-                )}
-              </button>
-            </form>
-
-            <div className="text-center mt-4 text-secondary">
-              Don't have an account? <Link to="/register" className="text-primary fw-bold text-decoration-none">Sign Up</Link>
             </div>
+
+            <button
+              type="submit"
+              id="login-submit-btn"
+              className="btn btn-glass w-100 py-3 d-flex justify-content-center align-items-center"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-box-arrow-in-right me-2"></i>
+                  Sign In
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="text-center mt-4 text-secondary small">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-primary fw-bold text-decoration-none">
+              Create one free
+            </Link>
           </div>
         </div>
       </div>

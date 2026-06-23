@@ -17,83 +17,90 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="navbar navbar-expand-lg glass-nav navbar-light">
+    <nav className="navbar navbar-expand-lg glass-nav">
       <div className="container">
-        <Link className="navbar-brand d-flex align-items-center fw-bold text-primary" to="/" style={{ fontSize: '1.5rem' }}>
+        <Link className="navbar-brand d-flex align-items-center fw-bold" to="/"
+          style={{ fontSize: '1.4rem', color: 'var(--primary)', letterSpacing: '-0.03em' }}>
           <i className="bi bi-balance2 me-2"></i>
           <span>CitizenLex</span>
         </Link>
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span className="navbar-toggler-icon"></span>
+        <button className="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+          style={{ color: 'var(--text)' }}>
+          <i className="bi bi-list fs-4"></i>
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
             {user && (
               <>
                 <li className="nav-item">
-                  <Link className={`nav-link nav-link-custom mx-2 ${isActive('/dashboard') ? 'active' : ''}`} to="/dashboard">
-                    Dashboard
+                  <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/dashboard') ? 'active' : ''}`} to="/dashboard">
+                    <i className="bi bi-speedometer2 me-1 d-lg-none"></i>Dashboard
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className={`nav-link nav-link-custom mx-2 ${isActive('/chat') ? 'active' : ''}`} to="/chat">
-                    AI Assistant
+                  <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/chat') ? 'active' : ''}`} to="/chat">
+                    <i className="bi bi-chat-dots me-1 d-lg-none"></i>AI Assistant
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className={`nav-link nav-link-custom mx-2 ${isActive('/complaint') ? 'active' : ''}`} to="/complaint">
-                    AI Drafter
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className={`nav-link nav-link-custom mx-2 ${isActive('/analyzer') ? 'active' : ''}`} to="/analyzer">
-                    Doc Analyzer
+                  <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/analyzer') ? 'active' : ''}`} to="/analyzer">
+                    <i className="bi bi-file-earmark-text me-1 d-lg-none"></i>Doc Analyzer
                   </Link>
                 </li>
               </>
             )}
             <li className="nav-item">
-              <Link className={`nav-link nav-link-custom mx-2 ${isActive('/rights') ? 'active' : ''}`} to="/rights">
-                Rights Explorer
+              <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/rights') ? 'active' : ''}`} to="/rights">
+                <i className="bi bi-book me-1 d-lg-none"></i>Rights Explorer
               </Link>
             </li>
             <li className="nav-item">
-              <Link className={`nav-link nav-link-custom mx-2 ${isActive('/schemes') ? 'active' : ''}`} to="/schemes">
-                Scheme Finder
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className={`nav-link nav-link-custom mx-2 ${isActive('/resources') ? 'active' : ''}`} to="/resources">
-                Resources
+              <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/schemes') ? 'active' : ''}`} to="/schemes">
+                <i className="bi bi-search-heart me-1 d-lg-none"></i>Scheme Finder
               </Link>
             </li>
             {user && isAdmin() && (
               <li className="nav-item">
-                <Link className={`nav-link nav-link-custom mx-2 text-danger fw-bold ${isActive('/admin') ? 'active' : ''}`} to="/admin">
-                  Admin Dashboard
+                <Link className={`nav-link nav-link-custom px-2 mx-1 text-danger fw-bold ${isActive('/admin') ? 'active' : ''}`} to="/admin">
+                  <i className="bi bi-shield-fill me-1 d-lg-none"></i>Admin
                 </Link>
               </li>
             )}
           </ul>
-          
-          <div className="d-flex align-items-center gap-3">
-            <button className="dark-mode-toggle me-2" onClick={toggleTheme} title="Toggle Dark/Light Mode">
-              {theme === 'light' ? <i className="bi bi-moon-stars-fill"></i> : <i className="bi bi-sun-fill text-warning"></i>}
+
+          <div className="d-flex align-items-center gap-2">
+            <button className="dark-mode-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle dark/light mode">
+              {theme === 'light' ? <i className="bi bi-moon-stars-fill"></i> : <i className="bi bi-sun-fill"></i>}
             </button>
 
             {user ? (
               <div className="dropdown">
-                <button className="btn btn-outline-primary dropdown-toggle d-flex align-items-center gap-2" type="button" id="userMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i className="bi bi-person-circle"></i>
+                <button
+                  className="btn d-flex align-items-center gap-2 fw-semibold"
+                  type="button"
+                  id="userMenuBtn"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '10px',
+                    color: 'var(--text)',
+                    fontSize: '0.88rem',
+                    padding: '7px 14px',
+                  }}
+                >
+                  <i className="bi bi-person-circle text-primary"></i>
                   <span>{user.firstName}</span>
+                  <i className="bi bi-chevron-down small"></i>
                 </button>
-                <ul className="dropdown-menu dropdown-menu-end glass-panel" aria-labelledby="userMenuBtn">
+                <ul className="dropdown-menu dropdown-menu-end glass-panel mt-1" aria-labelledby="userMenuBtn">
                   <li>
-                    <Link className="dropdown-item nav-link-custom" to="/profile">
-                      <i className="bi bi-person me-2"></i>Profile
+                    <Link className="dropdown-item" to="/profile">
+                      <i className="bi bi-person me-2 text-primary"></i>Profile
                     </Link>
                   </li>
-                  <li><hr className="dropdown-divider" style={{ borderColor: 'var(--border-color)' }} /></li>
+                  <li><hr className="dropdown-divider my-1" style={{ borderColor: 'var(--border)' }} /></li>
                   <li>
                     <button className="dropdown-item text-danger d-flex align-items-center" onClick={handleLogout}>
                       <i className="bi bi-box-arrow-right me-2"></i>Logout
@@ -103,8 +110,8 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="d-flex gap-2">
-                <Link className="btn btn-glass-secondary" to="/login">Login</Link>
-                <Link className="btn btn-glass" to="/register">Register</Link>
+                <Link className="btn btn-glass-secondary btn-sm" to="/login" style={{ padding: '8px 18px' }}>Login</Link>
+                <Link className="btn btn-glass btn-sm" to="/register" style={{ padding: '8px 18px' }}>Register</Link>
               </div>
             )}
           </div>

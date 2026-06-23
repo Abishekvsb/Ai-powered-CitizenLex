@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -16,18 +16,24 @@ import DocumentAnalyzer from './pages/DocumentAnalyzer';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 
+// Auth pages do not render Navbar/Footer
+const AUTH_ROUTES = ['/login', '/register'];
+
 export default function App() {
+  const location = useLocation();
+  const isAuthPage = AUTH_ROUTES.includes(location.pathname);
+
   return (
-    <div className="d-flex flex-column min-vh-100" style={{ backgroundColor: 'var(--bg-color)' }}>
-      <Navbar />
-      <main className="flex-grow-1">
+    <div className="d-flex flex-column min-vh-100" style={{ position: 'relative', zIndex: 1 }}>
+      {!isAuthPage && <Navbar />}
+      <main className={isAuthPage ? '' : 'flex-grow-1'}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/rights" element={<RightsExplorer />} />
           <Route path="/schemes" element={<SchemeFinder />} />
-          
+
           {/* Protected User Routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
@@ -58,7 +64,7 @@ export default function App() {
           } />
         </Routes>
       </main>
-      <Footer />
+      {!isAuthPage && <Footer />}
     </div>
   );
 }
