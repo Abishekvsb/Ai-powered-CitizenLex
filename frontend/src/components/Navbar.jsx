@@ -47,6 +47,11 @@ export default function Navbar() {
                     <i className="bi bi-file-earmark-text me-1 d-lg-none"></i>Doc Analyzer
                   </Link>
                 </li>
+                <li className="nav-item">
+                  <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/drafts') ? 'active' : ''}`} to="/drafts">
+                    <i className="bi bi-file-earmark-diff me-1 d-lg-none"></i>AI Drafts
+                  </Link>
+                </li>
               </>
             )}
             <li className="nav-item">

@@ -10,6 +10,16 @@ export default function SchemeFinder() {
   const [activeScheme, setActiveScheme] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ——— Eligibility Checker state ———
+  const [checkerAge, setCheckerAge] = useState('');
+  const [checkerGender, setCheckerGender] = useState('Female');
+  const [checkerIncome, setCheckerIncome] = useState('');
+  const [checkerOccupation, setCheckerOccupation] = useState('Farmer');
+  const [checkerState, setCheckerState] = useState('Tamil Nadu');
+  const [checkerCategory, setCheckerCategory] = useState('General');
+  const [checkerStep, setCheckerStep] = useState(1);
+  const [checkerResults, setCheckerResults] = useState([]);
+
   // ——— Bookmarks & Toast state ———
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -129,6 +139,124 @@ export default function SchemeFinder() {
     }
   };
 
+  const checkEligibility = () => {
+    const age = parseInt(checkerAge) || 25;
+    const income = parseInt(checkerIncome) || 150000;
+    
+    const results = schemes.map(scheme => {
+      let score = 50; // default base score
+      let explanations = [];
+
+      const titleLower = scheme.title.toLowerCase();
+      const catLower = scheme.category.toLowerCase();
+      const eligLower = scheme.eligibility.toLowerCase();
+
+      // 1. PM Kisan Samman Nidhi Matching
+      if (titleLower.includes('kisan') || eligLower.includes('farmer') || catLower.includes('farmer')) {
+        if (checkerOccupation === 'Farmer') {
+          score = 100;
+          explanations.push('Matched: Your occupation is Farmer, which is the primary requirement.');
+        } else {
+          score = 10;
+          explanations.push('Ineligible: This scheme is strictly for farmers.');
+        }
+        
+        if (income > 300000) {
+          score = Math.max(10, score - 30);
+          explanations.push('Partial Match: Your income is above Rs 3 Lakhs, which may exceed local limits.');
+        } else {
+          explanations.push('Matched: Your annual income is within the targeted range.');
+        }
+      } 
+      // 2. Beti Bachao Beti Padhao Matching
+      else if (titleLower.includes('beti') || catLower.includes('women') || eligLower.includes('girl')) {
+        if (checkerGender === 'Female') {
+          score = 100;
+          explanations.push('Matched: Scheme targets women and girl children.');
+        } else {
+          score = 40;
+          explanations.push('Partially Eligible: Can apply as a parent of a girl child.');
+        }
+        
+        if (age < 18) {
+          score = Math.min(100, score + 10);
+          explanations.push('Matched: Target age group (minor/student).');
+        } else if (age > 40) {
+          score = Math.max(20, score - 20);
+          explanations.push('Notice: Older age brackets are less likely to qualify unless applying for dependent children.');
+        }
+      }
+      // 3. Ayushman Bharat (PM-JAY) Matching
+      else if (titleLower.includes('ayushman') || titleLower.includes('jay') || catLower.includes('health') || eligLower.includes('poor')) {
+        if (income <= 250000) {
+          score = 100;
+          explanations.push('Matched: Your income is under Rs. 2.5 Lakhs (SECC poor/vulnerable category).');
+        } else if (income <= 500000) {
+          score = 70;
+          explanations.push('Partially Eligible: Middle-low income. Empanelment depends on Ration Card status.');
+        } else {
+          score = 15;
+          explanations.push('Ineligible: Your income exceeds the limit for free healthcare schemes.');
+        }
+
+        if (checkerCategory !== 'General') {
+          score = Math.min(100, score + 10);
+          explanations.push('Matched: Social category preference (OBC/SC/ST/EWS).');
+        }
+      }
+      // 4. Atal Pension Yojana (APY) Matching
+      else if (titleLower.includes('atal') || titleLower.includes('pension') || eligLower.includes('18 and 40')) {
+        if (age >= 18 && age <= 40) {
+          score = 90;
+          explanations.push('Matched: Your age (' + age + ') is within the required 18 to 40 years range.');
+        } else {
+          score = 0;
+          explanations.push('Ineligible: Your age must be between 18 and 40 years to enroll.');
+        }
+
+        if (checkerOccupation === 'Salaried') {
+          score = Math.max(0, score - 15);
+          explanations.push('Notice: Taxpayers and formal salaried workers are subject to pension limits/exclusions.');
+        } else {
+          explanations.push('Matched: Ideal for informal sector worker (' + checkerOccupation + ').');
+        }
+      }
+      // 5. Generic Matching logic for other/added schemes
+      else {
+        if (eligLower.includes(checkerOccupation.toLowerCase())) {
+          score += 20;
+          explanations.push('Matched: Occupation matches scheme details.');
+        }
+        if (eligLower.includes('bpl') || eligLower.includes('poor') || eligLower.includes('low-income')) {
+          if (income <= 250000) {
+            score += 20;
+            explanations.push('Matched: Low income is compatible with BPL/welfare target.');
+          } else {
+            score -= 20;
+            explanations.push('Notice: Scheme targets BPL/poor households.');
+          }
+        }
+        if (eligLower.includes('youth') || eligLower.includes('student')) {
+          if (age <= 28) {
+            score += 15;
+            explanations.push('Matched: Age is within youth demographic.');
+          }
+        }
+      }
+
+      score = Math.max(0, Math.min(100, score));
+
+      return {
+        ...scheme,
+        score,
+        explanations
+      };
+    }).sort((a, b) => b.score - a.score);
+
+    setCheckerResults(results);
+    setCheckerStep(4);
+  };
+
   return (
     <div className="container py-5 text-start">
       {/* Header */}
@@ -145,7 +273,7 @@ export default function SchemeFinder() {
       </div>
 
       {/* Mode Toggle Tabs */}
-      <div className="d-flex justify-content-center mb-4">
+      <div className="d-flex justify-content-center mb-4 flex-wrap gap-2">
         <div className="btn-group" role="group">
           <button
             className={`btn px-4 ${mode === 'db' ? 'btn-success text-white' : 'btn-glass-secondary'}`}
@@ -158,6 +286,12 @@ export default function SchemeFinder() {
             onClick={() => setMode('ai')}
           >
             <i className="bi bi-stars me-2"></i>AI Smart Search
+          </button>
+          <button
+            className={`btn px-4 ${mode === 'eligibility' ? 'btn-success text-white' : 'btn-glass-secondary'}`}
+            onClick={() => setMode('eligibility')}
+          >
+            <i className="bi bi-person-check-fill me-2"></i>Eligibility Checker
           </button>
         </div>
       </div>
@@ -360,6 +494,289 @@ export default function SchemeFinder() {
               <p className="small">Enter your query above to let our AI find the best government schemes for your situation.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ====== ELIGIBILITY MODE ====== */}
+      {mode === 'eligibility' && (
+        <div className="fade-in-el">
+          <div className="row justify-content-center">
+            <div className="col-lg-8">
+              <div className="glass-panel p-4 mb-4">
+                
+                {/* Step Indicator */}
+                {checkerStep < 4 && (
+                  <div className="d-flex justify-content-between mb-4 position-relative px-2">
+                    <div className="position-absolute top-50 start-0 end-0 translate-middle-y bg-secondary" style={{ height: 2, zIndex: 0 }}></div>
+                    <div className="position-absolute top-50 start-0 bg-success" style={{ height: 2, width: `${((checkerStep - 1) / 2) * 100}%`, zIndex: 0, transition: 'width 0.3s' }}></div>
+                    
+                    {[1, 2, 3].map(step => (
+                      <div
+                        key={step}
+                        className={`rounded-circle d-flex align-items-center justify-content-center fw-bold position-relative`}
+                        style={{
+                          width: 38,
+                          height: 38,
+                          background: checkerStep >= step ? 'var(--primary)' : 'var(--bg-secondary)',
+                          color: checkerStep >= step ? 'white' : 'var(--text-secondary)',
+                          border: `2px solid ${checkerStep >= step ? 'var(--primary)' : 'var(--border)'}`,
+                          zIndex: 1
+                        }}
+                      >
+                        {step}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Step 1: Basic Demographics */}
+                {checkerStep === 1 && (
+                  <div className="fade-in-el text-start">
+                    <h5 className="fw-bold mb-3"><i className="bi bi-person-bounding-box text-primary me-2"></i>Step 1: Basic Demographics</h5>
+                    
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold small text-secondary">Your Age / வயது</label>
+                      <input
+                        type="number"
+                        className="form-control form-glass-control"
+                        placeholder="e.g. 25"
+                        value={checkerAge}
+                        onChange={e => setCheckerAge(e.target.value)}
+                        min={1}
+                        max={120}
+                        required
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="form-label fw-semibold small text-secondary">Your Gender / பாலினம்</label>
+                      <select
+                        className="form-select form-glass-control"
+                        value={checkerGender}
+                        onChange={e => setCheckerGender(e.target.value)}
+                      >
+                        <option value="Male" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Male / ஆண்</option>
+                        <option value="Female" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Female / பெண்</option>
+                        <option value="Transgender" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Transgender / திருநங்கை/திருநம்பி</option>
+                      </select>
+                    </div>
+
+                    <div className="d-flex justify-content-end">
+                      <button
+                        className="btn btn-glass"
+                        onClick={() => {
+                          if (!checkerAge) {
+                            alert('Please enter your age.');
+                            return;
+                          }
+                          setCheckerStep(2);
+                        }}
+                      >
+                        Next Step <i className="bi bi-arrow-right ms-1"></i>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: Financials & Category */}
+                {checkerStep === 2 && (
+                  <div className="fade-in-el text-start">
+                    <h5 className="fw-bold mb-3"><i className="bi bi-wallet2 text-primary me-2"></i>Step 2: Financial Information</h5>
+                    
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold small text-secondary">Annual Family Income / ஆண்டு வருமானம் (INR)</label>
+                      <input
+                        type="number"
+                        className="form-control form-glass-control"
+                        placeholder="e.g. 150000"
+                        value={checkerIncome}
+                        onChange={e => setCheckerIncome(e.target.value)}
+                        min={0}
+                        required
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="form-label fw-semibold small text-secondary">Social Category / சமூகப்பிரிவு</label>
+                      <select
+                        className="form-select form-glass-control"
+                        value={checkerCategory}
+                        onChange={e => setCheckerCategory(e.target.value)}
+                      >
+                        <option value="General" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>General / பொதுப் பிரிவு</option>
+                        <option value="OBC" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>OBC / இதர பிற்படுத்தப்பட்ட வகுப்பு</option>
+                        <option value="SC" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>SC / பட்டியல் சாதியினர்</option>
+                        <option value="ST" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>ST / பழங்குடியினர்</option>
+                        <option value="EWS" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>EWS / நலிவடைந்த பிரிவினர்</option>
+                      </select>
+                    </div>
+
+                    <div className="d-flex justify-content-between">
+                      <button className="btn btn-glass-secondary" onClick={() => setCheckerStep(1)}>
+                        <i className="bi bi-arrow-left me-1"></i> Back
+                      </button>
+                      <button
+                        className="btn btn-glass"
+                        onClick={() => {
+                          if (!checkerIncome) {
+                            alert('Please enter your annual income.');
+                            return;
+                          }
+                          setCheckerStep(3);
+                        }}
+                      >
+                        Next Step <i className="bi bi-arrow-right ms-1"></i>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Work & Residency */}
+                {checkerStep === 3 && (
+                  <div className="fade-in-el text-start">
+                    <h5 className="fw-bold mb-3"><i className="bi bi-briefcase text-primary me-2"></i>Step 3: Occupation & Residence</h5>
+                    
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold small text-secondary">Your Occupation / தொழில்</label>
+                      <select
+                        className="form-select form-glass-control"
+                        value={checkerOccupation}
+                        onChange={e => setCheckerOccupation(e.target.value)}
+                      >
+                        <option value="Farmer" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Farmer / விவசாயி</option>
+                        <option value="Student" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Student / மாணவர்</option>
+                        <option value="Unemployed" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Unemployed / வேலையில்லாதவர்</option>
+                        <option value="Salaried" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Salaried Worker / ஊதியம் பெறுபவர்</option>
+                        <option value="Business Owner" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Business Owner / தொழில் அதிபர்</option>
+                        <option value="Retired" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Retired / ஓய்வு பெற்றவர்</option>
+                      </select>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="form-label fw-semibold small text-secondary">State of Residence / வசிக்கும் மாநிலம்</label>
+                      <select
+                        className="form-select form-glass-control"
+                        value={checkerState}
+                        onChange={e => setCheckerState(e.target.value)}
+                      >
+                        <option value="Tamil Nadu" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Tamil Nadu / தமிழ்நாடு</option>
+                        <option value="Maharashtra" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Maharashtra / மகாராஷ்டிரா</option>
+                        <option value="Karnataka" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Karnataka / கர்நாடகா</option>
+                        <option value="Delhi" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Delhi / டெல்லி</option>
+                        <option value="Others" style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>Others / இதர மாநிலங்கள்</option>
+                      </select>
+                    </div>
+
+                    <div className="d-flex justify-content-between">
+                      <button className="btn btn-glass-secondary" onClick={() => setCheckerStep(2)}>
+                        <i className="bi bi-arrow-left me-1"></i> Back
+                      </button>
+                      <button
+                        className="btn btn-success text-white"
+                        style={{ boxShadow: '0 4px 14px 0 rgba(25, 135, 84, 0.3)' }}
+                        onClick={checkEligibility}
+                      >
+                        <i className="bi bi-search-heart me-1"></i> Calculate Eligibility
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Results */}
+                {checkerStep === 4 && (
+                  <div className="fade-in-el text-start">
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                      <h5 className="fw-bold mb-0"><i className="bi bi-check-circle-fill text-success me-2"></i>Matched Schemes</h5>
+                      <button className="btn btn-sm btn-glass-secondary" onClick={() => setCheckerStep(1)}>
+                        <i className="bi bi-arrow-counterclockwise"></i> Test Again
+                      </button>
+                    </div>
+
+                    <div className="d-flex flex-column gap-3">
+                      {checkerResults.map(result => {
+                        let scoreColor = '#ef4444'; // red
+                        let scoreLabel = 'Low Match';
+                        if (result.score >= 70) {
+                          scoreColor = '#10b981'; // green
+                          scoreLabel = 'High Match';
+                        } else if (result.score >= 40) {
+                          scoreColor = '#f59e0b'; // amber
+                          scoreLabel = 'Medium Match';
+                        }
+
+                        return (
+                          <div
+                            key={result.id}
+                            className="p-4 rounded-3 text-start"
+                            style={{
+                              background: 'var(--surface)',
+                              border: `1px solid ${result.score >= 70 ? 'rgba(16,185,129,0.2)' : 'var(--border)'}`,
+                              boxShadow: 'var(--shadow-sm)'
+                            }}
+                          >
+                            <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                              <div>
+                                <span className="badge bg-success-subtle text-success py-1 px-3 mb-2">{result.category}</span>
+                                <h5 className="fw-bold mb-1" style={{ fontSize: '1.1rem' }}>{result.title}</h5>
+                              </div>
+                              
+                              <div className="text-end">
+                                <span className="badge px-3 py-2 fs-6 rounded-pill" style={{ background: `${scoreColor}15`, color: scoreColor, border: `1px solid ${scoreColor}40` }}>
+                                  {result.score}% Match ({scoreLabel})
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Match Progress Bar */}
+                            <div className="progress mb-3" style={{ height: 6, background: 'var(--bg-secondary)' }}>
+                              <div
+                                  className="progress-bar"
+                                  role="progressbar"
+                                  style={{ width: `${result.score}%`, backgroundColor: scoreColor }}
+                                  aria-valuenow={result.score}
+                                  aria-valuemin={0}
+                                  aria-valuemax={100}
+                              ></div>
+                            </div>
+
+                            {/* Eligibility explanations */}
+                            <div className="mb-3 bg-light bg-opacity-10 p-3 rounded border" style={{ borderColor: 'var(--border)' }}>
+                              <strong className="text-primary small d-block mb-2">Matching Explanations / தகுதி விளக்கம்:</strong>
+                              <ul className="small text-secondary mb-0 ps-3">
+                                {result.explanations.map((exp, i) => (
+                                  <li key={i} className="mb-1">{exp}</li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            <div className="d-flex gap-2">
+                              <button
+                                className="btn btn-sm btn-outline-success flex-fill"
+                                onClick={() => setActiveScheme(result)}
+                                data-bs-toggle="modal"
+                                data-bs-target="#schemeDetailsModal"
+                              >
+                                View Details &amp; Application
+                              </button>
+                              
+                              <button
+                                className="btn btn-sm btn-link p-0 text-decoration-none border-0 bg-transparent px-2"
+                                onClick={() => toggleBookmark(result)}
+                                title={bookmarkedIds.includes(result.id) ? "Remove Bookmark" : "Add Bookmark"}
+                              >
+                                <i className={`bi ${bookmarkedIds.includes(result.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'} fs-5`}></i>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

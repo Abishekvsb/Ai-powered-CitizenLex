@@ -14,6 +14,7 @@ import RightsExplorer from './pages/RightsExplorer';
 import SchemeFinder from './pages/SchemeFinder';
 import DocumentAnalyzer from './pages/DocumentAnalyzer';
 import Profile from './pages/Profile';
+import LegalDrafts from './pages/LegalDrafts';
 import AdminDashboard from './pages/AdminDashboard';
 
 // Auth pages do not render Navbar/Footer
@@ -48,6 +49,11 @@ export default function App() {
           <Route path="/analyzer" element={
             <ProtectedRoute>
               <DocumentAnalyzer />
+            </ProtectedRoute>
+          } />
+          <Route path="/drafts" element={
+            <ProtectedRoute>
+              <LegalDrafts />
             </ProtectedRoute>
           } />
           <Route path="/profile" element={

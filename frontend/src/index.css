@@ -832,3 +832,70 @@ footer {
   }
 }
 
+/* =========================================
+   PRINT-READY PAPER STYLES & PRINT MEDIA QUERY
+   ========================================= */
+.legal-paper-preview {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  padding: 50px 60px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  min-height: 700px;
+  white-space: pre-wrap;
+  outline: none;
+  transition: box-shadow 0.2s ease;
+  position: relative;
+  text-align: left;
+}
+
+.legal-paper-preview:focus-within {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2), 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] .legal-paper-preview {
+  /* Keep paper white even in dark mode for realistic print preview */
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #94a3b8;
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Hide everything except the paper content */
+  #root > div > *:not(main),
+  main > *:not(.print-container-wrapper),
+  .no-print {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+  }
+  
+  .print-paper-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.8;
+    visibility: visible !important;
+    display: block !important;
+  }
+}
+
+
