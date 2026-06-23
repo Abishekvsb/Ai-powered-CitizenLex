@@ -898,4 +898,112 @@ footer {
   }
 }
 
+/* =========================================
+   VOICE INPUT — PULSE ANIMATION
+   ========================================= */
+.voice-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  animation: voice-ring-pulse 1.2s ease-out infinite;
+  pointer-events: none;
+}
 
+@keyframes voice-ring-pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* =========================================
+   OCR SCANNER STYLES
+   ========================================= */
+.ocr-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ocr-drop-zone.drag-over {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.06);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.ocr-drop-zone:hover {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.ocr-progress-bar {
+  height: 6px;
+  border-radius: 100px;
+  background: rgba(37, 99, 235, 0.15);
+  overflow: hidden;
+}
+
+.ocr-progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width 0.3s ease;
+}
+
+.ocr-result-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  resize: vertical;
+  min-height: 200px;
+  color: var(--text);
+  padding: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ocr-result-panel:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.ocr-action-btn {
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+/* =========================================
+   PWA INSTALL BUTTON ANIMATION
+   ========================================= */
+.pwa-install-btn {
+  animation: pwa-pulse 2s ease-in-out 3;
+}
+
+@keyframes pwa-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+  50% { box-shadow: 0 0 0 6px rgba(37,99,235,0.15); }
+}

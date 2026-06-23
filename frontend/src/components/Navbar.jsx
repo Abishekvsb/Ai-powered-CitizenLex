@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -8,6 +8,31 @@ export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // PWA Install prompt
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setShowInstallBtn(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    // If already installed, hide button
+    window.addEventListener('appinstalled', () => setShowInstallBtn(false));
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    const result = await installPrompt.prompt();
+    if (result.outcome === 'accepted') {
+      setShowInstallBtn(false);
+      setInstallPrompt(null);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -52,6 +77,11 @@ export default function Navbar() {
                     <i className="bi bi-file-earmark-diff me-1 d-lg-none"></i>AI Drafts
                   </Link>
                 </li>
+                <li className="nav-item">
+                  <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/ocr') ? 'active' : ''}`} to="/ocr">
+                    <i className="bi bi-upc-scan me-1 d-lg-none"></i>OCR Scanner
+                  </Link>
+                </li>
               </>
             )}
             <li className="nav-item">
@@ -74,6 +104,29 @@ export default function Navbar() {
           </ul>
 
           <div className="d-flex align-items-center gap-2">
+
+            {/* PWA Install Button */}
+            {showInstallBtn && (
+              <button
+                className="btn btn-sm d-flex align-items-center gap-1 pwa-install-btn"
+                onClick={handleInstall}
+                title="Install CitizenLex App"
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  padding: '6px 12px',
+                  animation: 'fadeInUp 0.4s ease'
+                }}
+              >
+                <i className="bi bi-download"></i>
+                <span className="d-none d-md-inline">Install App</span>
+              </button>
+            )}
+
             <button className="dark-mode-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle dark/light mode">
               {theme === 'light' ? <i className="bi bi-moon-stars-fill"></i> : <i className="bi bi-sun-fill"></i>}
             </button>

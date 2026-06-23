@@ -1,17 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler,
   Title,
   Tooltip,
   Legend
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -22,6 +37,8 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState([]);
   const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activityTrend, setActivityTrend] = useState([]);
+  const [actionBreakdown, setActionBreakdown] = useState({});
 
   // Form states
   const [newCatName, setNewCatName] = useState('');
@@ -52,6 +69,24 @@ export default function AdminDashboard() {
       if (activeTab === 'analytics') {
         const res = await axios.get('/api/admin/analytics');
         setAnalytics(res.data);
+        try {
+          const trendRes = await axios.get('/api/admin/activity-trend');
+          setActivityTrend(trendRes.data || []);
+        } catch (e) {
+          console.error("Error loading activity trend", e);
+        }
+        try {
+          const breakdownRes = await axios.get('/api/admin/action-breakdown');
+          setActionBreakdown(breakdownRes.data || {});
+        } catch (e) {
+          console.error("Error loading action breakdown", e);
+        }
+        try {
+          const logsRes = await axios.get('/api/admin/logs');
+          setLogs(logsRes.data || []);
+        } catch (e) {
+          console.error("Error loading logs", e);
+        }
       } else if (activeTab === 'users') {
         const res = await axios.get('/api/admin/users');
         setUsers(res.data || []);
@@ -192,9 +227,9 @@ export default function AdminDashboard() {
 
   // Chart Setup
   const getChartData = () => {
-    if (!analytics) return {};
+    if (!analytics) return { labels: [], datasets: [] };
     return {
-      labels: ['Users', 'Rights', 'Schemes', 'Analyzed Docs', 'AI Chats'],
+      labels: ['Users', 'Rights', 'Schemes', 'Analyzed Docs', 'AI Chats', 'Legal Drafts'],
       datasets: [
         {
           label: 'Total Counts',
@@ -203,10 +238,58 @@ export default function AdminDashboard() {
             analytics.totalRights,
             analytics.totalSchemes,
             analytics.totalDocuments,
-            analytics.totalChats
+            analytics.totalChats,
+            analytics.totalDrafts || 0
           ],
           backgroundColor: 'rgba(37, 99, 235, 0.7)',
           borderRadius: 8
+        }
+      ]
+    };
+  };
+
+  const getLineChartData = () => {
+    if (!activityTrend || activityTrend.length === 0) return { labels: [], datasets: [] };
+    const sortedTrend = [...activityTrend].sort((a, b) => new Date(a.date) - new Date(b.date));
+    return {
+      labels: sortedTrend.map(t => new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+      datasets: [
+        {
+          label: 'Daily Activities',
+          data: sortedTrend.map(t => t.count),
+          fill: true,
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          borderColor: '#ef4444',
+          tension: 0.4,
+          pointBackgroundColor: '#ef4444',
+          pointBorderColor: '#ffffff',
+          pointHoverRadius: 6
+        }
+      ]
+    };
+  };
+
+  const getDoughnutChartData = () => {
+    if (!actionBreakdown || Object.keys(actionBreakdown).length === 0) return { labels: [], datasets: [] };
+    const labels = Object.keys(actionBreakdown);
+    const data = Object.values(actionBreakdown);
+    const colors = [
+      'rgba(59, 130, 246, 0.8)',
+      'rgba(16, 185, 129, 0.8)',
+      'rgba(245, 158, 11, 0.8)',
+      'rgba(236, 72, 153, 0.8)',
+      'rgba(139, 92, 246, 0.8)',
+      'rgba(239, 68, 68, 0.8)',
+      'rgba(107, 114, 128, 0.8)'
+    ];
+    return {
+      labels: labels,
+      datasets: [
+        {
+          data: data,
+          backgroundColor: colors.slice(0, labels.length),
+          borderWidth: 1,
+          borderColor: 'var(--border)'
         }
       ]
     };
@@ -257,42 +340,230 @@ export default function AdminDashboard() {
               {/* Analytics Tab */}
               {activeTab === 'analytics' && analytics && (
                 <div>
-                  <h4 className="fw-bold mb-4">System Statistics</h4>
+                  <h4 className="fw-bold mb-4 text-white">System Statistics</h4>
                   <div className="row g-4 mb-5">
-                    <div className="col-md-2 col-6">
-                      <div className="border rounded p-3 text-center">
-                        <h6 className="text-secondary small">Total Users</h6>
-                        <h3>{analytics.totalUsers}</h3>
+                    {/* Card 1: Users */}
+                    <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                        borderRadius: '16px'
+                      }}>
+                        <div className="card-body p-4 position-relative">
+                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
+                            <i className="bi bi-people-fill" style={{ fontSize: '4.5rem' }}></i>
+                          </div>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Total Registered Users</h6>
+                          <h2 className="display-5 fw-bold mb-1">{analytics.totalUsers}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>System user accounts</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="col-md-2 col-6">
-                      <div className="border rounded p-3 text-center">
-                        <h6 className="text-secondary small">Rights Articles</h6>
-                        <h3>{analytics.totalRights}</h3>
+
+                    {/* Card 2: Chats */}
+                    <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                        borderRadius: '16px'
+                      }}>
+                        <div className="card-body p-4 position-relative">
+                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
+                            <i className="bi bi-chat-left-text-fill" style={{ fontSize: '4.5rem' }}></i>
+                          </div>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Saved Conversations</h6>
+                          <h2 className="display-5 fw-bold mb-1">{analytics.totalChats}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>AI Assistant chats</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="col-md-2 col-6">
-                      <div className="border rounded p-3 text-center">
-                        <h6 className="text-secondary small">Welfare Schemes</h6>
-                        <h3>{analytics.totalSchemes}</h3>
+
+                    {/* Card 3: Documents */}
+                    <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
+                        borderRadius: '16px'
+                      }}>
+                        <div className="card-body p-4 position-relative">
+                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
+                            <i className="bi bi-file-earmark-medical-fill" style={{ fontSize: '4.5rem' }}></i>
+                          </div>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Analyzed Documents</h6>
+                          <h2 className="display-5 fw-bold mb-1">{analytics.totalDocuments}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Uploaded legal files</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="col-md-3 col-6">
-                      <div className="border rounded p-3 text-center">
-                        <h6 className="text-secondary small">Analyzed Documents</h6>
-                        <h3>{analytics.totalDocuments}</h3>
+
+                    {/* Card 4: Drafts */}
+                    <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+                        borderRadius: '16px'
+                      }}>
+                        <div className="card-body p-4 position-relative">
+                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
+                            <i className="bi bi-file-earmark-word-fill" style={{ fontSize: '4.5rem' }}></i>
+                          </div>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Legal Drafts Generated</h6>
+                          <h2 className="display-5 fw-bold mb-1">{analytics.totalDrafts || 0}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Created drafts & petitions</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="col-md-3 col-12">
-                      <div className="border rounded p-3 text-center">
-                        <h6 className="text-secondary small">Conversations Saved</h6>
-                        <h3>{analytics.totalChats}</h3>
+
+                    {/* Card 5: Rights */}
+                    <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                        borderRadius: '16px'
+                      }}>
+                        <div className="card-body p-4 position-relative">
+                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
+                            <i className="bi bi-journal-text" style={{ fontSize: '4.5rem' }}></i>
+                          </div>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Rights Articles</h6>
+                          <h2 className="display-5 fw-bold mb-1">{analytics.totalRights}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Constitutional rights database</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card 6: Schemes */}
+                    <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                        borderRadius: '16px'
+                      }}>
+                        <div className="card-body p-4 position-relative">
+                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
+                            <i className="bi bi-card-checklist" style={{ fontSize: '4.5rem' }}></i>
+                          </div>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Welfare Schemes</h6>
+                          <h2 className="display-5 fw-bold mb-1">{analytics.totalSchemes}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Registered schemes</p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="d-flex justify-content-center" style={{ maxHeight: '350px' }}>
-                    <Bar data={getChartData()} options={{ responsive: true }} />
+                  {/* Charts section */}
+                  <div className="row g-4 mb-5">
+                    <div className="col-lg-8">
+                      <div className="card bg-glass border border-light-subtle shadow-sm p-4 h-100" style={{ borderRadius: '16px', backdropFilter: 'blur(10px)', background: 'var(--surface)' }}>
+                        <h5 className="fw-bold mb-4 text-white"><i className="bi bi-graph-up text-danger me-2"></i>Daily Activity Trend (Last 30 Days)</h5>
+                        <div style={{ height: '300px', position: 'relative' }}>
+                          {activityTrend.length > 0 ? (
+                            <Line data={getLineChartData()} options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              plugins: {
+                                legend: { display: false }
+                              },
+                              scales: {
+                                y: {
+                                  grid: { color: 'rgba(255,255,255,0.05)' },
+                                  ticks: { color: 'var(--text-secondary)' }
+                                },
+                                x: {
+                                  grid: { display: false },
+                                  ticks: { color: 'var(--text-secondary)' }
+                                }
+                              }
+                            }} />
+                          ) : (
+                            <div className="d-flex h-100 justify-content-center align-items-center text-secondary">
+                              No activity logs recorded in the last 30 days
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-lg-4">
+                      <div className="card bg-glass border border-light-subtle shadow-sm p-4 h-100" style={{ borderRadius: '16px', backdropFilter: 'blur(10px)', background: 'var(--surface)' }}>
+                        <h5 className="fw-bold mb-4 text-white"><i className="bi bi-pie-chart text-danger me-2"></i>Action Distribution</h5>
+                        <div style={{ height: '300px', position: 'relative' }} className="d-flex justify-content-center align-items-center">
+                          {Object.keys(actionBreakdown).length > 0 ? (
+                            <Doughnut data={getDoughnutChartData()} options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              plugins: {
+                                legend: {
+                                  position: 'bottom',
+                                  labels: { color: 'var(--text-primary)', boxWidth: 12, font: { size: 11 } }
+                                }
+                              }
+                            }} />
+                          ) : (
+                            <div className="text-secondary">No actions recorded</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row g-4">
+                    <div className="col-lg-6">
+                      <div className="card bg-glass border border-light-subtle shadow-sm p-4 h-100" style={{ borderRadius: '16px', backdropFilter: 'blur(10px)', background: 'var(--surface)' }}>
+                        <h5 className="fw-bold mb-4 text-white"><i className="bi bi-bar-chart text-danger me-2"></i>Platform Overview</h5>
+                        <div style={{ height: '300px', position: 'relative' }}>
+                          <Bar data={getChartData()} options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: { display: false }
+                            },
+                            scales: {
+                              y: {
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: 'var(--text-secondary)' }
+                              },
+                              x: {
+                                grid: { display: false },
+                                ticks: { color: 'var(--text-secondary)' }
+                              }
+                            }
+                          }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-lg-6">
+                      <div className="card bg-glass border border-light-subtle shadow-sm p-4 h-100" style={{ borderRadius: '16px', backdropFilter: 'blur(10px)', background: 'var(--surface)' }}>
+                        <h5 className="fw-bold mb-4 text-white"><i className="bi bi-clock-history text-danger me-2"></i>Recent Activity Feed</h5>
+                        <div className="overflow-auto" style={{ maxHeight: '300px' }}>
+                          {logs.length > 0 ? (
+                            <ul className="list-group list-group-flush bg-transparent">
+                              {logs.slice(0, 10).map((log) => (
+                                <li key={log.id} className="list-group-item bg-transparent text-start border-light-subtle px-0 py-3 d-flex justify-content-between align-items-start gap-3">
+                                  <div className="ms-2 me-auto">
+                                    <div className="fw-bold text-primary small">{log.user ? log.user.email : 'SYSTEM'}</div>
+                                    <span className="text-secondary small">{log.details}</span>
+                                  </div>
+                                  <div className="text-end">
+                                    <span className={`badge ${
+                                      log.action === 'CHAT' ? 'bg-info' : 
+                                      log.action === 'LOGIN' ? 'bg-success' : 
+                                      log.action === 'REGISTER' ? 'bg-primary' : 
+                                      log.action === 'DRAFT' ? 'bg-danger' : 
+                                      'bg-warning'
+                                    } me-2`}>
+                                      {log.action}
+                                    </span>
+                                    <div className="text-muted" style={{ fontSize: '10px' }}>
+                                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="d-flex h-100 justify-content-center align-items-center text-secondary py-5">
+                              No recent activity logs
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

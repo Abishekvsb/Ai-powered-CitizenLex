@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import VoiceInput from '../components/VoiceInput';
+import TextToSpeech from '../components/TextToSpeech';
 
 const SUGGESTIONS_EN = [
   "What are my rights if arrested?",
@@ -18,6 +21,7 @@ const SUGGESTIONS_TA = [
 ];
 
 export default function AiAssistant() {
+  const location = useLocation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [language, setLanguage] = useState('en');
@@ -27,11 +31,22 @@ export default function AiAssistant() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [voiceNotice, setVoiceNotice] = useState(false);
 
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
   const suggestions = language === 'en' ? SUGGESTIONS_EN : SUGGESTIONS_TA;
+
+  // Handle prefill text from OCR Scanner or other sources
+  useEffect(() => {
+    if (location.state?.prefillText) {
+      setInput(location.state.prefillText);
+      setTimeout(() => inputRef.current?.focus(), 200);
+      // Clear state so back navigation doesn't re-prefill
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -51,6 +66,12 @@ export default function AiAssistant() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Show voice notice if Speech API not available
+  useEffect(() => {
+    const supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!supported) setVoiceNotice(true);
+  }, []);
 
   const handleSend = async (text) => {
     const msg = (text || input).trim();
@@ -82,6 +103,12 @@ export default function AiAssistant() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  // Voice input result handler
+  const handleVoiceResult = (transcript) => {
+    setInput(transcript);
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const reopenChat = (chat) => {
@@ -300,6 +327,24 @@ export default function AiAssistant() {
               </div>
             </div>
 
+            {/* Voice Compatibility Notice */}
+            {voiceNotice && (
+              <div className="px-4 pt-3">
+                <div className="d-flex align-items-center gap-2 p-2 rounded-3" style={{
+                  background: 'rgba(245,158,11,0.08)',
+                  border: '1px solid rgba(245,158,11,0.2)',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-secondary)'
+                }}>
+                  <i className="bi bi-mic-mute text-warning"></i>
+                  <span>Voice input is not supported in this browser. For voice features, use Chrome or Edge.</span>
+                  <button onClick={() => setVoiceNotice(false)} className="btn btn-sm p-0 ms-auto border-0" style={{ color: 'var(--text-muted)' }}>
+                    <i className="bi bi-x-lg" style={{ fontSize: '0.7rem' }}></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Mobile History Drawer */}
             {showMobileHistory && (
               <div className="d-lg-none p-3 border-bottom" style={{ borderColor: 'var(--border)', maxHeight: 300, overflowY: 'auto', background: 'var(--bg-secondary)' }}>
@@ -359,22 +404,29 @@ export default function AiAssistant() {
                           <i className="bi bi-robot"></i>
                         </div>
                       )}
-                      <div
-                        className="chat-bubble"
-                        style={{
-                          background: msg.sender === 'user'
-                            ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)'
-                            : msg.isError
-                            ? 'rgba(239,68,68,0.08)'
-                            : 'var(--surface)',
-                          color: msg.sender === 'user' ? 'white' : 'var(--text)',
-                          border: msg.sender !== 'user' ? '1px solid var(--border)' : 'none',
-                          maxWidth: '78%',
-                        }}
-                      >
-                        <div style={{ whiteSpace: 'pre-line', lineHeight: 1.65, fontSize: '0.9rem' }}>
-                          {msg.text}
+                      <div style={{ maxWidth: '78%' }}>
+                        <div
+                          className="chat-bubble"
+                          style={{
+                            background: msg.sender === 'user'
+                              ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)'
+                              : msg.isError
+                              ? 'rgba(239,68,68,0.08)'
+                              : 'var(--surface)',
+                            color: msg.sender === 'user' ? 'white' : 'var(--text)',
+                            border: msg.sender !== 'user' ? '1px solid var(--border)' : 'none',
+                          }}
+                        >
+                          <div style={{ whiteSpace: 'pre-line', lineHeight: 1.65, fontSize: '0.9rem' }}>
+                            {msg.text}
+                          </div>
                         </div>
+                        {/* TTS button for assistant messages */}
+                        {msg.sender === 'assistant' && !msg.isError && (
+                          <div className="mt-1 ms-1">
+                            <TextToSpeech text={msg.text} language={language} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -406,12 +458,12 @@ export default function AiAssistant() {
 
             {/* Input Bar */}
             <div className="p-4 border-top" style={{ borderColor: 'var(--border)' }}>
-              <div className="d-flex gap-3 align-items-end">
+              <div className="d-flex gap-2 align-items-end">
                 <div className="flex-grow-1 position-relative">
                   <textarea
                     ref={inputRef}
                     className="form-control form-glass-control w-100"
-                    placeholder={language === 'ta' ? 'இங்கே உங்கள் சட்டக் கேள்வியைக் கேளுங்கள்...' : 'Ask your legal question here... (Enter to send, Shift+Enter for new line)'}
+                    placeholder={language === 'ta' ? 'இங்கே உங்கள் சட்டக் கேள்வியைக் கேளுங்கள்... (Enter to send)' : 'Ask your legal question here... (Enter to send, Shift+Enter for new line)'}
                     rows={1}
                     value={input}
                     onChange={e => setInput(e.target.value)}
@@ -424,6 +476,15 @@ export default function AiAssistant() {
                     }}
                   />
                 </div>
+
+                {/* Voice Input Button */}
+                <VoiceInput
+                  language={language}
+                  onResult={handleVoiceResult}
+                  disabled={loading}
+                />
+
+                {/* Send Button */}
                 <button
                   className="btn btn-glass d-flex align-items-center justify-content-center flex-shrink-0"
                   onClick={() => handleSend()}

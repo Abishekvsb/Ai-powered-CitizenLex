@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const DRAFT_TYPES = [
@@ -33,6 +34,7 @@ const PREFILL_TEMPLATES = {
 };
 
 export default function LegalDrafts() {
+  const location = useLocation();
   const [draftType, setDraftType] = useState('Consumer Complaint');
   const [language, setLanguage] = useState('en');
   const [details, setDetails] = useState('');
@@ -42,6 +44,15 @@ export default function LegalDrafts() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const paperRef = useRef(null);
+
+  // Prefill from OCR Scanner
+  useEffect(() => {
+    if (location.state?.prefillText) {
+      setDetails(location.state.prefillText);
+      showToast('Text prefilled from OCR Scanner!', 'success');
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });

@@ -41,6 +41,9 @@ public class AdminController {
     @Autowired
     private ChatHistoryRepository chatHistoryRepository;
 
+    @Autowired
+    private ActivityLogRepository activityLogRepository;
+
     @GetMapping("/analytics")
     public ResponseEntity<AdminAnalyticsDto> getAnalytics() {
         AdminAnalyticsDto dto = new AdminAnalyticsDto(
@@ -48,9 +51,34 @@ public class AdminController {
                 rightsContentRepository.count(),
                 governmentSchemeRepository.count(),
                 userDocumentRepository.count(),
-                chatHistoryRepository.count()
+                chatHistoryRepository.count(),
+                activityLogRepository.countByAction("DRAFT")
         );
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/activity-trend")
+    public ResponseEntity<List<java.util.Map<String, Object>>> getActivityTrend() {
+        java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(30);
+        List<Object[]> results = activityLogRepository.findDailyActivitySince(since);
+        List<java.util.Map<String, Object>> trend = results.stream().map(row -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("date", row[0].toString());
+            map.put("count", row[1]);
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(trend);
+    }
+
+    @GetMapping("/action-breakdown")
+    public ResponseEntity<java.util.Map<String, Long>> getActionBreakdown() {
+        List<Object[]> results = activityLogRepository.countByActionGrouped();
+        java.util.Map<String, Long> breakdown = results.stream().collect(Collectors.toMap(
+                row -> row[0] != null ? row[0].toString() : "UNKNOWN",
+                row -> (Long) row[1],
+                (existing, replacement) -> existing
+        ));
+        return ResponseEntity.ok(breakdown);
     }
 
     @GetMapping("/users")

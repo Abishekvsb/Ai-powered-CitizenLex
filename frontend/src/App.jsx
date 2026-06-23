@@ -16,6 +16,7 @@ import DocumentAnalyzer from './pages/DocumentAnalyzer';
 import Profile from './pages/Profile';
 import LegalDrafts from './pages/LegalDrafts';
 import AdminDashboard from './pages/AdminDashboard';
+import OcrScanner from './pages/OcrScanner';
 
 // Auth pages do not render Navbar/Footer
 const AUTH_ROUTES = ['/login', '/register'];
@@ -59,6 +60,11 @@ export default function App() {
           <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/ocr" element={
+            <ProtectedRoute>
+              <OcrScanner />
             </ProtectedRoute>
           } />
 

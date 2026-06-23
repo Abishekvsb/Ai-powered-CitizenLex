@@ -6,15 +6,17 @@ public class AdminAnalyticsDto {
     private long totalSchemes;
     private long totalDocuments;
     private long totalChats;
+    private long totalDrafts;
 
     public AdminAnalyticsDto() {}
 
-    public AdminAnalyticsDto(long totalUsers, long totalRights, long totalSchemes, long totalDocuments, long totalChats) {
+    public AdminAnalyticsDto(long totalUsers, long totalRights, long totalSchemes, long totalDocuments, long totalChats, long totalDrafts) {
         this.totalUsers = totalUsers;
         this.totalRights = totalRights;
         this.totalSchemes = totalSchemes;
         this.totalDocuments = totalDocuments;
         this.totalChats = totalChats;
+        this.totalDrafts = totalDrafts;
     }
 
     public long getTotalUsers() {
@@ -56,4 +58,13 @@ public class AdminAnalyticsDto {
     public void setTotalChats(long totalChats) {
         this.totalChats = totalChats;
     }
+
+    public long getTotalDrafts() {
+        return totalDrafts;
+    }
+
+    public void setTotalDrafts(long totalDrafts) {
+        this.totalDrafts = totalDrafts;
+    }
 }
+

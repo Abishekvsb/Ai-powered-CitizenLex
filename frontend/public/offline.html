@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CitizenLex — Offline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 50%, #0c4a6e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+      padding: 24px;
+    }
+    .card {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 24px;
+      padding: 48px 36px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .icon { font-size: 4rem; margin-bottom: 20px; display: block; }
+    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 10px; }
+    p { color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.6; margin-bottom: 28px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 100px; padding: 6px 14px; font-size: 0.8rem;
+      color: rgba(255,255,255,0.7); margin-bottom: 28px;
+    }
+    .badge::before { content: '●'; color: #ef4444; }
+    button {
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      color: white; border: none; border-radius: 12px;
+      padding: 14px 32px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: all 0.25s; width: 100%;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+    .brand { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; opacity: 0.9; }
+    .brand span { color: #60a5fa; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="icon">⚖️</span>
+    <div class="brand">Citizen<span>Lex</span></div>
+    <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin-bottom:24px;">AI-Powered Legal Rights Assistant</p>
+    <div class="badge">No Internet Connection</div>
+    <h1>You're Offline</h1>
+    <p>
+      It looks like you've lost your connection. CitizenLex requires an internet connection to access AI legal assistance, rights information, and scheme data.
+    </p>
+    <button onclick="window.location.reload()">
+      🔄 Try Again
+    </button>
+  </div>
+</body>
+</html>
