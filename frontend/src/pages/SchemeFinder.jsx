@@ -10,6 +10,42 @@ export default function SchemeFinder() {
   const [activeScheme, setActiveScheme] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ——— Bookmarks & Toast state ———
+  const [bookmarkedIds, setBookmarkedIds] = useState([]);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('bookmarks_schemes') || '[]');
+      setBookmarkedIds(saved.map(item => item.id));
+    } catch (e) {
+      console.error('Failed to load bookmarks', e);
+    }
+  }, []);
+
+  const toggleBookmark = (scheme) => {
+    let current = [];
+    try {
+      current = JSON.parse(localStorage.getItem('bookmarks_schemes') || '[]');
+    } catch(e) {}
+    const exists = current.some(item => item.id === scheme.id);
+    let updated;
+    if (exists) {
+      updated = current.filter(item => item.id !== scheme.id);
+      showToast('Removed from Saved Library', 'warning');
+    } else {
+      updated = [...current, scheme];
+      showToast('Added to Saved Library', 'success');
+    }
+    localStorage.setItem('bookmarks_schemes', JSON.stringify(updated));
+    setBookmarkedIds(updated.map(item => item.id));
+  };
+
   // ——— AI mode state ———
   const [mode, setMode] = useState('db'); // 'db' | 'ai'
   const [aiQuery, setAiQuery] = useState('');
@@ -181,8 +217,16 @@ export default function SchemeFinder() {
                 <div key={sch.id} className="col-md-6">
                   <div className="glass-panel glass-panel-hover p-4 h-100 d-flex flex-column justify-content-between">
                     <div>
-                      <div className="d-flex justify-content-between mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
                         <span className="badge bg-success-subtle text-success py-2 px-3">{sch.category}</span>
+                        <button
+                          className="btn btn-sm btn-link p-0 text-decoration-none border-0 bg-transparent"
+                          onClick={(e) => { e.preventDefault(); toggleBookmark(sch); }}
+                          title={bookmarkedIds.includes(sch.id) ? "Remove Bookmark" : "Add Bookmark"}
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          <i className={`bi ${bookmarkedIds.includes(sch.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'} fs-5`}></i>
+                        </button>
                       </div>
                       <h5 className="fw-bold mb-3">{sch.title}</h5>
                       <div className="mb-2">
@@ -324,12 +368,22 @@ export default function SchemeFinder() {
         <div className="modal-dialog modal-lg modal-dialog-centered">
           {activeScheme && (
             <div className="modal-content glass-panel border-0 text-start">
-              <div className="modal-header border-bottom border-light-subtle p-4">
-                <div className="d-flex align-items-center">
-                  <span className="badge bg-success-subtle text-success py-2 px-3 me-3">{activeScheme.category}</span>
-                  <h5 className="modal-title fw-bold mb-0">{activeScheme.title}</h5>
+              <div className="modal-header border-bottom border-light-subtle p-4 d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center min-w-0">
+                  <span className="badge bg-success-subtle text-success py-2 px-3 me-3 flex-shrink-0">{activeScheme.category}</span>
+                  <h5 className="modal-title fw-bold mb-0 text-truncate">{activeScheme.title}</h5>
                 </div>
-                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div className="d-flex align-items-center gap-3">
+                  <button
+                    className="btn btn-sm btn-link p-0 text-decoration-none border-0 bg-transparent"
+                    onClick={() => toggleBookmark(activeScheme)}
+                    title={bookmarkedIds.includes(activeScheme.id) ? "Remove Bookmark" : "Add Bookmark"}
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    <i className={`bi ${bookmarkedIds.includes(activeScheme.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'} fs-4`}></i>
+                  </button>
+                  <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
               </div>
 
               <div className="modal-body p-4">
@@ -366,6 +420,16 @@ export default function SchemeFinder() {
           )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="custom-toast-container">
+          <div className={`custom-toast ${toast.type === 'success' ? 'toast-success' : 'toast-warning'}`}>
+            <i className={`bi ${toast.type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-circle-fill text-danger'}`}></i>
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

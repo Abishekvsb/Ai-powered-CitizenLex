@@ -10,6 +10,42 @@ export default function RightsExplorer() {
   const [activeRight, setActiveRight] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ——— Bookmarks & Toast state ———
+  const [bookmarkedIds, setBookmarkedIds] = useState([]);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('bookmarks_rights') || '[]');
+      setBookmarkedIds(saved.map(item => item.id));
+    } catch (e) {
+      console.error('Failed to load bookmarks', e);
+    }
+  }, []);
+
+  const toggleBookmark = (right) => {
+    let current = [];
+    try {
+      current = JSON.parse(localStorage.getItem('bookmarks_rights') || '[]');
+    } catch(e) {}
+    const exists = current.some(item => item.id === right.id);
+    let updated;
+    if (exists) {
+      updated = current.filter(item => item.id !== right.id);
+      showToast('Removed from Saved Library', 'warning');
+    } else {
+      updated = [...current, right];
+      showToast('Added to Saved Library', 'success');
+    }
+    localStorage.setItem('bookmarks_rights', JSON.stringify(updated));
+    setBookmarkedIds(updated.map(item => item.id));
+  };
+
   // ——— AI mode state ———
   const [mode, setMode] = useState('db'); // 'db' | 'ai'
   const [aiQuery, setAiQuery] = useState('');
@@ -183,10 +219,18 @@ export default function RightsExplorer() {
                 <div key={right.id} className="col-md-6 col-lg-4">
                   <div className="glass-panel glass-panel-hover p-4 h-100 d-flex flex-column justify-content-between">
                     <div>
-                      <div className="d-flex justify-content-between align-items-start mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
                         <span className="badge bg-primary-subtle text-primary py-2 px-3">
                           {right.category.name}
                         </span>
+                        <button
+                          className="btn btn-sm btn-link p-0 text-decoration-none border-0 bg-transparent"
+                          onClick={(e) => { e.preventDefault(); toggleBookmark(right); }}
+                          title={bookmarkedIds.includes(right.id) ? "Remove Bookmark" : "Add Bookmark"}
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          <i className={`bi ${bookmarkedIds.includes(right.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'} fs-5`}></i>
+                        </button>
                       </div>
                       <h5 className="fw-bold text-truncate-2 mb-2">{right.title}</h5>
                       <h6 className="text-secondary fw-normal mb-3">{right.tamilTitle}</h6>
@@ -329,14 +373,24 @@ export default function RightsExplorer() {
         <div className="modal-dialog modal-lg modal-dialog-centered">
           {activeRight && (
             <div className="modal-content glass-panel border-0 text-start">
-              <div className="modal-header border-bottom border-light-subtle p-4">
-                <div className="d-flex align-items-center gap-2">
-                  <span className="badge bg-primary-subtle text-primary py-2 px-3 me-2">
+              <div className="modal-header border-bottom border-light-subtle p-4 d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center gap-2 min-w-0">
+                  <span className="badge bg-primary-subtle text-primary py-2 px-3 me-2 flex-shrink-0">
                     {activeRight.category.name}
                   </span>
-                  <h5 className="modal-title fw-bold mb-0">{activeRight.title}</h5>
+                  <h5 className="modal-title fw-bold mb-0 text-truncate">{activeRight.title}</h5>
                 </div>
-                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div className="d-flex align-items-center gap-3">
+                  <button
+                    className="btn btn-sm btn-link p-0 text-decoration-none border-0 bg-transparent"
+                    onClick={() => toggleBookmark(activeRight)}
+                    title={bookmarkedIds.includes(activeRight.id) ? "Remove Bookmark" : "Add Bookmark"}
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    <i className={`bi ${bookmarkedIds.includes(activeRight.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'} fs-4`}></i>
+                  </button>
+                  <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
               </div>
 
               <div className="modal-body p-4">
@@ -385,6 +439,16 @@ export default function RightsExplorer() {
           )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="custom-toast-container">
+          <div className={`custom-toast ${toast.type === 'success' ? 'toast-success' : 'toast-warning'}`}>
+            <i className={`bi ${toast.type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-circle-fill text-danger'}`}></i>
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
