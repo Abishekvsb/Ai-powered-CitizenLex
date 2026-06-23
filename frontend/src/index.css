@@ -695,3 +695,88 @@ h1, h2, h3, h4, h5, h6 {
     padding-top: 40px;
   }
 }
+
+/* =========================================
+   TYPING INDICATOR
+   ========================================= */
+.typing-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: typing-bounce 1.2s infinite;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* =========================================
+   PROFILE TABS
+   ========================================= */
+.profile-tab-btn {
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 8px 18px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+/* =========================================
+   TRACKING UTILITY
+   ========================================= */
+.tracking-wide {
+  letter-spacing: 0.06em;
+}
+
+/* =========================================
+   CHAT BUBBLE ANIMATION
+   ========================================= */
+.chat-bubble {
+  border-radius: 18px;
+  padding: 12px 18px;
+  animation: fadeInUp 0.3s ease;
+  line-height: 1.6;
+}
+
+/* =========================================
+   DASHBOARD WELCOME GRADIENT TEXT
+   ========================================= */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =========================================
+   HOVER CARD TRANSITIONS
+   ========================================= */
+.hover-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.hover-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* =========================================
+   MIN-WIDTH FIX FOR TRUNCATED TEXT
+   ========================================= */
+.min-w-0 {
+  min-width: 0;
+}
+
+/* =========================================
+   FOOTER STYLE OVERRIDE
+   ========================================= */
+footer {
+  background: var(--footer-bg) !important;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-top: 1px solid var(--border);
+}

@@ -2,19 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-
-// Register Chart.js modules
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -25,12 +12,14 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const chatsRes = await axios.get('/api/chat/history');
-        const docsRes = await axios.get('/api/documents');
+        const [chatsRes, docsRes] = await Promise.all([
+          axios.get('/api/chat/history'),
+          axios.get('/api/documents'),
+        ]);
         setChats(chatsRes.data || []);
         setDocs(docsRes.data || []);
       } catch (err) {
-        console.error("Failed to load dashboard statistics", err);
+        console.error('Failed to load dashboard data', err);
       } finally {
         setLoading(false);
       }
@@ -38,45 +27,60 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const chartData = {
-    labels: ['AI Chats', 'Uploaded Documents'],
-    datasets: [
-      {
-        label: 'Your Platform Activity',
-        data: [chats.length, docs.length],
-        backgroundColor: ['rgba(37, 99, 235, 0.65)', 'rgba(56, 189, 248, 0.65)'],
-        borderColor: ['#2563eb', '#38bdf8'],
-        borderWidth: 1,
-        borderRadius: 8,
-      },
-    ],
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false,
-      },
+  const quickActions = [
+    { to: '/chat', icon: 'bi-chat-square-text-fill', label: 'AI Assistant', color: '#2563eb', bg: 'rgba(37,99,235,0.1)' },
+    { to: '/analyzer', icon: 'bi-file-earmark-pdf-fill', label: 'Doc Analyzer', color: '#06b6d4', bg: 'rgba(6,182,212,0.1)' },
+    { to: '/rights', icon: 'bi-book-fill', label: 'Rights Explorer', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+    { to: '/schemes', icon: 'bi-search-heart-fill', label: 'Scheme Finder', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+  ];
+
+  const stats = [
+    {
+      label: 'AI Conversations',
+      value: chats.length,
+      icon: 'bi-chat-dots-fill',
+      color: '#2563eb',
+      bg: 'rgba(37,99,235,0.1)',
+      sub: chats.length === 0 ? 'Start your first chat' : `Last: ${new Date(chats[0]?.createdAt).toLocaleDateString()}`,
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(255, 255, 255, 0.05)',
-        },
-        ticks: {
-          precision: 0,
-        }
-      },
+    {
+      label: 'Documents Analyzed',
+      value: docs.length,
+      icon: 'bi-file-earmark-bar-graph-fill',
+      color: '#06b6d4',
+      bg: 'rgba(6,182,212,0.1)',
+      sub: docs.length === 0 ? 'Upload your first doc' : `Latest: ${docs[0]?.fileName?.slice(0, 20)}...`,
     },
-  };
+    {
+      label: 'Account Status',
+      value: 'Active',
+      icon: 'bi-patch-check-fill',
+      color: '#10b981',
+      bg: 'rgba(16,185,129,0.1)',
+      sub: `Member since ${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`,
+    },
+  ];
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading Dashboard...</span>
+      <div className="container py-5">
+        <div className="row g-4 mb-5">
+          {[1, 2, 3].map(i => (
+            <div className="col-md-4" key={i}>
+              <div className="glass-panel p-4" style={{ height: 120 }}>
+                <div className="skeleton-loader mb-2" style={{ height: 16, width: '60%' }}></div>
+                <div className="skeleton-loader mb-2" style={{ height: 36, width: '40%' }}></div>
+                <div className="skeleton-loader" style={{ height: 12, width: '80%' }}></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -84,154 +88,174 @@ export default function Dashboard() {
 
   return (
     <div className="container py-5 text-start">
+
+      {/* Welcome Header */}
       <div className="row mb-5 fade-in-el">
-        <div className="col-12">
-          <h1 className="fw-bold">Welcome back, {user?.firstName}!</h1>
-          <p className="text-secondary">Explore legal rights, check schemes eligibility, or upload covenants for instant AI parsing.</p>
+        <div className="col-12 d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <p className="text-secondary mb-1 small fw-semibold text-uppercase tracking-wide">
+              {greeting()},
+            </p>
+            <h1 className="fw-bold mb-1" style={{ fontSize: '2rem' }}>
+              {user?.firstName} {user?.lastName} 👋
+            </h1>
+            <p className="text-secondary mb-0">
+              Your legal intelligence hub — AI-powered, always ready.
+            </p>
+          </div>
+          <Link to="/profile" className="btn btn-glass-secondary d-flex align-items-center gap-2">
+            <i className="bi bi-person-gear"></i>
+            <span>My Profile</span>
+          </Link>
         </div>
       </div>
 
-      {/* Metrics Summary Row */}
-      <div className="row g-4 mb-5 fade-in-el">
-        <div className="col-md-4">
-          <div className="glass-panel p-4 d-flex align-items-center gap-3">
-            <div className="bg-primary text-white rounded p-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
-              <i className="bi bi-chat-dots-fill fs-3"></i>
-            </div>
-            <div>
-              <h6 className="text-secondary mb-1">Total Chat Queries</h6>
-              <h2 className="mb-0 fw-bold">{chats.length}</h2>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-4">
-          <div className="glass-panel p-4 d-flex align-items-center gap-3">
-            <div className="bg-info text-white rounded p-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
-              <i className="bi bi-file-earmark-bar-graph-fill fs-3"></i>
-            </div>
-            <div>
-              <h6 className="text-secondary mb-1">Documents Uploaded</h6>
-              <h2 className="mb-0 fw-bold">{docs.length}</h2>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-4">
-          <div className="glass-panel p-4 d-flex align-items-center gap-3">
-            <div className="bg-success text-white rounded p-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
-              <i className="bi bi-patch-check-fill fs-3"></i>
-            </div>
-            <div>
-              <h6 className="text-secondary mb-1">Verification Status</h6>
-              <h2 className="mb-0 fw-bold text-success">Verified</h2>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="row g-5 mb-5 fade-in-el">
-        {/* Activity Chart */}
-        <div className="col-lg-6">
-          <div className="glass-panel p-4 h-100">
-            <h5 className="fw-bold mb-4">Activity Visualization</h5>
-            <div style={{ maxHeight: '300px' }} className="d-flex align-items-center justify-content-center">
-              {chats.length === 0 && docs.length === 0 ? (
-                <div className="text-center text-secondary py-5">
-                  <i className="bi bi-graph-up fs-2 d-block mb-3 text-secondary-50"></i>
-                  <span>No data to display. Start chatting or upload files to generate logs.</span>
+      {/* Stat Cards */}
+      <div className="row g-4 mb-5">
+        {stats.map((s, i) => (
+          <div className="col-md-4 fade-in-el" key={i} style={{ animationDelay: `${i * 0.08}s` }}>
+            <div className="glass-panel p-4 dashboard-stat-card h-100">
+              <div className="d-flex align-items-start justify-content-between mb-3">
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-3"
+                  style={{ width: 52, height: 52, background: s.bg, color: s.color, fontSize: '1.4rem' }}
+                >
+                  <i className={`bi ${s.icon}`}></i>
                 </div>
-              ) : (
-                <Bar data={chartData} options={chartOptions} />
-              )}
+              </div>
+              <div className="fs-1 fw-bold mb-1" style={{ color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div className="fw-semibold mb-1">{s.label}</div>
+              <div className="text-secondary small">{s.sub}</div>
             </div>
           </div>
-        </div>
-
-        {/* Quick Tools Grid */}
-        <div className="col-lg-6">
-          <div className="glass-panel p-4 h-100">
-            <h5 className="fw-bold mb-4">Quick Legal Tools</h5>
-            <div className="row g-3">
-              <div className="col-6">
-                <Link to="/chat" className="btn btn-outline-primary w-100 p-4 d-flex flex-column align-items-center gap-2 glass-panel-hover h-100">
-                  <i className="bi bi-chat-square-text fs-2"></i>
-                  <span className="fw-bold">AI Assistant</span>
-                </Link>
-              </div>
-              <div className="col-6">
-                <Link to="/analyzer" className="btn btn-outline-info w-100 p-4 d-flex flex-column align-items-center gap-2 glass-panel-hover h-100">
-                  <i className="bi bi-file-earmark-pdf fs-2"></i>
-                  <span className="fw-bold">Doc Analyzer</span>
-                </Link>
-              </div>
-              <div className="col-6">
-                <Link to="/rights" className="btn btn-outline-secondary w-100 p-4 d-flex flex-column align-items-center gap-2 glass-panel-hover h-100">
-                  <i className="bi bi-book fs-2"></i>
-                  <span className="fw-bold">Explore Rights</span>
-                </Link>
-              </div>
-              <div className="col-6">
-                <Link to="/schemes" className="btn btn-outline-success w-100 p-4 d-flex flex-column align-items-center gap-2 glass-panel-hover h-100">
-                  <i className="bi bi-search-heart fs-2"></i>
-                  <span className="fw-bold">Scheme Finder</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div className="row g-5 fade-in-el">
-        {/* Recent Chat Queries */}
-        <div className="col-md-6">
+      <div className="row g-4 mb-5">
+        {/* Quick Actions */}
+        <div className="col-lg-5 fade-in-el-delay-1">
+          <div className="glass-panel p-4 h-100">
+            <h5 className="fw-bold mb-4 d-flex align-items-center gap-2">
+              <i className="bi bi-grid-fill text-primary"></i>
+              Quick Access
+            </h5>
+            <div className="row g-3">
+              {quickActions.map((a, i) => (
+                <div className="col-6" key={i}>
+                  <Link
+                    to={a.to}
+                    className="text-decoration-none d-flex flex-column align-items-center justify-content-center p-3 rounded-3 glass-panel-hover text-center"
+                    style={{ background: a.bg, border: `1px solid ${a.color}22`, minHeight: 90, transition: 'all 0.2s' }}
+                  >
+                    <i className={`bi ${a.icon} mb-2`} style={{ fontSize: '1.6rem', color: a.color }}></i>
+                    <span className="fw-semibold small" style={{ color: 'var(--text)' }}>{a.label}</span>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Chat History */}
+        <div className="col-lg-7 fade-in-el-delay-2">
           <div className="glass-panel p-4 h-100">
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 className="fw-bold mb-0">Recent Chat History</h5>
-              <Link to="/chat" className="btn btn-sm btn-link text-decoration-none">Open Chat</Link>
+              <h5 className="fw-bold mb-0 d-flex align-items-center gap-2">
+                <i className="bi bi-clock-history text-primary"></i>
+                Recent Conversations
+              </h5>
+              <Link to="/chat" className="btn btn-sm btn-glass" style={{ fontSize: '0.8rem', padding: '5px 14px' }}>
+                <i className="bi bi-plus-lg me-1"></i>New Chat
+              </Link>
             </div>
-            
+
             {chats.length === 0 ? (
-              <p className="text-secondary py-4 text-center">No recent conversations. Ask a legal question to start.</p>
+              <div className="text-center py-5 text-secondary">
+                <i className="bi bi-chat-square-dots fs-1 d-block mb-3 opacity-25"></i>
+                <p className="mb-2 fw-semibold">No conversations yet</p>
+                <p className="small mb-3">Ask CitizenLex a legal question to get started.</p>
+                <Link to="/chat" className="btn btn-glass btn-sm">Start Chatting</Link>
+              </div>
             ) : (
-              <div className="list-group list-group-flush" style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                {chats.slice(0, 5).map((chat) => (
-                  <div key={chat.id} className="list-group-item bg-transparent border-0 border-bottom px-0 py-3 text-start">
-                    <div className="d-flex justify-content-between mb-1">
-                      <strong className="text-primary text-truncate" style={{ maxWidth: '75%' }}>{chat.message}</strong>
-                      <span className="text-secondary small">{new Date(chat.createdAt).toLocaleDateString()}</span>
+              <div className="d-flex flex-column gap-2" style={{ maxHeight: 320, overflowY: 'auto' }}>
+                {chats.slice(0, 6).map((chat) => (
+                  <Link
+                    key={chat.id}
+                    to="/chat"
+                    className="text-decoration-none p-3 rounded-3 d-flex align-items-start gap-3"
+                    style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid var(--border)', transition: 'background 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(37,99,235,0.08)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(37,99,235,0.04)'}
+                  >
+                    <div
+                      className="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0 mt-1"
+                      style={{ width: 32, height: 32, background: 'rgba(37,99,235,0.1)', color: 'var(--primary)' }}
+                    >
+                      <i className="bi bi-chat-left-text-fill small"></i>
                     </div>
-                    <p className="text-secondary small mb-0 text-truncate">{chat.response}</p>
-                  </div>
+                    <div className="flex-grow-1 min-w-0">
+                      <div className="fw-semibold text-truncate small mb-1" style={{ color: 'var(--text)' }}>
+                        {chat.message}
+                      </div>
+                      <div className="text-truncate small" style={{ color: 'var(--text-secondary)' }}>
+                        {chat.response?.slice(0, 80)}...
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 text-end">
+                      <span className="badge rounded-pill small" style={{ background: chat.language === 'ta' ? 'rgba(139,92,246,0.15)' : 'rgba(37,99,235,0.12)', color: chat.language === 'ta' ? '#8b5cf6' : 'var(--primary)', fontSize: '0.7rem' }}>
+                        {chat.language === 'ta' ? '🇮🇳 Tamil' : '🇬🇧 EN'}
+                      </span>
+                      <div className="text-secondary mt-1" style={{ fontSize: '0.72rem' }}>
+                        {new Date(chat.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Recent Analyzed Docs */}
-        <div className="col-md-6">
-          <div className="glass-panel p-4 h-100">
+      {/* Documents Section */}
+      <div className="row g-4 fade-in-el-delay-3">
+        <div className="col-12">
+          <div className="glass-panel p-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 className="fw-bold mb-0">Recent Analyzed Documents</h5>
-              <Link to="/analyzer" className="btn btn-sm btn-link text-decoration-none">Analyze File</Link>
+              <h5 className="fw-bold mb-0 d-flex align-items-center gap-2">
+                <i className="bi bi-folder2-open text-primary"></i>
+                Analyzed Documents
+              </h5>
+              <Link to="/analyzer" className="btn btn-sm btn-glass-secondary" style={{ fontSize: '0.8rem', padding: '5px 14px' }}>
+                <i className="bi bi-upload me-1"></i>Upload New
+              </Link>
             </div>
 
             {docs.length === 0 ? (
-              <p className="text-secondary py-4 text-center">No uploaded documents. Upload a contract to start.</p>
+              <div className="text-center py-5 text-secondary">
+                <i className="bi bi-file-earmark-plus fs-1 d-block mb-3 opacity-25"></i>
+                <p className="mb-2 fw-semibold">No documents uploaded</p>
+                <p className="small mb-3">Upload a legal document for instant AI-powered analysis.</p>
+                <Link to="/analyzer" className="btn btn-glass btn-sm">Upload Document</Link>
+              </div>
             ) : (
-              <div className="list-group list-group-flush" style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                {docs.slice(0, 5).map((doc) => (
-                  <div key={doc.id} className="list-group-item bg-transparent border-0 border-bottom px-0 py-3 text-start">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="bi bi-file-earmark-text text-info fs-4"></i>
-                        <strong className="text-truncate" style={{ maxWidth: '200px' }}>{doc.fileName}</strong>
+              <div className="row g-3">
+                {docs.slice(0, 6).map((doc) => (
+                  <div key={doc.id} className="col-md-4 col-lg-3">
+                    <div
+                      className="p-3 rounded-3 h-100 d-flex flex-column"
+                      style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.15)' }}
+                    >
+                      <div className="d-flex align-items-center gap-2 mb-2">
+                        <i className="bi bi-file-earmark-text-fill text-info fs-4"></i>
+                        <span className="fw-semibold small text-truncate">{doc.fileName}</span>
                       </div>
-                      <span className="text-secondary small">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="mt-2">
-                      <Link to="/analyzer" className="btn btn-sm btn-outline-info">View Analysis</Link>
+                      <div className="text-secondary small mt-auto">
+                        {new Date(doc.uploadedAt).toLocaleDateString()}
+                      </div>
+                      <Link to="/analyzer" className="btn btn-sm btn-outline-info mt-2 w-100" style={{ fontSize: '0.78rem' }}>
+                        View Analysis
+                      </Link>
                     </div>
                   </div>
                 ))}
