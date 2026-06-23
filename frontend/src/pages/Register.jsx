@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ThreeDBackground from '../components/ThreeDBackground';
 
 export default function Register() {
   const [firstName, setFirstName] = useState('');
@@ -41,7 +42,8 @@ export default function Register() {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container py-5 position-relative">
+      <ThreeDBackground />
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="glass-panel p-4 p-md-5 text-start fade-in-el">

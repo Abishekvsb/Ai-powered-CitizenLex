@@ -1,20 +1,21 @@
-/* Custom CSS variables for CitizenLex */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 :root {
-  --primary-color: #1e40af;
-  --secondary-color: #2563eb;
-  --accent-color: #38bdf8;
+  --primary-color: #2563eb;
+  --secondary-color: #1d4ed8;
+  --accent-color: #06b6d4;
   --bg-color: #f8fafc;
   --card-bg: rgba(255, 255, 255, 0.75);
-  --card-border: rgba(255, 255, 255, 0.4);
-  --text-color: #1e293b;
-  --text-secondary: #64748b;
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
-  --glass-blur: blur(12px);
-  --nav-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(255, 255, 255, 0.5);
+  --text-color: #0f172a;
+  --text-secondary: #475569;
+  --glass-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.08);
+  --glass-blur: blur(16px);
+  --nav-bg: rgba(255, 255, 255, 0.85);
   --border-color: rgba(226, 232, 240, 0.8);
+  --skeleton-bg: #e2e8f0;
 }
 
 [data-theme='dark'] {
@@ -243,4 +244,75 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-color);
   font-size: 1.3rem;
   cursor: pointer;
+  transition: transform 0.2s ease;
 }
+
+.dark-mode-toggle:hover {
+  transform: rotate(20deg) scale(1.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Skeleton Loading Effect */
+.skeleton-loader {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg) 25%,
+    var(--border-color) 50%,
+    var(--skeleton-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading-skeleton 1.5s infinite;
+  border-radius: 8px;
+  display: inline-block;
+  width: 100%;
+}
+
+@keyframes loading-skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Form focus and glass inputs adjustments */
+.form-glass-control:focus {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Premium Card Designs */
+.dashboard-stat-card {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+
+.dashboard-stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--glass-shadow);
+}
+
+.badge-glow-primary {
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.2);
+}
+

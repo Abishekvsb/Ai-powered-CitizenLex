@@ -41,6 +41,11 @@ export default function Navbar() {
                   </Link>
                 </li>
                 <li className="nav-item">
+                  <Link className={`nav-link nav-link-custom mx-2 ${isActive('/complaint') ? 'active' : ''}`} to="/complaint">
+                    AI Drafter
+                  </Link>
+                </li>
+                <li className="nav-item">
                   <Link className={`nav-link nav-link-custom mx-2 ${isActive('/analyzer') ? 'active' : ''}`} to="/analyzer">
                     Doc Analyzer
                   </Link>
@@ -55,6 +60,11 @@ export default function Navbar() {
             <li className="nav-item">
               <Link className={`nav-link nav-link-custom mx-2 ${isActive('/schemes') ? 'active' : ''}`} to="/schemes">
                 Scheme Finder
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className={`nav-link nav-link-custom mx-2 ${isActive('/resources') ? 'active' : ''}`} to="/resources">
+                Resources
               </Link>
             </li>
             {user && isAdmin() && (

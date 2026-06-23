@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import ThreeDBackground from '../components/ThreeDBackground';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,7 +34,8 @@ export default function Login() {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container py-5 position-relative">
+      <ThreeDBackground />
       <div className="row justify-content-center py-5">
         <div className="col-md-5">
           <div className="glass-panel p-4 p-md-5 text-start fade-in-el">
