@@ -51,7 +51,23 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff}'],
+        // CRITICAL FIX: Use index.html (the SPA shell) as navigation fallback, NOT offline.html.
+        // offline.html as navigateFallback caused it to be served for ALL navigations even when online.
+        // index.html is the correct SPA fallback so React Router can handle client-side routes.
+        navigateFallback: '/index.html',
+        // Only apply the SPA fallback to non-API, non-asset routes
+        navigateFallbackDenylist: [/^\/api/, /^\/assets/, /^\/__/],
         runtimeCaching: [
+          {
+            // Network-first for API calls — always try network, fallback to cache
+            urlPattern: /^https:\/\/just-happiness-production\.up\.railway\.app\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 5 }
+            }
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'StaleWhileRevalidate',
@@ -68,9 +84,7 @@ export default defineConfig({
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 }
             }
           }
-        ],
-        navigateFallback: '/offline.html',
-        navigateFallbackAllowlist: [/^(?!\/(api|assets))/]
+        ]
       },
       devOptions: {
         enabled: false
@@ -89,3 +103,4 @@ export default defineConfig({
     }
   }
 });
+
