@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePWA } from '../context/PWAContext';
 
 export default function Landing() {
   const { user } = useAuth();
+  const { isInstallable, installApp } = usePWA();
 
   return (
     <div className="hero-section">
@@ -65,6 +67,28 @@ export default function Landing() {
             </div>
           </div>
         </div>
+
+        {isInstallable && (
+          <div className="row mt-4 justify-content-center fade-in-el">
+            <div className="col-lg-12">
+              <div className="glass-panel p-4 d-flex flex-wrap align-items-center justify-content-between gap-3 text-start" 
+                   style={{ borderLeft: '5px solid var(--primary)', background: 'linear-gradient(90deg, rgba(37,99,235,0.05), rgba(255,255,255,0.02))' }}>
+                <div className="d-flex align-items-center gap-3">
+                  <div className="rounded-3 bg-primary text-white p-3 d-flex align-items-center justify-content-center" style={{ width: 54, height: 54 }}>
+                    <i className="bi bi-phone-vibrate-fill fs-3"></i>
+                  </div>
+                  <div>
+                    <h5 className="fw-bold mb-1">Install CitizenLex PWA</h5>
+                    <p className="text-secondary small mb-0">Access legal aid instantly from your home screen. Works offline, loads faster, and updates automatically.</p>
+                  </div>
+                </div>
+                <button className="btn btn-glass px-4 py-2" onClick={installApp}>
+                  <i className="bi bi-download me-2"></i>Install App
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Feature Cards Grid */}
         <div className="row g-4 mt-5 pt-5">

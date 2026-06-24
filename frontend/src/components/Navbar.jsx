@@ -2,37 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { usePWA } from '../context/PWAContext';
+import axios from 'axios';
 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // PWA Install prompt
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [showInstallBtn, setShowInstallBtn] = useState(false);
-
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-      setShowInstallBtn(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    // If already installed, hide button
-    window.addEventListener('appinstalled', () => setShowInstallBtn(false));
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    const result = await installPrompt.prompt();
-    if (result.outcome === 'accepted') {
-      setShowInstallBtn(false);
-      setInstallPrompt(null);
-    }
-  };
+  const { isInstallable, installApp } = usePWA();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleLogout = () => {
     logout();
@@ -40,6 +19,20 @@ export default function Navbar() {
   };
 
   const isActive = (path) => location.pathname === path;
+
+  // Fetch notification badge count
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+    const fetchCount = async () => {
+      try {
+        const res = await axios.get('/api/notifications/count');
+        setUnreadCount(res.data.unreadCount || 0);
+      } catch {}
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 60000); // refresh every 60s
+    return () => clearInterval(interval);
+  }, [user, location.pathname]);
 
   return (
     <nav className="navbar navbar-expand-lg glass-nav">
@@ -65,6 +58,18 @@ export default function Navbar() {
                 <li className="nav-item">
                   <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/chat') ? 'active' : ''}`} to="/chat">
                     <i className="bi bi-chat-dots me-1 d-lg-none"></i>AI Assistant
+                  </Link>
+                </li>
+                {/* AI Legal Copilot — highlighted */}
+                <li className="nav-item">
+                  <Link
+                    className={`nav-link px-2 mx-1 d-flex align-items-center gap-1 fw-semibold ${isActive('/copilot') ? 'active' : ''}`}
+                    to="/copilot"
+                    style={{ color: 'var(--accent)', fontSize: '0.9rem' }}
+                  >
+                    <i className="bi bi-robot"></i>
+                    <span>Copilot</span>
+                    <span className="badge ms-1" style={{ background: 'var(--accent)', color: '#071530', fontSize: '0.6rem', borderRadius: 4, padding: '2px 5px' }}>NEW</span>
                   </Link>
                 </li>
                 <li className="nav-item">
@@ -106,10 +111,10 @@ export default function Navbar() {
           <div className="d-flex align-items-center gap-2">
 
             {/* PWA Install Button */}
-            {showInstallBtn && (
+            {isInstallable && (
               <button
                 className="btn btn-sm d-flex align-items-center gap-1 pwa-install-btn"
-                onClick={handleInstall}
+                onClick={installApp}
                 title="Install CitizenLex App"
                 style={{
                   background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
@@ -125,6 +130,51 @@ export default function Navbar() {
                 <i className="bi bi-download"></i>
                 <span className="d-none d-md-inline">Install App</span>
               </button>
+            )}
+
+            {/* Notification Bell */}
+            {user && (
+              <Link
+                to="/notifications"
+                title="Notifications"
+                style={{
+                  position: 'relative',
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
+                  background: isActive('/notifications') ? 'var(--primary)' : 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: isActive('/notifications') ? 'white' : 'var(--text)',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  flexShrink: 0
+                }}
+              >
+                <i className="bi bi-bell-fill" style={{ fontSize: '0.95rem' }}></i>
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    background: '#dc2626',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: 18,
+                    height: 18,
+                    fontSize: '0.6rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid var(--nav-bg)'
+                  }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
             )}
 
             <button className="dark-mode-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle dark/light mode">
@@ -156,6 +206,15 @@ export default function Navbar() {
                   <li>
                     <Link className="dropdown-item" to="/profile">
                       <i className="bi bi-person me-2 text-primary"></i>Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/notifications">
+                      <i className="bi bi-bell me-2 text-primary"></i>
+                      Notifications
+                      {unreadCount > 0 && (
+                        <span className="badge ms-2" style={{ background: '#dc2626', color: 'white', borderRadius: 6, fontSize: '0.65rem' }}>{unreadCount}</span>
+                      )}
                     </Link>
                   </li>
                   <li><hr className="dropdown-divider my-1" style={{ borderColor: 'var(--border)' }} /></li>

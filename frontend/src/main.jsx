@@ -5,6 +5,7 @@ import App from './App';
 import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PWAProvider } from './context/PWAContext';
 
 // Import Bootstrap JS for interactive elements (modals, dropdowns)
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -14,7 +15,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <App />
+          <PWAProvider>
+            <App />
+          </PWAProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

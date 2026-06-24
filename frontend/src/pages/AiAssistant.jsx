@@ -32,11 +32,27 @@ export default function AiAssistant() {
   const [showMobileHistory, setShowMobileHistory] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [voiceNotice, setVoiceNotice] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
+  const scrollContainerRef = useRef(null);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
   const suggestions = language === 'en' ? SUGGESTIONS_EN : SUGGESTIONS_TA;
+
+  // Handle visual viewport for mobile keyboard height adjustments
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handleResize = () => {
+      setViewportHeight(window.visualViewport.height);
+    };
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('scroll', handleResize);
+    return () => {
+      window.visualViewport.removeEventListener('resize', handleResize);
+      window.visualViewport.removeEventListener('scroll', handleResize);
+    };
+  }, []);
 
   // Handle prefill text from OCR Scanner or other sources
   useEffect(() => {
@@ -63,9 +79,18 @@ export default function AiAssistant() {
     fetchHistory();
   }, [fetchHistory]);
 
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    } else {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Scroll both ways to be extra robust on all browsers/devices
+    setTimeout(scrollToBottom, 50);
+  }, [messages, loading]);
 
   // Show voice notice if Speech API not available
   useEffect(() => {
@@ -76,6 +101,15 @@ export default function AiAssistant() {
   const handleSend = async (text) => {
     const msg = (text || input).trim();
     if (!msg) return;
+
+    // Save to recent searches
+    try {
+      const existing = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+      const updated = [msg, ...existing.filter(q => q !== msg)].slice(0, 10);
+      localStorage.setItem('recent_searches', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save recent search', e);
+    }
 
     setMessages(prev => [...prev, { sender: 'user', text: msg }]);
     setInput('');
@@ -266,7 +300,7 @@ export default function AiAssistant() {
 
         {/* Chat Main Area */}
         <div className="col-lg-9 fade-in-el">
-          <div className="glass-panel d-flex flex-column" style={{ height: 'calc(100vh - 130px)', minHeight: 500 }}>
+          <div className="glass-panel d-flex flex-column" style={{ height: `${viewportHeight - 120}px`, minHeight: '380px' }}>
 
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center p-4 border-bottom" style={{ borderColor: 'var(--border)' }}>
@@ -353,7 +387,7 @@ export default function AiAssistant() {
             )}
 
             {/* Messages Area */}
-            <div className="flex-grow-1 overflow-auto p-4 d-flex flex-column gap-3" ref={null}>
+            <div className="flex-grow-1 overflow-auto p-4 d-flex flex-column gap-3" ref={scrollContainerRef}>
               {messages.length === 0 ? (
                 <div className="m-auto text-center py-4" style={{ maxWidth: 460 }}>
                   <div

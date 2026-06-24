@@ -17,12 +17,16 @@ import Profile from './pages/Profile';
 import LegalDrafts from './pages/LegalDrafts';
 import AdminDashboard from './pages/AdminDashboard';
 import OcrScanner from './pages/OcrScanner';
+import LegalCopilot from './pages/LegalCopilot';
+import NotificationCenter from './pages/NotificationCenter';
+import { usePWA } from './context/PWAContext';
 
 // Auth pages do not render Navbar/Footer
 const AUTH_ROUTES = ['/login', '/register'];
 
 export default function App() {
   const location = useLocation();
+  const { installedSuccess } = usePWA();
   const isAuthPage = AUTH_ROUTES.includes(location.pathname);
 
   return (
@@ -67,6 +71,16 @@ export default function App() {
               <OcrScanner />
             </ProtectedRoute>
           } />
+          <Route path="/copilot" element={
+            <ProtectedRoute>
+              <LegalCopilot />
+            </ProtectedRoute>
+          } />
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <NotificationCenter />
+            </ProtectedRoute>
+          } />
 
           {/* Protected Admin Routes */}
           <Route path="/admin" element={
@@ -77,6 +91,15 @@ export default function App() {
         </Routes>
       </main>
       {!isAuthPage && <Footer />}
+      
+      {installedSuccess && (
+        <div className="custom-toast-container" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999 }}>
+          <div className="custom-toast toast-success" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <i className="bi bi-check-circle-fill text-success"></i>
+            <span>Thank you for installing CitizenLex App! 🎉</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

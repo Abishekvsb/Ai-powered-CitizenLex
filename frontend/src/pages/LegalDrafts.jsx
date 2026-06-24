@@ -45,14 +45,46 @@ export default function LegalDrafts() {
 
   const paperRef = useRef(null);
 
-  // Prefill from OCR Scanner
+  // Prefill from OCR Scanner or Saved Draft
   useEffect(() => {
     if (location.state?.prefillText) {
       setDetails(location.state.prefillText);
       showToast('Text prefilled from OCR Scanner!', 'success');
       window.history.replaceState({}, '');
+    } else if (location.state?.savedDraft) {
+      const d = location.state.savedDraft;
+      setDraftType(d.type || 'Consumer Complaint');
+      setLanguage(d.language || 'en');
+      setDraft(d.content || '');
+      setDetails(d.details || '');
+      showToast('Draft loaded successfully!', 'success');
+      window.history.replaceState({}, '');
     }
   }, [location.state]);
+
+  const handleSaveDraft = () => {
+    if (!draft) return;
+    try {
+      const existing = JSON.parse(localStorage.getItem('saved_drafts') || '[]');
+      const newDraft = {
+        id: Date.now(),
+        type: draftType,
+        language,
+        title: `${draftType} (${language.toUpperCase()})`,
+        details: details,
+        content: draft,
+        createdAt: new Date().toISOString()
+      };
+      // Prevent duplicates of identical content
+      const filtered = existing.filter(d => d.content !== draft);
+      const updated = [newDraft, ...filtered].slice(0, 10);
+      localStorage.setItem('saved_drafts', JSON.stringify(updated));
+      showToast('Draft saved to library!', 'success');
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to save draft', 'warning');
+    }
+  };
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -251,6 +283,15 @@ export default function LegalDrafts() {
                   >
                     <i className="bi bi-download"></i>
                     <span>Download</span>
+                  </button>
+                  <button
+                    className="btn btn-sm btn-glass d-flex align-items-center gap-1"
+                    onClick={handleSaveDraft}
+                    title="Save Draft to Library"
+                    style={{ border: '1px solid rgba(196,157,63,0.3)', color: '#c49d3f' }}
+                  >
+                    <i className="bi bi-bookmark-star-fill"></i>
+                    <span>Save Draft</span>
                   </button>
                   <button
                     className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"

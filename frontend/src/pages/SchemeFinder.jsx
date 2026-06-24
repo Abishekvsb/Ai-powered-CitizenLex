@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 export default function SchemeFinder() {
+  const location = useLocation();
+  const [mode, setMode] = useState('db'); // 'db' | 'ai' | 'eligibility'
+
+  useEffect(() => {
+    if (location.state?.openChecker) {
+      setMode('eligibility');
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
   // ——— DB mode state ———
   const [schemes, setSchemes] = useState([]);
   const [categories, setCategories] = useState(['All', 'Farmers', 'Women & Education', 'Healthcare', 'Social Security']);
@@ -33,8 +43,18 @@ export default function SchemeFinder() {
     try {
       const saved = JSON.parse(localStorage.getItem('bookmarks_schemes') || '[]');
       setBookmarkedIds(saved.map(item => item.id));
+      
+      const savedProfile = JSON.parse(localStorage.getItem('eligibility_profile'));
+      if (savedProfile) {
+        if (savedProfile.age) setCheckerAge(savedProfile.age);
+        if (savedProfile.gender) setCheckerGender(savedProfile.gender);
+        if (savedProfile.income) setCheckerIncome(savedProfile.income);
+        if (savedProfile.occupation) setCheckerOccupation(savedProfile.occupation);
+        if (savedProfile.state) setCheckerState(savedProfile.state);
+        if (savedProfile.category) setCheckerCategory(savedProfile.category);
+      }
     } catch (e) {
-      console.error('Failed to load bookmarks', e);
+      console.error('Failed to load bookmarks or eligibility profile', e);
     }
   }, []);
 
@@ -57,7 +77,6 @@ export default function SchemeFinder() {
   };
 
   // ——— AI mode state ———
-  const [mode, setMode] = useState('db'); // 'db' | 'ai'
   const [aiQuery, setAiQuery] = useState('');
   const [aiResults, setAiResults] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -253,6 +272,18 @@ export default function SchemeFinder() {
       };
     }).sort((a, b) => b.score - a.score);
 
+    try {
+      localStorage.setItem('eligibility_profile', JSON.stringify({
+        age: checkerAge,
+        gender: checkerGender,
+        income: checkerIncome,
+        occupation: checkerOccupation,
+        state: checkerState,
+        category: checkerCategory
+      }));
+    } catch (e) {
+      console.error('Failed to save eligibility profile', e);
+    }
     setCheckerResults(results);
     setCheckerStep(4);
   };

@@ -8,6 +8,10 @@ export default function Dashboard() {
   const [chats, setChats] = useState([]);
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [savedDrafts, setSavedDrafts] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [eligibilityProfile, setEligibilityProfile] = useState(null);
 
   // ——— Bookmarks & Toast state ———
   const [bookmarkedRights, setBookmarkedRights] = useState([]);
@@ -42,10 +46,19 @@ export default function Dashboard() {
     try {
       setBookmarkedRights(JSON.parse(localStorage.getItem('bookmarks_rights') || '[]'));
       setBookmarkedSchemes(JSON.parse(localStorage.getItem('bookmarks_schemes') || '[]'));
+      setSavedDrafts(JSON.parse(localStorage.getItem('saved_drafts') || '[]'));
+      setRecentSearches(JSON.parse(localStorage.getItem('recent_searches') || '[]'));
+      setEligibilityProfile(JSON.parse(localStorage.getItem('eligibility_profile') || 'null'));
     } catch (e) {
-      console.error('Failed to load bookmarks from localStorage', e);
+      console.error('Failed to load from localStorage', e);
     }
+
+    // Fetch notification unread count
+    axios.get('/api/notifications/count').then(res => {
+      setUnreadNotifCount(res.data.unreadCount || 0);
+    }).catch(() => {});
   }, []);
+
 
   const removeRightBookmark = (id) => {
     const updated = bookmarkedRights.filter(r => r.id !== id);
@@ -82,10 +95,15 @@ export default function Dashboard() {
 
   const quickActions = [
     { to: '/chat', icon: 'bi-chat-square-text-fill', label: 'AI Assistant', color: '#2563eb', bg: 'rgba(37,99,235,0.1)' },
+    { to: '/copilot', icon: 'bi-robot', label: 'Legal Copilot', color: '#c49d3f', bg: 'rgba(196,157,63,0.1)', isNew: true },
     { to: '/analyzer', icon: 'bi-file-earmark-pdf-fill', label: 'Doc Analyzer', color: '#06b6d4', bg: 'rgba(6,182,212,0.1)' },
-    { to: '/rights', icon: 'bi-book-fill', label: 'Rights Explorer', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-    { to: '/schemes', icon: 'bi-search-heart-fill', label: 'Scheme Finder', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+    { to: '/ocr', icon: 'bi-upc-scan', label: 'OCR Scanner', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+    { to: '/rights', icon: 'bi-book-fill', label: 'Rights Explorer', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+    { to: '/schemes', icon: 'bi-search-heart-fill', label: 'Scheme Finder', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+    { to: '/drafts', icon: 'bi-file-earmark-diff-fill', label: 'AI Drafts', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+    { to: '/notifications', icon: 'bi-bell-fill', label: `Alerts${unreadNotifCount > 0 ? ` (${unreadNotifCount})` : ''}`, color: '#dc2626', bg: 'rgba(220,38,38,0.08)' },
   ];
+
 
   const stats = [
     {
@@ -105,6 +123,14 @@ export default function Dashboard() {
       sub: docs.length === 0 ? 'Upload your first doc' : `Latest: ${docs[0]?.fileName?.slice(0, 20)}...`,
     },
     {
+      label: 'Notifications',
+      value: unreadNotifCount,
+      icon: 'bi-bell-fill',
+      color: unreadNotifCount > 0 ? '#dc2626' : '#10b981',
+      bg: unreadNotifCount > 0 ? 'rgba(220,38,38,0.1)' : 'rgba(16,185,129,0.1)',
+      sub: unreadNotifCount > 0 ? `${unreadNotifCount} unread alerts` : 'All caught up!',
+    },
+    {
       label: 'Account Status',
       value: 'Active',
       icon: 'bi-patch-check-fill',
@@ -113,6 +139,7 @@ export default function Dashboard() {
       sub: `Member since ${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`,
     },
   ];
+
 
   if (loading) {
     return (
@@ -159,7 +186,7 @@ export default function Dashboard() {
       {/* Stat Cards */}
       <div className="row g-4 mb-5">
         {stats.map((s, i) => (
-          <div className="col-md-4 fade-in-el" key={i} style={{ animationDelay: `${i * 0.08}s` }}>
+          <div className="col-sm-6 col-lg-3 fade-in-el" key={i} style={{ animationDelay: `${i * 0.08}s` }}>
             <div className="glass-panel p-4 dashboard-stat-card h-100">
               <div className="d-flex align-items-start justify-content-between mb-3">
                 <div
@@ -185,16 +212,20 @@ export default function Dashboard() {
               <i className="bi bi-grid-fill text-primary"></i>
               Quick Access
             </h5>
-            <div className="row g-3">
+
+            <div className="row g-2">
               {quickActions.map((a, i) => (
-                <div className="col-6" key={i}>
+                <div className="col-6 col-md-3" key={i}>
                   <Link
                     to={a.to}
-                    className="text-decoration-none d-flex flex-column align-items-center justify-content-center p-3 rounded-3 glass-panel-hover text-center"
-                    style={{ background: a.bg, border: `1px solid ${a.color}22`, minHeight: 90, transition: 'all 0.2s' }}
+                    className="text-decoration-none d-flex flex-column align-items-center justify-content-center p-3 rounded-3 glass-panel-hover text-center position-relative"
+                    style={{ background: a.bg, border: `1px solid ${a.color}22`, minHeight: 82, transition: 'all 0.2s' }}
                   >
-                    <i className={`bi ${a.icon} mb-2`} style={{ fontSize: '1.6rem', color: a.color }}></i>
-                    <span className="fw-semibold small" style={{ color: 'var(--text)' }}>{a.label}</span>
+                    {a.isNew && (
+                      <span style={{ position: 'absolute', top: 6, right: 6, background: '#c49d3f', color: '#071530', fontSize: '0.55rem', fontWeight: 700, borderRadius: 4, padding: '2px 5px' }}>NEW</span>
+                    )}
+                    <i className={`bi ${a.icon} mb-1`} style={{ fontSize: '1.4rem', color: a.color }}></i>
+                    <span className="fw-semibold" style={{ fontSize: '0.75rem', color: 'var(--text)' }}>{a.label}</span>
                   </Link>
                 </div>
               ))}
@@ -259,6 +290,267 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Flagship Features & Library Widget Section */}
+      <div className="row g-4 mb-5 fade-in-el-delay-2">
+        {/* AI Legal Copilot CTA Card */}
+        <div className="col-lg-6">
+          <div className="glass-panel p-4 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden" 
+               style={{ border: '1px solid rgba(197, 160, 89, 0.3)', background: 'linear-gradient(135deg, rgba(7, 21, 48, 0.05) 0%, rgba(12, 33, 73, 0.07) 100%)' }}>
+            
+            {/* Subtle gold accent light */}
+            <div className="position-absolute" style={{ top: -50, right: -50, width: 150, height: 150, background: 'radial-gradient(circle, rgba(197,160,89,0.1) 0%, rgba(0,0,0,0) 70%)', pointerEvents: 'none' }}></div>
+            
+            <div>
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <span className="badge rounded-pill px-3 py-2 fw-bold text-uppercase d-flex align-items-center gap-1" 
+                      style={{ background: 'rgba(197, 160, 89, 0.12)', color: '#c49d3f', border: '1px solid rgba(197, 160, 89, 0.25)', fontSize: '0.68rem', letterSpacing: '0.5px' }}>
+                  <i className="bi bi-star-fill text-warning"></i> Flagship Feature
+                </span>
+                <div className="d-flex align-items-center justify-content-center rounded-3" 
+                     style={{ width: 44, height: 44, background: 'rgba(197, 160, 89, 0.1)', color: '#c49d3f', border: '1px solid rgba(197, 160, 89, 0.2)' }}>
+                  <i className="bi bi-shield-shaded fs-5"></i>
+                </div>
+              </div>
+              
+              <h4 className="fw-bold mb-2 text-gold-accent" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent)' }}>AI Legal Copilot</h4>
+              <p className="text-secondary small mb-4" style={{ lineHeight: '1.6' }}>
+                Navigate legal issues with custom structured action plans, court timelines, bilingual Tamil/English summaries, document checklists, and risk warnings tailored to your case.
+              </p>
+              
+              <div className="row g-2 mb-4">
+                <div className="col-6">
+                  <div className="p-3 rounded-3 text-start h-100" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                    <div className="fw-semibold mb-1" style={{ fontSize: '0.78rem', color: 'var(--text)' }}><i className="bi bi-file-earmark-check text-warning me-1"></i> Checklists</div>
+                    <div className="text-secondary" style={{ fontSize: '0.7rem' }}>Required evidence & filings</div>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="p-3 rounded-3 text-start h-100" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                    <div className="fw-semibold mb-1" style={{ fontSize: '0.78rem', color: 'var(--text)' }}><i className="bi bi-calendar2-range text-warning me-1"></i> Timelines</div>
+                    <div className="text-secondary" style={{ fontSize: '0.7rem' }}>Structured steps & procedures</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <Link to="/copilot" className="btn btn-glass-gold w-100 py-2.5 mt-auto d-flex align-items-center justify-content-center gap-2 fw-bold">
+              <span>Launch Legal Copilot</span>
+              <i className="bi bi-arrow-right"></i>
+            </Link>
+          </div>
+        </div>
+
+        {/* Saved Drafts & Recent Searches Widget */}
+        <div className="col-lg-6">
+          <div className="glass-panel p-4 h-100 d-flex flex-column justify-content-between">
+            
+            {/* Saved Drafts sub-widget */}
+            <div className="mb-4">
+              <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i className="bi bi-file-earmark-zip-fill text-primary"></i>
+                Saved AI Drafts
+              </h5>
+              
+              {savedDrafts.length === 0 ? (
+                <div className="p-4 rounded-3 text-center text-secondary mb-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+                  <i className="bi bi-file-earmark-plus fs-3 mb-2 d-block opacity-25"></i>
+                  <span className="small d-block">No drafts saved yet. Create a draft in AI Drafts and save it!</span>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-2" style={{ maxHeight: 165, overflowY: 'auto' }}>
+                  {savedDrafts.slice(0, 3).map((draft) => (
+                    <div key={draft.id} className="p-2.5 rounded-3 d-flex align-items-center justify-content-between gap-3 text-start" 
+                         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                      <div className="min-w-0 flex-grow-1">
+                        <h6 className="fw-semibold text-truncate mb-1" style={{ fontSize: '0.85rem' }}>{draft.title}</h6>
+                        <div className="text-secondary" style={{ fontSize: '0.72rem' }}>
+                          <i className="bi bi-calendar3 me-1"></i>
+                          {new Date(draft.createdAt || draft.id).toLocaleDateString()}
+                          <span className="mx-2">|</span>
+                          <span className="badge" style={{ background: draft.language === 'ta' ? 'rgba(139,92,246,0.1)' : 'rgba(37,99,235,0.1)', color: draft.language === 'ta' ? '#8b5cf6' : '#2563eb', fontSize: '0.65rem' }}>
+                            {draft.language === 'ta' ? 'Tamil' : 'English'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="d-flex gap-2 align-items-center">
+                        <Link to="/drafts" state={{ savedDraft: draft }} className="btn btn-sm btn-glass px-2.5 py-1" style={{ fontSize: '0.75rem' }}>
+                          Open
+                        </Link>
+                        <button onClick={() => {
+                          const updated = savedDrafts.filter(d => d.id !== draft.id);
+                          setSavedDrafts(updated);
+                          localStorage.setItem('saved_drafts', JSON.stringify(updated));
+                          showToast('Draft deleted successfully!', 'warning');
+                        }} className="btn btn-sm btn-link p-0 text-decoration-none border-0 text-danger opacity-75 hover-opacity-100">
+                          <i className="bi bi-trash3-fill fs-6"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Recent Searches sub-widget */}
+            <div>
+              <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i className="bi bi-search text-primary"></i>
+                Recent Searches
+              </h5>
+              
+              {recentSearches.length === 0 ? (
+                <div className="p-3 rounded-3 text-center text-secondary" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+                  <span className="small d-block">Search queries will appear here.</span>
+                </div>
+              ) : (
+                <div className="d-flex flex-wrap gap-2 align-items-center">
+                  {recentSearches.slice(0, 5).map((q, i) => (
+                    <Link key={i} to="/chat" state={{ prefillText: q }} className="btn btn-sm btn-glass-secondary rounded-pill px-3 py-1.5 text-truncate" 
+                          style={{ fontSize: '0.75rem', maxWidth: 180, border: '1px solid var(--border)', background: 'var(--surface)' }}
+                          title={`Search: "${q}"`}>
+                      <i className="bi bi-arrow-right-short text-primary me-1"></i>
+                      {q}
+                    </Link>
+                  ))}
+                  {recentSearches.length > 0 && (
+                    <button onClick={() => {
+                      setRecentSearches([]);
+                      localStorage.removeItem('recent_searches');
+                      showToast('Search history cleared!', 'success');
+                    }} className="btn btn-sm btn-link text-decoration-none text-secondary small p-1 ms-2">
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* Eligibility & News Bulletin Section */}
+      <div className="row g-4 mb-5 fade-in-el-delay-3">
+        {/* Eligibility Profile Summary Widget */}
+        <div className="col-lg-6">
+          <div className="glass-panel p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+              <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i className="bi bi-person-badge-key text-primary"></i>
+                Eligibility Profile Summary
+              </h5>
+
+              {eligibilityProfile ? (
+                <div>
+                  <div className="d-flex align-items-center justify-content-between mb-3 p-2.5 rounded-3" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                    <span className="small text-secondary fw-semibold">Profile Status</span>
+                    <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 fw-bold small d-flex align-items-center gap-1">
+                      <i className="bi bi-check-circle-fill"></i> Complete & Verified
+                    </span>
+                  </div>
+
+                  <div className="row g-2">
+                    <div className="col-6">
+                      <div className="p-3 rounded-3 text-start" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                        <div className="text-secondary small mb-0.5">Age</div>
+                        <div className="fw-bold text-primary-light" style={{ fontSize: '0.98rem' }}>{eligibilityProfile.age} Years</div>
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="p-3 rounded-3 text-start" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                        <div className="text-secondary small mb-0.5">Occupation</div>
+                        <div className="fw-bold text-primary-light text-truncate" style={{ fontSize: '0.98rem' }}>{eligibilityProfile.occupation}</div>
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="p-3 rounded-3 text-start" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                        <div className="text-secondary small mb-0.5">Annual Income</div>
+                        <div className="fw-bold text-primary-light" style={{ fontSize: '0.98rem' }}>₹{parseInt(eligibilityProfile.income).toLocaleString()}</div>
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="p-3 rounded-3 text-start" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                        <div className="text-secondary small mb-0.5">Residence State</div>
+                        <div className="fw-bold text-primary-light text-truncate" style={{ fontSize: '0.98rem' }}>{eligibilityProfile.state || 'Tamil Nadu'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-secondary small mt-3 mb-0">
+                    <i className="bi bi-info-circle me-1"></i> Use this profile to instantly filter government schemes on the Scheme Finder page.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 rounded-3 text-center text-secondary h-100 d-flex flex-column justify-content-center align-items-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', minHeight: 180 }}>
+                  <i className="bi bi-person-check fs-1 text-primary-subtle mb-3"></i>
+                  <h6 className="fw-bold text-dark-emphasis mb-1">No Profile Set Up</h6>
+                  <p className="small text-secondary mb-3" style={{ maxWidth: 320 }}>
+                    Provide details like your age, occupation, and income bracket to automatically match available government benefits.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <Link to="/schemes" state={{ openChecker: true }} className="btn btn-glass w-100 py-2.5 mt-3 d-flex align-items-center justify-content-center gap-2">
+              <i className="bi bi-sliders"></i>
+              <span>{eligibilityProfile ? 'Edit Eligibility Parameters' : 'Set Up Eligibility Profile'}</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Legal News Bulletin Widget */}
+        <div className="col-lg-6">
+          <div className="glass-panel p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+              <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i className="bi bi-newspaper text-primary"></i>
+                Legal News Bulletin
+              </h5>
+
+              <div className="d-flex flex-column gap-2.5">
+                <div className="p-2.5 rounded-3 text-start" style={{ background: 'var(--surface)', border: '1px solid var(--border)', transition: 'background 0.2s' }}>
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <span className="badge rounded-pill bg-primary bg-opacity-10 text-primary" style={{ fontSize: '0.62rem', fontWeight: 700 }}>CONSTITUTION</span>
+                    <span className="text-secondary" style={{ fontSize: '0.68rem' }}>June 23, 2026</span>
+                  </div>
+                  <h6 className="fw-semibold mb-1" style={{ fontSize: '0.82rem', lineHeight: '1.4', color: 'var(--text)' }}>
+                    SC rules Right to Privacy overrides Aadhaar linkage mandates for private bank accounts
+                  </h6>
+                  <span className="text-secondary small d-block" style={{ fontSize: '0.72rem' }}>Banks cannot freeze accounts for lack of Aadhaar linkage verification.</span>
+                </div>
+
+                <div className="p-2.5 rounded-3 text-start" style={{ background: 'var(--surface)', border: '1px solid var(--border)', transition: 'background 0.2s' }}>
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <span className="badge rounded-pill text-uppercase" style={{ fontSize: '0.62rem', fontWeight: 700, color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.1)' }}>CYBER LAW</span>
+                    <span className="text-secondary" style={{ fontSize: '0.68rem' }}>June 21, 2026</span>
+                  </div>
+                  <h6 className="fw-semibold mb-1" style={{ fontSize: '0.82rem', lineHeight: '1.4', color: 'var(--text)' }}>
+                    Digital India Act draft revised; proposes heavy fines for online phishing and spoofing
+                  </h6>
+                  <span className="text-secondary small d-block" style={{ fontSize: '0.72rem' }}>Tighter regulatory enforcement guidelines proposed for intermediaries.</span>
+                </div>
+
+                <div className="p-2.5 rounded-3 text-start" style={{ background: 'var(--surface)', border: '1px solid var(--border)', transition: 'background 0.2s' }}>
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <span className="badge rounded-pill text-uppercase" style={{ fontSize: '0.62rem', fontWeight: 700, color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' }}>CONSUMER</span>
+                    <span className="text-secondary" style={{ fontSize: '0.68rem' }}>June 18, 2026</span>
+                  </div>
+                  <h6 className="fw-semibold mb-1" style={{ fontSize: '0.82rem', lineHeight: '1.4', color: 'var(--text)' }}>
+                    New Consumer Protection Rules mandate 15-day online grievance dispute resolution
+                  </h6>
+                  <span className="text-secondary small d-block" style={{ fontSize: '0.72rem' }}>E-commerce portals must show complaint tracking status to buyers.</span>
+                </div>
+              </div>
+            </div>
+
+            <a href="https://www.livelaw.in" target="_blank" rel="noopener noreferrer" className="btn btn-glass-secondary w-100 py-2.5 mt-3 d-flex align-items-center justify-content-center gap-2" style={{ fontSize: '0.82rem' }}>
+              <span>View All Legal News (LiveLaw)</span>
+              <i className="bi bi-box-arrow-up-right"></i>
+            </a>
           </div>
         </div>
       </div>

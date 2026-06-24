@@ -29,6 +29,9 @@ public class DatabaseSeeder implements CommandLineRunner {
     private GovernmentSchemeRepository schemeRepository;
 
     @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -49,6 +52,61 @@ public class DatabaseSeeder implements CommandLineRunner {
         if (schemeRepository.count() == 0) {
             seedGovernmentSchemes();
         }
+
+        // 5. Seed Notifications
+        if (notificationRepository.countByUserIsNull() == 0) {
+            seedNotifications();
+        }
+    }
+
+    private void seedNotifications() {
+        List<Notification> notifications = new ArrayList<>();
+
+        // Legal Tips
+        notifications.add(new Notification("Know Your Rights: Right to Information",
+                "Under the RTI Act 2005, any Indian citizen can request information from any public authority within 30 days. Filing fee is just Rs. 10. Use this powerful tool to fight corruption and get government records.",
+                "TIP"));
+        notifications.add(new Notification("Free Legal Aid is Your Right",
+                "Under the Legal Services Authorities Act, 1987, citizens below poverty line, women, children, SC/ST, and disaster victims are entitled to FREE legal representation and advice from DLSA (District Legal Services Authority).",
+                "TIP"));
+        notifications.add(new Notification("Consumer Rights: 1800-11-4000",
+                "The National Consumer Helpline is free. You can call 1800-11-4000 or file online at consumerhelpline.gov.in for product defects, service failures, overcharging, and e-commerce disputes. Always keep your bill/invoice safe.",
+                "RIGHT"));
+        notifications.add(new Notification("Right to Equal Pay for Equal Work",
+                "Under Article 39(d) of the Indian Constitution and the Equal Remuneration Act 1976, men and women must receive equal pay for equal work. Any violation can be reported to the Labour Commissioner.",
+                "RIGHT"));
+        notifications.add(new Notification("Workplace Harassment: POSH Act 2013",
+                "Every organization with 10+ employees must have an Internal Complaints Committee (ICC) for sexual harassment complaints. If yours doesn't, report to the District Officer under POSH Act 2013.",
+                "RIGHT"));
+
+        // Scam Alerts
+        notifications.add(new Notification("⚠️ Alert: Fake Government Scheme SMS Scams",
+                "Fraudsters are sending fake SMS claiming Rs. 5000-50,000 government benefits. They ask for Aadhaar/bank details to 'transfer funds'. NEVER share OTP or bank details. Government schemes require application — they never auto-credit money via SMS links.",
+                "ALERT"));
+        notifications.add(new Notification("⚠️ Alert: Job Offer Fraud Rising in Tamil Nadu",
+                "Online job scams promising high-salary government/private jobs for a 'registration fee' are increasing. Report to cybercrime.gov.in or call 1930 (Cyber Crime Helpline). Legitimate employers NEVER ask for money to hire you.",
+                "ALERT"));
+        notifications.add(new Notification("⚠️ Alert: Fake Lawyer Scam",
+                "Beware of individuals posing as lawyers who approach families of accused persons and charge money for bail, court appearances, or case withdrawal. Always verify advocate enrollment number at the Bar Council website.",
+                "ALERT"));
+
+        // Scheme Updates
+        notifications.add(new Notification("PM-KISAN: Check Your Payment Status",
+                "PM Kisan Samman Nidhi provides Rs. 6000/year to eligible farmers in 3 installments. Check your payment status at pmkisan.gov.in. If your payment is pending, contact the local Agriculture Officer.",
+                "SCHEME"));
+        notifications.add(new Notification("Ayushman Bharat: Check Your Eligibility",
+                "PM-JAY provides health insurance of Rs. 5 lakh/year for secondary and tertiary care. Check eligibility at pmjay.gov.in or call 14555. Tamil Nadu operates 'MaKaLai Thittam' (Chief Minister's Comprehensive Health Insurance Scheme) similarly.",
+                "SCHEME"));
+
+        // Reminders
+        notifications.add(new Notification("📅 Legal Reminder: File RTI Appeals on Time",
+                "If you filed an RTI and didn't get a response within 30 days, file a First Appeal within 30 days of the deadline to the First Appellate Authority. If unsatisfied, file Second Appeal to CIC/SIC within 90 days.",
+                "REMINDER"));
+        notifications.add(new Notification("📅 Reminder: Consumer Complaint Time Limit",
+                "Consumer complaints must be filed within 2 years from the date of cause of action under the Consumer Protection Act 2019. Don't delay — gather evidence and file at the District Consumer Commission soon.",
+                "REMINDER"));
+
+        notificationRepository.saveAll(notifications);
     }
 
     private Role seedRole(String name) {
