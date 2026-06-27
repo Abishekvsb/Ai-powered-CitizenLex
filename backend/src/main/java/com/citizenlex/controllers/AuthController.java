@@ -40,17 +40,7 @@ public class AuthController {
         );
 
         User registered = userService.registerUser(user, "ROLE_USER");
-        
-        UserDto userDto = new UserDto(
-                registered.getId(),
-                registered.getEmail(),
-                registered.getFirstName(),
-                registered.getLastName(),
-                "ROLE_USER",
-                registered.getCreatedAt()
-        );
-
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok(ProfileController.toFullDto(registered));
     }
 
     @PostMapping("/login")
@@ -66,19 +56,8 @@ public class AuthController {
         String jwt = tokenProvider.generateToken(authentication);
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        String role = userPrincipal.getAuthorities().stream()
-                .findFirst()
-                .map(auth -> auth.getAuthority())
-                .orElse("ROLE_USER");
-
-        UserDto userDto = new UserDto(
-                userPrincipal.getId(),
-                userPrincipal.getEmail(),
-                userPrincipal.getFirstName(),
-                userPrincipal.getLastName(),
-                role,
-                null // Creation date omitted in login payload for convenience
-        );
+        User user = userService.findById(userPrincipal.getId());
+        UserDto userDto = ProfileController.toFullDto(user);
 
         return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, userDto));
     }

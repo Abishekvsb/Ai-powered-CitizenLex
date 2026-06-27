@@ -84,14 +84,7 @@ public class AdminController {
     @GetMapping("/users")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         List<UserDto> users = userService.getAllUsers().stream()
-                .map(user -> new UserDto(
-                        user.getId(),
-                        user.getEmail(),
-                        user.getFirstName(),
-                        user.getLastName(),
-                        user.getRoles().stream().findFirst().map(r -> r.getName()).orElse("ROLE_USER"),
-                        user.getCreatedAt()
-                ))
+                .map(user -> ProfileController.toFullDto(user))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(users);
     }
@@ -99,15 +92,7 @@ public class AdminController {
     @PutMapping("/users/{id}/role")
     public ResponseEntity<UserDto> changeUserRole(@PathVariable Long id, @RequestParam String role) {
         User updated = userService.changeUserRole(id, role);
-        UserDto userDto = new UserDto(
-                updated.getId(),
-                updated.getEmail(),
-                updated.getFirstName(),
-                updated.getLastName(),
-                role,
-                updated.getCreatedAt()
-        );
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok(ProfileController.toFullDto(updated));
     }
 
     @DeleteMapping("/users/{id}")
