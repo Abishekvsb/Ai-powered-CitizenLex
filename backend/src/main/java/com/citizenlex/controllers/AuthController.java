@@ -92,22 +92,7 @@ public class AuthController {
 
         UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
         User user = userService.findById(principal.getId());
-
-        String role = user.getRoles().stream()
-                .findFirst()
-                .map(r -> r.getName())
-                .orElse("ROLE_USER");
-
-        UserDto userDto = new UserDto(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                role,
-                user.getCreatedAt()
-        );
-
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok(ProfileController.toFullDto(user));
     }
 
     @PutMapping("/profile")
@@ -118,21 +103,6 @@ public class AuthController {
         UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
         
         User updated = userService.updateProfile(principal.getId(), firstName, lastName, password);
-        
-        String role = updated.getRoles().stream()
-                .findFirst()
-                .map(r -> r.getName())
-                .orElse("ROLE_USER");
-
-        UserDto userDto = new UserDto(
-                updated.getId(),
-                updated.getEmail(),
-                updated.getFirstName(),
-                updated.getLastName(),
-                role,
-                updated.getCreatedAt()
-        );
-
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok(ProfileController.toFullDto(updated));
     }
 }

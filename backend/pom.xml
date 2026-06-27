@@ -83,6 +83,13 @@
             <version>${poi.version}</version>
         </dependency>
 
+        <!-- Cloudinary for profile image storage -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http45</artifactId>
+            <version>1.38.0</version>
+        </dependency>
+
         <!-- Development Tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

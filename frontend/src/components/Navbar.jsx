@@ -198,7 +198,24 @@ export default function Navbar() {
                     padding: '7px 14px',
                   }}
                 >
-                  <i className="bi bi-person-circle text-primary"></i>
+                  {/* Profile avatar — photo or initials */}
+                  {user.profileImageUrl ? (
+                    <img
+                      src={user.profileImageUrl}
+                      alt="Profile"
+                      style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(99,102,241,0.4)' }}
+                      onError={e => { e.target.style.display='none'; }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 26, height: 26, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.65rem', fontWeight: 700, color: 'white', flexShrink: 0,
+                    }}>
+                      {`${(user.firstName||'?')[0]}${(user.lastName||'')[0]||''}`.toUpperCase()}
+                    </div>
+                  )}
                   <span>{user.firstName}</span>
                   <i className="bi bi-chevron-down small"></i>
                 </button>

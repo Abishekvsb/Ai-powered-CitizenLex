@@ -177,7 +177,22 @@ export default function Dashboard() {
             </p>
           </div>
           <Link to="/profile" className="btn btn-glass-secondary d-flex align-items-center gap-2">
-            <i className="bi bi-person-gear"></i>
+            {user?.profileImageUrl ? (
+              <img
+                src={user.profileImageUrl}
+                alt="Profile"
+                style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(99,102,241,0.4)', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.6rem', fontWeight: 700, color: 'white', flexShrink: 0,
+              }}>
+                {`${(user?.firstName||'?')[0]}${(user?.lastName||'')[0]||''}`.toUpperCase()}
+              </div>
+            )}
             <span>My Profile</span>
           </Link>
         </div>

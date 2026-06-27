@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import VoiceInput from '../components/VoiceInput';
 import TextToSpeech from '../components/TextToSpeech';
+import { useAuth } from '../context/AuthContext';
 
 const SUGGESTIONS_EN = [
   "What are my rights if arrested?",
@@ -22,6 +23,8 @@ const SUGGESTIONS_TA = [
 
 export default function AiAssistant() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [language, setLanguage] = useState('en');
@@ -286,6 +289,52 @@ export default function AiAssistant() {
           </div>
         )}
       </div>
+      
+      {/* User profile row in sidebar */}
+      {user && (
+        <>
+          <hr style={{ borderColor: 'var(--border)', margin: '12px 0' }} />
+          <div
+            className="d-flex align-items-center justify-content-between p-2 rounded-3"
+            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+          >
+            <div className="d-flex align-items-center gap-2 overflow-hidden">
+              {user.profileImageUrl ? (
+                <img
+                  src={user.profileImageUrl}
+                  alt="Profile"
+                  style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(99,102,241,0.4)', flexShrink: 0 }}
+                />
+              ) : (
+                <div style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.8rem', fontWeight: 700, color: 'white', flexShrink: 0,
+                }}>
+                  {`${(user.firstName||'?')[0]}${(user.lastName||'')[0]||''}`.toUpperCase()}
+                </div>
+              )}
+              <div className="overflow-hidden" style={{ lineHeight: 1.2 }}>
+                <div className="fw-semibold text-truncate" style={{ fontSize: '0.82rem', color: 'var(--text)' }}>
+                  {user.firstName} {user.lastName}
+                </div>
+                <div className="text-secondary text-truncate" style={{ fontSize: '0.7rem' }}>
+                  {user.email}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="btn btn-sm p-0 border-0 flex-shrink-0 d-flex align-items-center justify-content-center"
+              title="Profile Settings"
+              style={{ color: 'var(--text-secondary)', width: 28, height: 28, borderRadius: '50%', background: 'rgba(99,102,241,0.06)' }}
+            >
+              <i className="bi bi-gear-fill" style={{ fontSize: '0.85rem' }}></i>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 
