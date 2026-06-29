@@ -26,15 +26,34 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
+    /**
+     * Generate token WITHOUT a session ID (legacy compatibility).
+     */
     public String generateToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
                 .setSubject(Long.toString(userPrincipal.getId()))
-                .setIssuedAt(new Date())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    /**
+     * Generate token WITH a session ID (for session revocation support).
+     */
+    public String generateToken(Authentication authentication, String sessionId) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+
+        return Jwts.builder()
+                .setSubject(Long.toString(userPrincipal.getId()))
+                .claim("sid", sessionId)
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
@@ -46,8 +65,20 @@ public class JwtTokenProvider {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-
         return Long.parseLong(claims.getSubject());
+    }
+
+    public String getSessionIdFromJWT(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("sid", String.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public boolean validateToken(String authToken) {

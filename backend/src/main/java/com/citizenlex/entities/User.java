@@ -66,6 +66,52 @@ public class User {
     @Column(nullable = false, name = "created_at")
     private LocalDateTime createdAt;
 
+    // --- Email Verification ---
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+
+    @Column(name = "email_verification_token", length = 200)
+    private String emailVerificationToken;
+
+    @Column(name = "email_verification_token_expiry")
+    private LocalDateTime emailVerificationTokenExpiry;
+
+    // --- Mobile OTP Verification ---
+    @Column(name = "mobile_verified", nullable = false)
+    private Boolean mobileVerified = false;
+
+    @Column(name = "mobile_otp", length = 10)
+    private String mobileOtp;
+
+    @Column(name = "mobile_otp_expiry")
+    private LocalDateTime mobileOtpExpiry;
+
+    // --- Login Audit ---
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+
+    @Column(name = "last_login_device", length = 200)
+    private String lastLoginDevice;
+
+    @Column(name = "last_login_ip", length = 50)
+    private String lastLoginIp;
+
+    // --- Notification Preferences ---
+    @Column(name = "email_notifications", nullable = false)
+    private Boolean emailNotifications = true;
+
+    @Column(name = "push_notifications", nullable = false)
+    private Boolean pushNotifications = true;
+
+    @Column(name = "reminder_notifications", nullable = false)
+    private Boolean reminderNotifications = true;
+
+    @Column(name = "marketing_emails", nullable = false)
+    private Boolean marketingEmails = false;
+
+    @Column(name = "product_updates", nullable = false)
+    private Boolean productUpdates = true;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "user_roles",
@@ -76,6 +122,13 @@ public class User {
 
     public User() {
         this.createdAt = LocalDateTime.now();
+        this.emailVerified = false;
+        this.mobileVerified = false;
+        this.emailNotifications = true;
+        this.pushNotifications = true;
+        this.reminderNotifications = true;
+        this.marketingEmails = false;
+        this.productUpdates = true;
     }
 
     public User(String email, String password, String firstName, String lastName) {
@@ -85,6 +138,13 @@ public class User {
         this.lastName = lastName;
         this.enabled = true;
         this.createdAt = LocalDateTime.now();
+        this.emailVerified = false;
+        this.mobileVerified = false;
+        this.emailNotifications = true;
+        this.pushNotifications = true;
+        this.reminderNotifications = true;
+        this.marketingEmails = false;
+        this.productUpdates = true;
     }
 
     // --- Getters & Setters ---
@@ -139,6 +199,48 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Boolean getEmailVerified() { return emailVerified; }
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public String getEmailVerificationToken() { return emailVerificationToken; }
+    public void setEmailVerificationToken(String emailVerificationToken) { this.emailVerificationToken = emailVerificationToken; }
+
+    public LocalDateTime getEmailVerificationTokenExpiry() { return emailVerificationTokenExpiry; }
+    public void setEmailVerificationTokenExpiry(LocalDateTime emailVerificationTokenExpiry) { this.emailVerificationTokenExpiry = emailVerificationTokenExpiry; }
+
+    public Boolean getMobileVerified() { return mobileVerified; }
+    public void setMobileVerified(Boolean mobileVerified) { this.mobileVerified = mobileVerified; }
+
+    public String getMobileOtp() { return mobileOtp; }
+    public void setMobileOtp(String mobileOtp) { this.mobileOtp = mobileOtp; }
+
+    public LocalDateTime getMobileOtpExpiry() { return mobileOtpExpiry; }
+    public void setMobileOtpExpiry(LocalDateTime mobileOtpExpiry) { this.mobileOtpExpiry = mobileOtpExpiry; }
+
+    public LocalDateTime getLastLogin() { return lastLogin; }
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
+    public String getLastLoginDevice() { return lastLoginDevice; }
+    public void setLastLoginDevice(String lastLoginDevice) { this.lastLoginDevice = lastLoginDevice; }
+
+    public String getLastLoginIp() { return lastLoginIp; }
+    public void setLastLoginIp(String lastLoginIp) { this.lastLoginIp = lastLoginIp; }
+
+    public Boolean getEmailNotifications() { return emailNotifications; }
+    public void setEmailNotifications(Boolean emailNotifications) { this.emailNotifications = emailNotifications; }
+
+    public Boolean getPushNotifications() { return pushNotifications; }
+    public void setPushNotifications(Boolean pushNotifications) { this.pushNotifications = pushNotifications; }
+
+    public Boolean getReminderNotifications() { return reminderNotifications; }
+    public void setReminderNotifications(Boolean reminderNotifications) { this.reminderNotifications = reminderNotifications; }
+
+    public Boolean getMarketingEmails() { return marketingEmails; }
+    public void setMarketingEmails(Boolean marketingEmails) { this.marketingEmails = marketingEmails; }
+
+    public Boolean getProductUpdates() { return productUpdates; }
+    public void setProductUpdates(Boolean productUpdates) { this.productUpdates = productUpdates; }
 
     public Set<Role> getRoles() { return roles; }
     public void setRoles(Set<Role> roles) { this.roles = roles; }

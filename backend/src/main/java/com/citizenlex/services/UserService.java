@@ -155,4 +155,56 @@ public class UserService {
         logService.logActivity(updatedUser, "CHANGE_ROLE", "Admin changed user role to: " + roleName);
         return updatedUser;
     }
+
+    /**
+     * Generic save — used internally for login audit updates.
+     */
+    @Transactional
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    /**
+     * Change password after verifying current password.
+     */
+    @Transactional
+    public void changePassword(Long id, String currentPassword, String newPassword) {
+        User user = findById(id);
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        logService.logActivity(user, "CHANGE_PASSWORD", "User changed password");
+    }
+
+    /**
+     * Update notification preferences for a user.
+     */
+    @Transactional
+    public User updateNotificationPreferences(Long id, Boolean emailNotifications, Boolean pushNotifications,
+                                               Boolean reminderNotifications, Boolean marketingEmails,
+                                               Boolean productUpdates) {
+        User user = findById(id);
+        if (emailNotifications != null) user.setEmailNotifications(emailNotifications);
+        if (pushNotifications != null) user.setPushNotifications(pushNotifications);
+        if (reminderNotifications != null) user.setReminderNotifications(reminderNotifications);
+        if (marketingEmails != null) user.setMarketingEmails(marketingEmails);
+        if (productUpdates != null) user.setProductUpdates(productUpdates);
+        return userRepository.save(user);
+    }
+
+    /**
+     * Delete account and log the action.
+     */
+    @Transactional
+    public void deleteAccount(Long id, String password) {
+        User user = findById(id);
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("Password is incorrect.");
+        }
+        userRepository.delete(user);
+        logService.logActivity((User) null, "DELETE_ACCOUNT", "User deleted account: " + user.getEmail());
+    }
 }
+

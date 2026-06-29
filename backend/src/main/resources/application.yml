@@ -38,3 +38,29 @@ cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:mock}
   api-key: ${CLOUDINARY_API_KEY:mock}
   api-secret: ${CLOUDINARY_API_SECRET:mock}
+
+spring:
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  sms:
+    provider: ${SMS_PROVIDER:mock} # Options: mock, twilio, fast2sms, msg91
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from-number: ${TWILIO_FROM_NUMBER:}
+    fast2sms:
+      api-key: ${FAST2SMS_API_KEY:}
+    msg91:
+      auth-key: ${MSG91_AUTH_KEY:}
+      template-id: ${MSG91_TEMPLATE_ID:}

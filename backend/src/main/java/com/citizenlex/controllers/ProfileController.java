@@ -123,7 +123,7 @@ public class ProfileController {
                 .map(r -> r.getName())
                 .orElse("ROLE_USER");
 
-        return new UserDto(
+        UserDto dto = new UserDto(
                 user.getId(),
                 user.getEmail(),
                 user.getFirstName(),
@@ -140,5 +140,24 @@ public class ProfileController {
                 user.getPreferredLanguage(),
                 user.getOccupation()
         );
+
+        // Verification status
+        dto.setEmailVerified(Boolean.TRUE.equals(user.getEmailVerified()));
+        dto.setMobileVerified(Boolean.TRUE.equals(user.getMobileVerified()));
+
+        // Login audit
+        if (user.getLastLogin() != null) {
+            dto.setLastLogin(user.getLastLogin().toString());
+        }
+        dto.setLastLoginDevice(user.getLastLoginDevice());
+
+        // Notification preferences
+        dto.setEmailNotifications(user.getEmailNotifications());
+        dto.setPushNotifications(user.getPushNotifications());
+        dto.setReminderNotifications(user.getReminderNotifications());
+        dto.setMarketingEmails(user.getMarketingEmails());
+        dto.setProductUpdates(user.getProductUpdates());
+
+        return dto;
     }
 }

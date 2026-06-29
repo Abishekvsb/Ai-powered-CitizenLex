@@ -22,9 +22,24 @@ public class UserDto {
     private String preferredLanguage;
     private String occupation;
 
+    // Verification status
+    private Boolean emailVerified;
+    private Boolean mobileVerified;
+
+    // Login audit
+    private String lastLogin;
+    private String lastLoginDevice;
+
+    // Notification preferences
+    private Boolean emailNotifications;
+    private Boolean pushNotifications;
+    private Boolean reminderNotifications;
+    private Boolean marketingEmails;
+    private Boolean productUpdates;
+
     public UserDto() {}
 
-    // Original constructor (keeps existing callers working)
+    // Original constructor (backward compat)
     public UserDto(Long id, String email, String firstName, String lastName, String role, LocalDateTime createdAt) {
         this.id = id;
         this.email = email;
@@ -100,4 +115,31 @@ public class UserDto {
 
     public String getOccupation() { return occupation; }
     public void setOccupation(String occupation) { this.occupation = occupation; }
+
+    public Boolean getEmailVerified() { return emailVerified; }
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public Boolean getMobileVerified() { return mobileVerified; }
+    public void setMobileVerified(Boolean mobileVerified) { this.mobileVerified = mobileVerified; }
+
+    public String getLastLogin() { return lastLogin; }
+    public void setLastLogin(String lastLogin) { this.lastLogin = lastLogin; }
+
+    public String getLastLoginDevice() { return lastLoginDevice; }
+    public void setLastLoginDevice(String lastLoginDevice) { this.lastLoginDevice = lastLoginDevice; }
+
+    public Boolean getEmailNotifications() { return emailNotifications; }
+    public void setEmailNotifications(Boolean emailNotifications) { this.emailNotifications = emailNotifications; }
+
+    public Boolean getPushNotifications() { return pushNotifications; }
+    public void setPushNotifications(Boolean pushNotifications) { this.pushNotifications = pushNotifications; }
+
+    public Boolean getReminderNotifications() { return reminderNotifications; }
+    public void setReminderNotifications(Boolean reminderNotifications) { this.reminderNotifications = reminderNotifications; }
+
+    public Boolean getMarketingEmails() { return marketingEmails; }
+    public void setMarketingEmails(Boolean marketingEmails) { this.marketingEmails = marketingEmails; }
+
+    public Boolean getProductUpdates() { return productUpdates; }
+    public void setProductUpdates(Boolean productUpdates) { this.productUpdates = productUpdates; }
 }
