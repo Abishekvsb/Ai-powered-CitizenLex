@@ -15,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.Map;
 
 @RestController
@@ -77,9 +76,13 @@ public class ProfileController {
             return ResponseEntity.ok(toFullDto(updated));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (IOException e) {
-            logger.error("IO error uploading profile photo for user {}", principal.getId(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Failed to upload image. Please try again."));
+        } catch (Exception e) {
+            logger.error("Error uploading profile photo for user {}: {}", principal.getId(), e.getMessage());
+            String friendlyMsg = "Failed to upload image. Please try again.";
+            if (e.getMessage() != null && e.getMessage().contains("cloud_name is disabled")) {
+                friendlyMsg = "Photo upload service is not configured. Please contact support.";
+            }
+            return ResponseEntity.status(500).body(Map.of("error", friendlyMsg));
         }
     }
 
