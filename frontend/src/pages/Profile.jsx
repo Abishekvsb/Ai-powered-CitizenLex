@@ -3,12 +3,9 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ImageCropModal from '../components/ImageCropModal';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
+import { Doughnut } from 'react-chartjs-2';
 
-// Register ChartJS elements
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -30,13 +27,13 @@ function ProgressRing({ pct }) {
   const dash = (pct / 100) * circ;
   return (
     <svg width="130" height="130" style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx="65" cy="65" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" />
+      <circle cx="65" cy="65" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="7" />
       <circle cx="65" cy="65" r={r} fill="none"
-        stroke="url(#pg)" strokeWidth="8" strokeLinecap="round"
+        stroke="url(#pg-gradient)" strokeWidth="8" strokeLinecap="round"
         strokeDasharray={`${dash} ${circ}`}
-        style={{ transition: 'stroke-dasharray 1s ease' }} />
+        style={{ transition: 'stroke-dasharray 1s ease-out' }} />
       <defs>
-        <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
+        <linearGradient id="pg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#6366f1" />
           <stop offset="100%" stopColor="#a855f7" />
         </linearGradient>
@@ -49,28 +46,36 @@ function Badge({ label, verified, onClick, loading }) {
   return (
     <span
       onClick={onClick}
+      className="animate-hover"
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 5,
-        padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 600,
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '5px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600,
         cursor: onClick ? 'pointer' : 'default',
-        background: verified ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.12)',
+        background: verified ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.1)',
         color: verified ? '#10b981' : '#f87171',
-        border: `1px solid ${verified ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
-        transition: 'all 0.2s',
+        border: `1px solid ${verified ? 'rgba(16,185,129,0.22)' : 'rgba(239,68,68,0.22)'}`,
+        boxShadow: verified ? '0 0 10px rgba(16,185,129,0.1)' : 'none'
       }}
     >
-      {loading ? '⏳' : verified ? '✓' : '!'} {label}
+      {loading ? (
+        <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10 }} />
+      ) : verified ? (
+        <i className="bi bi-patch-check-fill text-success"></i>
+      ) : (
+        <i className="bi bi-exclamation-triangle-fill text-danger"></i>
+      )}
+      {label} {verified ? 'Verified' : 'Unverified'}
     </span>
   );
 }
 
 const TABS = [
-  { id: 'personal', label: 'Profile', icon: '👤' },
-  { id: 'security', label: 'Security', icon: '🔐' },
-  { id: 'timeline', label: 'Timeline', icon: '📅' },
-  { id: 'achievements', label: 'Achievements', icon: '🏆' },
-  { id: 'preferences', label: 'Preferences', icon: '⚙️' },
-  { id: 'privacy', label: 'Privacy', icon: '🛡️' },
+  { id: 'personal', label: 'Profile Settings', icon: <i className="bi bi-person me-1"></i> },
+  { id: 'security', label: 'Security Center', icon: <i className="bi bi-shield-lock me-1"></i> },
+  { id: 'timeline', label: 'Activity Timeline', icon: <i className="bi bi-calendar3 me-1"></i> },
+  { id: 'achievements', label: 'Badges & Summary', icon: <i className="bi bi-trophy me-1"></i> },
+  { id: 'preferences', label: 'Preferences', icon: <i className="bi bi-sliders me-1"></i> },
+  { id: 'privacy', label: 'Data & Privacy', icon: <i className="bi bi-eye-slash me-1"></i> },
 ];
 
 const STATES = [
@@ -80,8 +85,6 @@ const STATES = [
   'Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand',
   'West Bengal','Delhi','Jammu and Kashmir','Ladakh','Puducherry',
 ];
-
-// ─── Main Profile Component ────────────────────────────────────────────────────
 
 export default function Profile() {
   const { user, updateUserProfileState } = useAuth();
@@ -93,7 +96,7 @@ export default function Profile() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileRef = useRef(null);
 
-  // Security tab state
+  // Security
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -101,12 +104,12 @@ export default function Profile() {
   const [pwSaving, setPwSaving] = useState(false);
   const [logoutAllLoading, setLogoutAllLoading] = useState(false);
 
-  // Timeline state
+  // Timeline
   const [timeline, setTimeline] = useState([]);
   const [timelineFilter, setTimelineFilter] = useState('all');
   const [timelineLoading, setTimelineLoading] = useState(false);
 
-  // Achievements state
+  // Achievements
   const [achievements, setAchievements] = useState([]);
   const [stats, setStats] = useState({});
   const [statsLoading, setStatsLoading] = useState(false);
@@ -153,7 +156,6 @@ export default function Profile() {
     }
   }, [user]);
 
-  // Load data on tab switch
   useEffect(() => {
     if (activeTab === 'security') loadSessions();
     if (activeTab === 'timeline') loadTimeline(timelineFilter);
@@ -169,25 +171,23 @@ export default function Profile() {
     setTimeout(() => setMsg(null), 4000);
   };
 
-  // ─── Profile Save ──────────────────────────────────────────────────────
   const saveProfile = async () => {
     setSaving(true);
     try {
       const res = await axios.put(`${API}/api/profile/update`, form);
       updateUserProfileState(res.data);
-      showMsg('Profile saved successfully!');
+      showMsg('Profile details updated!');
     } catch (e) {
-      showMsg(e.response?.data?.error || 'Failed to save profile.', 'error');
+      showMsg(e.response?.data?.error || 'Failed to update details.', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  // ─── Photo Upload ──────────────────────────────────────────────────────
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showMsg('File must be under 5 MB.', 'error'); return; }
+    if (file.size > 5 * 1024 * 1024) { showMsg('File size must be under 5 MB.', 'error'); return; }
     const reader = new FileReader();
     reader.onload = ev => setCropSrc(ev.target.result);
     reader.readAsDataURL(file);
@@ -204,9 +204,9 @@ export default function Profile() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       updateUserProfileState(res.data);
-      showMsg('Profile photo updated!');
+      showMsg('Profile avatar updated successfully!');
     } catch (e) {
-      showMsg(e.response?.data?.error || 'Upload failed. Check Cloudinary configuration.', 'error');
+      showMsg(e.response?.data?.error || 'Upload failed. Check parameters.', 'error');
     } finally {
       setUploadingPhoto(false);
     }
@@ -217,26 +217,24 @@ export default function Profile() {
     try {
       const res = await axios.delete(`${API}/api/profile/remove-photo`);
       updateUserProfileState(res.data);
-      showMsg('Profile photo removed.');
+      showMsg('Custom avatar removed.');
     } catch (e) {
-      showMsg('Failed to remove photo.', 'error');
+      showMsg('Failed to delete avatar.', 'error');
     }
   };
 
-  // ─── Email Verification ────────────────────────────────────────────────
   const requestEmailVerification = async () => {
     setEmailVerifyLoading(true);
     try {
       const res = await axios.post(`${API}/api/verify/email/request`);
       showMsg(res.data.message || 'Verification email sent!');
     } catch (e) {
-      showMsg(e.response?.data?.error || 'Failed to send verification email.', 'error');
+      showMsg(e.response?.data?.error || 'Failed to send mail.', 'error');
     } finally {
       setEmailVerifyLoading(false);
     }
   };
 
-  // ─── Mobile OTP ────────────────────────────────────────────────────────
   const requestMobileOtp = async () => {
     setMobileVerifyLoading(true);
     setMockOtp('');
@@ -248,7 +246,7 @@ export default function Profile() {
       }
       setShowOtpInput(true);
     } catch (e) {
-      showMsg(e.response?.data?.error || 'Failed to send OTP.', 'error');
+      showMsg(e.response?.data?.error || 'OTP request failed.', 'error');
     } finally {
       setMobileVerifyLoading(false);
     }
@@ -258,21 +256,20 @@ export default function Profile() {
     try {
       const res = await axios.post(`${API}/api/verify/mobile/confirm`, { otp: otpInput });
       updateUserProfileState(res.data.user);
-      showMsg('Mobile verified!');
+      showMsg('Mobile successfully verified!');
       setShowOtpInput(false);
       setOtpInput('');
     } catch (e) {
-      showMsg(e.response?.data?.error || 'Invalid OTP.', 'error');
+      showMsg(e.response?.data?.error || 'Verification failed.', 'error');
     }
   };
 
-  // ─── Security ──────────────────────────────────────────────────────────
   const loadSessions = async () => {
     setSessionsLoading(true);
     try {
       const res = await axios.get(`${API}/api/security/sessions`);
       setSessions(res.data);
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
     finally { setSessionsLoading(false); }
   };
 
@@ -280,9 +277,9 @@ export default function Profile() {
     try {
       await axios.delete(`${API}/api/security/sessions/${id}`);
       setSessions(prev => prev.filter(s => s.id !== id));
-      showMsg('Session revoked.');
+      showMsg('Session terminated.');
     } catch (e) {
-      showMsg('Failed to revoke session.', 'error');
+      showMsg('Could not terminate session.', 'error');
     }
   };
 
@@ -293,7 +290,7 @@ export default function Profile() {
       showMsg(res.data.message);
       setSessions([]);
     } catch (e) {
-      showMsg('Failed.', 'error');
+      showMsg('Logout all failed.', 'error');
     } finally { setLogoutAllLoading(false); }
   };
 
@@ -306,10 +303,10 @@ export default function Profile() {
         currentPassword: pwForm.current,
         newPassword: pwForm.next,
       });
-      showMsg('Password changed! Please log in again.');
+      showMsg('Password changed successfully!');
       setPwForm({ current: '', next: '', confirm: '' });
     } catch (e) {
-      showMsg(e.response?.data?.error || 'Failed to change password.', 'error');
+      showMsg(e.response?.data?.error || 'Failed to update credentials.', 'error');
     } finally { setPwSaving(false); }
   };
 
@@ -322,17 +319,15 @@ export default function Profile() {
     return score;
   };
 
-  // ─── Timeline ──────────────────────────────────────────────────────────
   const loadTimeline = async (filter) => {
     setTimelineLoading(true);
     try {
       const res = await axios.get(`${API}/api/stats/timeline?filter=${filter}`);
       setTimeline(res.data.timeline || []);
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
     finally { setTimelineLoading(false); }
   };
 
-  // ─── Achievements & Stats ──────────────────────────────────────────────
   const loadAchievements = async () => {
     setStatsLoading(true);
     try {
@@ -342,11 +337,10 @@ export default function Profile() {
       ]);
       setAchievements(achRes.data.achievements || []);
       setStats(sumRes.data || {});
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
     finally { setStatsLoading(false); }
   };
 
-  // ─── Preferences ───────────────────────────────────────────────────────
   const savePreferences = async () => {
     setPrefsSaving(true);
     try {
@@ -354,11 +348,10 @@ export default function Profile() {
       updateUserProfileState(res.data);
       showMsg('Preferences saved!');
     } catch (e) {
-      showMsg('Failed to save preferences.', 'error');
+      showMsg('Could not update preferences.', 'error');
     } finally { setPrefsSaving(false); }
   };
 
-  // ─── Privacy ───────────────────────────────────────────────────────────
   const downloadData = () => { window.open(`${API}/api/stats/download-data`, '_blank'); };
   const exportCsv = () => { window.open(`${API}/api/stats/export-activity`, '_blank'); };
   const exportPdf = () => { window.print(); };
@@ -369,39 +362,37 @@ export default function Profile() {
       await axios.delete(`${API}/api/stats/delete-account`, { data: { password: deletePassword } });
       window.location.href = '/login';
     } catch (e) {
-      showMsg(e.response?.data?.error || 'Failed to delete account.', 'error');
+      showMsg(e.response?.data?.error || 'Password verification failed.', 'error');
     } finally {
       setDeletingAccount(false);
     }
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────
-
   const avatar = user?.profileImageUrl;
   const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
 
   return (
-    <div className="profile-page-wrap" style={{ minHeight: '100vh', padding: '30px 20px 60px', maxWidth: 1100, margin: '0 auto' }}>
-      {/* Toast */}
+    <div className="profile-page-wrap text-start" style={{ minHeight: '100vh', padding: '40px 20px 60px', maxWidth: 1100, margin: '0 auto' }}>
+      {/* Toast Alert */}
       {msg && (
         <div style={{
           position: 'fixed', top: 24, right: 24, zIndex: 9999,
           background: msg.type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(16,185,129,0.95)',
           color: '#fff', padding: '14px 22px', borderRadius: 14,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)', fontWeight: 600, fontSize: '0.9rem',
+          boxShadow: 'var(--shadow-lg)', fontWeight: 600, fontSize: '0.9rem',
           animation: 'slideIn 0.3s ease',
         }}>
           {msg.type === 'error' ? '❌ ' : '✅ '}{msg.text}
         </div>
       )}
 
-      {/* Hero Header */}
-      <div className="glass-card mb-4 print-hide" style={{
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.1))',
-        border: '1px solid rgba(99,102,241,0.25)', borderRadius: 24, padding: '32px 36px',
+      {/* Premium Profile Header Card */}
+      <div className="glass-panel mb-4 print-hide" style={{
+        background: 'linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(168,85,247,0.03) 100%)',
+        border: '1px solid var(--border)', borderRadius: 24, padding: '36px',
       }}>
         <div className="d-flex align-items-center gap-4 flex-wrap">
-          {/* Avatar */}
+          {/* Avatar Ring */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{ position: 'relative', width: 130, height: 130 }}>
               <ProgressRing pct={completion} />
@@ -410,7 +401,7 @@ export default function Profile() {
                 style={{
                   position: 'absolute', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
-                  width: 92, height: 92, borderRadius: '50%',
+                  width: 96, height: 96, borderRadius: '50%',
                   overflow: 'hidden', cursor: 'pointer',
                   border: '3px solid rgba(99,102,241,0.5)',
                   background: 'var(--bg-secondary)',
@@ -418,14 +409,15 @@ export default function Profile() {
                   fontSize: '1.8rem', fontWeight: 700, color: '#6366f1',
                 }}
               >
-                {uploadingPhoto
-                  ? <div className="spinner-border spinner-border-sm text-primary" />
-                  : avatar
-                    ? <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <span>{initials || '?'}</span>
-                }
+                {uploadingPhoto ? (
+                  <div className="spinner-border spinner-border-sm text-primary" />
+                ) : avatar ? (
+                  <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span>{initials || '?'}</span>
+                )}
                 <div style={{
-                  position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
+                  position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   opacity: 0, transition: 'opacity 0.2s',
                   borderRadius: '50%', color: '#fff', fontSize: '1.2rem',
@@ -440,15 +432,15 @@ export default function Profile() {
               background: completion >= 80 ? '#10b981' : '#f59e0b',
               color: '#fff', borderRadius: 12, fontSize: '0.65rem',
               padding: '2px 7px', fontWeight: 700,
-            }}>{completion}%</div>
+            }}>{completion}% Profile Score</div>
           </div>
 
-          {/* Info */}
+          {/* User Meta */}
           <div style={{ flex: 1, minWidth: 200 }}>
-            <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.7rem', color: 'var(--text)' }}>
+            <h2 className="text-white fw-bold mb-1" style={{ fontSize: '1.8rem', letterSpacing: '-0.5px' }}>
               {user?.firstName} {user?.lastName}
             </h2>
-            <p style={{ color: 'var(--text-secondary)', margin: '4px 0 12px', fontSize: '0.9rem' }}>{user?.email}</p>
+            <p className="text-secondary small mb-3">{user?.email}</p>
             <div className="d-flex flex-wrap gap-2">
               <Badge label="Email" verified={user?.emailVerified}
                 onClick={!user?.emailVerified ? requestEmailVerification : null}
@@ -457,66 +449,63 @@ export default function Profile() {
                 onClick={!user?.mobileVerified ? requestMobileOtp : null}
                 loading={mobileVerifyLoading} />
               {user?.occupation && (
-                <span style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1', borderRadius: 20, padding: '3px 10px', fontSize: '0.72rem', fontWeight: 600 }}>
+                <span style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', borderRadius: 20, padding: '4px 12px', fontSize: '0.72rem', fontWeight: 600 }}>
                   💼 {user.occupation}
                 </span>
               )}
               {user?.state && (
-                <span style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', borderRadius: 20, padding: '3px 10px', fontSize: '0.72rem', fontWeight: 600 }}>
+                <span style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', borderRadius: 20, padding: '4px 12px', fontSize: '0.72rem', fontWeight: 600 }}>
                   📍 {user.state}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Photo Controls */}
           <div className="d-flex flex-column gap-2">
-            <button className="btn btn-glass btn-sm" onClick={() => fileRef.current.click()}>📷 Change Photo</button>
-            {avatar && <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }} onClick={removePhoto}>🗑️ Remove</button>}
+            <button className="btn btn-glass btn-sm" onClick={() => fileRef.current.click()}>📷 Upload Avatar</button>
+            {avatar && <button className="btn btn-sm text-danger" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }} onClick={removePhoto}>Remove Photo</button>}
           </div>
         </div>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileSelect} style={{ display: 'none' }} />
       </div>
 
-      {/* OTP Input */}
+      {/* Mock OTP Display */}
       {showOtpInput && (
-        <div className="glass-card mb-4 print-hide" style={{ padding: 20, borderRadius: 16 }}>
-          <p className="mb-2 fw-semibold">Enter the OTP sent to {user?.mobile}:</p>
+        <div className="glass-panel mb-4 p-4 print-hide" style={{ borderRadius: 18, border: '1px solid var(--border)' }}>
+          <p className="mb-2 fw-semibold text-white">Enter validation OTP sent to your device:</p>
           {mockOtp && (
-            <div className="alert alert-info mb-3 py-2 small" style={{ maxWidth: 400, background: 'rgba(13,202,240,0.12)', color: '#0dcaf0', border: '1px solid rgba(13,202,240,0.3)', borderRadius: 12 }}>
-              💡 <strong>Mock Mode:</strong> SMS is not configured. Use this OTP to verify: <strong style={{ fontSize: '1.1rem', color: '#fff' }}>{mockOtp}</strong>
+            <div className="alert alert-info mb-3 py-2 small" style={{ maxWidth: 420, background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.2)' }}>
+              💡 <strong>Mock Mode Sandbox:</strong> Use this mock OTP: <strong style={{ fontSize: '1.1rem', color: '#fff' }}>{mockOtp}</strong>
             </div>
           )}
           <div className="d-flex gap-2">
-            <input className="form-control" placeholder="6-digit OTP" value={otpInput}
-              onChange={e => setOtpInput(e.target.value)} maxLength={6} style={{ maxWidth: 200 }} />
-            <button className="btn btn-glass" onClick={confirmMobileOtp}>Verify</button>
-            <button className="btn btn-sm" style={{ background: 'none', color: 'var(--text-secondary)' }}
-              onClick={() => setShowOtpInput(false)}>Cancel</button>
+            <input className="form-control form-glass-control" placeholder="6-digit code" value={otpInput}
+              onChange={e => setOtpInput(e.target.value)} maxLength={6} style={{ maxWidth: 180 }} />
+            <button className="btn btn-glass" onClick={confirmMobileOtp}>Verify OTP</button>
+            <button className="btn btn-glass-secondary btn-sm" onClick={() => setShowOtpInput(false)}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Crop Modal */}
       {cropSrc && <ImageCropModal imageSrc={cropSrc} onConfirm={handleCropConfirm} onCancel={() => setCropSrc(null)} />}
 
-      {/* Tabs */}
-      <div className="print-hide" style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+      {/* Tabs Menu */}
+      <div className="print-hide d-flex gap-2 mb-4 flex-wrap">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             style={{
-              padding: '9px 18px', borderRadius: 12, fontWeight: 600, fontSize: '0.85rem',
-              border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-              background: activeTab === t.id ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--glass)',
+              padding: '10px 18px', borderRadius: 12, fontWeight: 600, fontSize: '0.85rem',
+              border: 'none', cursor: 'pointer', transition: 'all 0.25s',
+              background: activeTab === t.id ? 'linear-gradient(135deg,#6366f1,#a855f7)' : 'rgba(255,255,255,0.03)',
               color: activeTab === t.id ? '#fff' : 'var(--text-secondary)',
-              boxShadow: activeTab === t.id ? '0 4px 15px rgba(99,102,241,0.35)' : 'none',
+              boxShadow: activeTab === t.id ? '0 4px 15px rgba(99,102,241,0.3)' : 'none',
             }}>
             {t.icon} {t.label}
           </button>
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* Tabs Render */}
       <div className="print-hide">
         {activeTab === 'personal' && <PersonalTab form={form} setForm={setForm} saving={saving} onSave={saveProfile} onExportPdf={exportPdf} />}
         {activeTab === 'security' && (
@@ -543,7 +532,7 @@ export default function Profile() {
         )}
       </div>
 
-      {/* ─── Printable Profile PDF Report ───────────────────────────────────────── */}
+      {/* Printable Report PDF */}
       <div id="printable-profile-report">
         <div style={{ borderBottom: '3px solid #6366f1', paddingBottom: 15, marginBottom: 30, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -657,11 +646,6 @@ export default function Profile() {
 
       <style>{`
         @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
-        .profile-page-wrap .glass-card {
-          background: var(--glass, rgba(255,255,255,0.04));
-          border: 1px solid var(--border, rgba(255,255,255,0.1));
-          backdrop-filter: blur(12px);
-        }
         #printable-profile-report {
           display: none;
         }
@@ -690,25 +674,25 @@ export default function Profile() {
   );
 }
 
-// ─── Personal Info Tab ─────────────────────────────────────────────────────────
+// Personal Info Tab
 function PersonalTab({ form, setForm, saving, onSave, onExportPdf }) {
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
   const Field = ({ label, name, type = 'text', children }) => (
     <div className="mb-3">
-      <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <label className="form-label small fw-semibold text-secondary mb-1">{label}</label>
       {children || (
-        <input type={type} className="form-control" value={form[name] || ''}
+        <input type={type} className="form-control form-glass-control" value={form[name] || ''}
           onChange={e => set(name, e.target.value)}
-          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 12 }} />
+          style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12 }} />
       )}
     </div>
   );
 
   return (
-    <div className="glass-card" style={{ borderRadius: 20, padding: 32 }}>
+    <div className="glass-panel" style={{ borderRadius: 20, padding: 32, background: 'var(--surface)' }}>
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <h5 className="fw-bold mb-0">Personal Information</h5>
-        <button className="btn btn-sm btn-glass" onClick={onExportPdf}>📄 Export Profile PDF</button>
+        <h5 className="fw-bold mb-0 text-white">Personal Information</h5>
+        <button className="btn btn-sm btn-glass-secondary animate-hover" onClick={onExportPdf}>📄 Export Profile Report (PDF)</button>
       </div>
       <div className="row g-3">
         <div className="col-md-6"><Field label="First Name" name="firstName" /></div>
@@ -717,19 +701,19 @@ function PersonalTab({ form, setForm, saving, onSave, onExportPdf }) {
         <div className="col-md-6"><Field label="Date of Birth" name="dateOfBirth" type="date" /></div>
         <div className="col-md-6">
           <Field label="Gender" name="gender">
-            <select className="form-select" value={form.gender || ''} onChange={e => set('gender', e.target.value)}
-              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 12 }}>
+            <select className="form-select form-glass-control" value={form.gender || ''} onChange={e => set('gender', e.target.value)}
+              style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12 }}>
               <option value="">Select Gender</option>
-              {['Male', 'Female', 'Non-binary', 'Prefer not to say'].map(g => <option key={g}>{g}</option>)}
+              {['Male', 'Female', 'Non-binary', 'Prefer not to say'].map(g => <option key={g} value={g}>{g}</option>)}
             </select>
           </Field>
         </div>
         <div className="col-md-6">
           <Field label="State" name="state">
-            <select className="form-select" value={form.state || ''} onChange={e => set('state', e.target.value)}
-              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 12 }}>
+            <select className="form-select form-glass-control" value={form.state || ''} onChange={e => set('state', e.target.value)}
+              style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12 }}>
               <option value="">Select State</option>
-              {STATES.map(s => <option key={s}>{s}</option>)}
+              {STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
         </div>
@@ -737,22 +721,26 @@ function PersonalTab({ form, setForm, saving, onSave, onExportPdf }) {
         <div className="col-md-6"><Field label="Occupation" name="occupation" /></div>
         <div className="col-md-6">
           <Field label="Preferred Language" name="preferredLanguage">
-            <select className="form-select" value={form.preferredLanguage || ''} onChange={e => set('preferredLanguage', e.target.value)}
-              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 12 }}>
+            <select className="form-select form-glass-control" value={form.preferredLanguage || ''} onChange={e => set('preferredLanguage', e.target.value)}
+              style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12 }}>
               <option value="">Select Language</option>
-              {['English','Hindi','Tamil','Telugu','Kannada','Malayalam','Bengali','Marathi','Gujarati','Punjabi','Odia','Urdu'].map(l => <option key={l}>{l}</option>)}
+              {['English','Hindi','Tamil','Telugu','Kannada','Malayalam','Bengali','Marathi','Gujarati','Punjabi','Odia','Urdu'].map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </Field>
         </div>
         <div className="col-12">
           <Field label="Address" name="address">
-            <textarea className="form-control" rows={3} value={form.address || ''} onChange={e => set('address', e.target.value)}
-              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 12, resize: 'vertical' }} />
+            <textarea className="form-control form-glass-control" rows={3} value={form.address || ''} onChange={e => set('address', e.target.value)}
+              style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12, resize: 'vertical' }} />
           </Field>
         </div>
       </div>
       <div className="mt-4 text-end">
-        <button className="btn btn-glass px-5 py-2 fw-semibold" onClick={onSave} disabled={saving}>
+        <button className="btn btn-glass px-5 py-2.5 fw-semibold" onClick={onSave} disabled={saving} style={{
+          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+          border: 'none',
+          borderRadius: 12
+        }}>
           {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving...</> : '💾 Save Changes'}
         </button>
       </div>
@@ -760,7 +748,7 @@ function PersonalTab({ form, setForm, saving, onSave, onExportPdf }) {
   );
 }
 
-// ─── Security Tab ──────────────────────────────────────────────────────────────
+// Security Tab
 function SecurityTab({ sessions, loading, onRevoke, onLogoutAll, logoutAllLoading, pwForm, setPwForm,
   showPw, setShowPw, pwSaving, onChangePw, pwStrength, lastLogin, lastDevice }) {
   const strength = pwStrength(pwForm.next);
@@ -770,21 +758,21 @@ function SecurityTab({ sessions, loading, onRevoke, onLogoutAll, logoutAllLoadin
   return (
     <div className="d-flex flex-column gap-4">
       {/* Change Password */}
-      <div className="glass-card" style={{ borderRadius: 20, padding: 28 }}>
-        <h6 className="fw-bold mb-4">🔑 Change Password</h6>
+      <div className="glass-panel" style={{ borderRadius: 20, padding: 28, background: 'var(--surface)' }}>
+        <h6 className="fw-bold mb-4 text-white"><i className="bi bi-key-fill text-warning me-1.5"></i> Change Credentials Password</h6>
         {['current', 'next', 'confirm'].map((k, i) => (
-          <div key={k} className="mb-3 position-relative">
-            <label className="form-label small fw-semibold" style={{ color: 'var(--text-secondary)' }}>
+          <div key={k} className="mb-3 position-relative text-start">
+            <label className="form-label small fw-semibold text-secondary mb-1">
               {['Current Password', 'New Password', 'Confirm New Password'][i]}
             </label>
             <div className="d-flex">
               <input
-                type={showPw[k] ? 'text' : 'password'} className="form-control"
+                type={showPw[k] ? 'text' : 'password'} className="form-control form-glass-control"
                 value={pwForm[k]} onChange={e => setPwForm(p => ({ ...p, [k]: e.target.value }))}
-                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '12px 0 0 12px' }} />
+                style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px 0 0 12px' }} />
               <button onClick={() => setShowPw(p => ({ ...p, [k]: !p[k] }))}
-                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderLeft: 'none', borderRadius: '0 12px 12px 0', padding: '0 14px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                {showPw[k] ? '🙈' : '👁️'}
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderLeft: 'none', borderRadius: '0 12px 12px 0', padding: '0 14px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                {showPw[k] ? <i className="bi bi-eye-slash"></i> : <i className="bi bi-eye"></i>}
               </button>
             </div>
           </div>
@@ -796,116 +784,123 @@ function SecurityTab({ sessions, loading, onRevoke, onLogoutAll, logoutAllLoadin
                 <div key={i} style={{ height: 4, flex: 1, borderRadius: 4, background: i < strength ? strengthColors[strength - 1] : 'rgba(255,255,255,0.1)', transition: 'background 0.3s' }} />
               ))}
             </div>
-            <small style={{ color: strength > 0 ? strengthColors[strength - 1] : 'var(--text-secondary)' }}>
+            <small style={{ color: strength > 0 ? strengthColors[strength - 1] : 'var(--text-secondary)', fontWeight: 600 }}>
               {strength > 0 ? strengthLabels[strength - 1] : ''}
             </small>
           </div>
         )}
-        <button className="btn btn-glass" onClick={onChangePw} disabled={pwSaving}>
+        <button className="btn btn-glass mt-2" onClick={onChangePw} disabled={pwSaving} style={{
+          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+          border: 'none',
+          borderRadius: 12,
+          padding: '10px 24px'
+        }}>
           {pwSaving ? <span className="spinner-border spinner-border-sm" /> : '🔐 Change Password'}
         </button>
       </div>
 
-      {/* Last Login */}
+      {/* Last Login Info */}
       {lastLogin && (
-        <div className="glass-card" style={{ borderRadius: 20, padding: 24 }}>
-          <h6 className="fw-bold mb-3">🕐 Last Login</h6>
-          <p className="mb-1"><strong>Time:</strong> {new Date(lastLogin).toLocaleString()}</p>
-          <p className="mb-0"><strong>Device:</strong> {lastDevice || 'Unknown'}</p>
+        <div className="glass-panel p-4" style={{ borderRadius: 20, background: 'var(--surface)' }}>
+          <h6 className="fw-bold mb-3 text-white"><i className="bi bi-clock-history text-primary me-1.5"></i> Last Login Session Info</h6>
+          <p className="mb-1 text-white-50"><strong>Time:</strong> {new Date(lastLogin).toLocaleString()}</p>
+          <p className="mb-0 text-white-50"><strong>Device:</strong> {lastDevice || 'Unknown'}</p>
         </div>
       )}
 
       {/* Active Sessions */}
-      <div className="glass-card" style={{ borderRadius: 20, padding: 28 }}>
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h6 className="fw-bold mb-0">📱 Active Sessions</h6>
-          <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10 }}
+      <div className="glass-panel" style={{ borderRadius: 20, padding: 28, background: 'var(--surface)' }}>
+        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h6 className="fw-bold mb-0 text-white"><i className="bi bi-phone text-primary me-1.5"></i> Active Access Sessions</h6>
+          <button className="btn btn-sm animate-hover" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '6px 14px' }}
             onClick={onLogoutAll} disabled={logoutAllLoading}>
-            {logoutAllLoading ? '...' : '🚪 Logout All Devices'}
+            {logoutAllLoading ? '🚪 Revoking...' : '🚪 Terminate All Other Devices'}
           </button>
         </div>
-        {loading ? <div className="text-center py-3"><span className="spinner-border spinner-border-sm" /></div>
-          : sessions.length === 0 ? <p className="text-secondary text-center">No active sessions.</p>
-          : sessions.map(s => (
+        {loading ? (
+          <div className="text-center py-3"><span className="spinner-border spinner-border-sm" /></div>
+        ) : sessions.length === 0 ? (
+          <p className="text-secondary text-center">No active sessions found.</p>
+        ) : (
+          sessions.map(s => (
             <div key={s.id} className="d-flex justify-content-between align-items-center py-3"
               style={{ borderBottom: '1px solid var(--border)' }}>
               <div>
-                <p className="mb-0 fw-semibold">{s.deviceInfo}</p>
-                <small className="text-secondary">{s.ipAddress} · Login: {s.loginTime}</small>
+                <p className="mb-0 fw-semibold text-white">{s.deviceInfo}</p>
+                <small className="text-secondary">{s.ipAddress} · Connected: {s.loginTime}</small>
               </div>
-              <button onClick={() => onRevoke(s.id)}
-                style={{ background: 'none', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: 8, padding: '4px 12px', cursor: 'pointer', fontSize: '0.8rem' }}>
+              <button onClick={() => onRevoke(s.id)} className="btn btn-sm animate-hover"
+                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.22)', color: '#f87171', borderRadius: 8, padding: '5px 14px', fontSize: '0.8rem' }}>
                 Revoke
               </button>
             </div>
           ))
-        }
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Timeline Tab ──────────────────────────────────────────────────────────────
+// Timeline Tab
 function TimelineTab({ timeline, filter, setFilter, loading }) {
   const filters = [['today', 'Today'], ['week', 'This Week'], ['month', 'This Month'], ['all', 'All Time']];
   return (
-    <div className="glass-card" style={{ borderRadius: 20, padding: 28 }}>
+    <div className="glass-panel" style={{ borderRadius: 20, padding: 28, background: 'var(--surface)' }}>
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <h5 className="fw-bold mb-0">📅 Activity Timeline</h5>
+        <h5 className="fw-bold mb-0 text-white">📅 Account Activity Logs</h5>
         <div className="d-flex gap-2 flex-wrap">
           {filters.map(([val, label]) => (
             <button key={val} onClick={() => setFilter(val)}
+              className="btn btn-sm animate-hover"
               style={{
-                padding: '5px 14px', borderRadius: 20, fontSize: '0.8rem', border: 'none', cursor: 'pointer',
-                background: filter === val ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--bg-secondary)',
-                color: filter === val ? '#fff' : 'var(--text-secondary)', fontWeight: 600,
+                borderRadius: 20, fontSize: '0.78rem', border: 'none',
+                background: filter === val ? 'linear-gradient(135deg,#6366f1,#a855f7)' : 'rgba(255,255,255,0.03)',
+                color: '#fff', fontWeight: 600, padding: '6px 14px'
               }}>{label}</button>
           ))}
         </div>
       </div>
-      {loading ? <div className="text-center py-5"><span className="spinner-border" /></div>
-        : timeline.length === 0 ? <p className="text-center text-secondary py-4">No activity recorded yet.</p>
-        : (
-          <div style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', left: 22, top: 0, bottom: 0, width: 2, background: 'rgba(99,102,241,0.2)' }} />
-            {timeline.map(item => (
-              <div key={item.id} className="d-flex gap-3 mb-3" style={{ position: 'relative' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-                  background: `${item.color}22`, border: `2px solid ${item.color}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', zIndex: 1,
-                }}>
-                  {item.icon}
-                </div>
-                <div style={{ paddingTop: 6 }}>
-                  <p className="mb-0 fw-semibold" style={{ fontSize: '0.9rem' }}>{item.details || item.action}</p>
-                  <small style={{ color: 'var(--text-secondary)' }}>{item.timestamp}</small>
-                </div>
+      {loading ? (
+        <div className="text-center py-5"><span className="spinner-border" /></div>
+      ) : timeline.length === 0 ? (
+        <p className="text-center text-secondary py-4">No audit logs found for this timeframe.</p>
+      ) : (
+        <div style={{ position: 'relative', marginTop: '20px' }}>
+          <div style={{ position: 'absolute', left: 22, top: 0, bottom: 0, width: 2, background: 'rgba(99,102,241,0.12)' }} />
+          {timeline.map(item => (
+            <div key={item.id} className="d-flex gap-3 mb-4" style={{ position: 'relative' }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                background: `rgba(99,102,241,0.08)`, border: `1px solid rgba(99,102,241,0.25)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', zIndex: 1,
+              }}>
+                📄
               </div>
-            ))}
-          </div>
-        )
-      }
+              <div style={{ paddingTop: 6 }}>
+                <p className="mb-0 fw-semibold text-white" style={{ fontSize: '0.92rem' }}>{item.details || item.action}</p>
+                <small className="text-secondary">{item.timestamp}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Achievements Tab ──────────────────────────────────────────────────────────
+// Achievements Tab
 function AchievementsTab({ achievements, stats, loading }) {
   const statCards = [
-    { label: 'AI Chats', value: stats.aiChats || 0, icon: '🤖', color: '#06b6d4' },
+    { label: 'AI Chats', value: stats.aiChats || 0, icon: '🤖', color: '#6366f1' },
     { label: 'Rights Viewed', value: stats.rightsViewed || 0, icon: '⚖️', color: '#10b981' },
-    { label: 'Schemes Explored', value: stats.schemesViewed || 0, icon: '📋', color: '#8b5cf6' },
+    { label: 'Schemes Explored', value: stats.schemesViewed || 0, icon: '📋', color: '#a855f7' },
     { label: 'OCR Scans', value: stats.ocrScans || 0, icon: '📷', color: '#f59e0b' },
-    { label: 'Drafts Created', value: stats.drafts || 0, icon: '📝', color: '#3b82f6' },
+    { label: 'Drafts Created', value: stats.drafts || 0, icon: '📝', color: '#06b6d4' },
     { label: 'Bookmarks', value: stats.bookmarks || 0, icon: '🔖', color: '#ef4444' },
-    { label: 'Total Logins', value: stats.totalLogins || 0, icon: '🔐', color: '#6366f1' },
-    { label: 'Active Sessions', value: stats.activeSessions || 0, icon: '📱', color: '#14b8a6' },
   ];
 
-  // Doughnut Chart Data mapping activity breakdown
   const doughnutData = {
-    labels: ['AI Copilot', 'OCR Scans', 'Legal Drafts', 'Bookmarks Saved', 'Rights/Schemes Viewed'],
+    labels: ['AI Assistant', 'OCR Scans', 'AI Drafts', 'Bookmarks', 'Rights/Schemes Explored'],
     datasets: [{
       label: 'ActivitiesCount',
       data: [
@@ -915,15 +910,9 @@ function AchievementsTab({ achievements, stats, loading }) {
         stats.bookmarks || 0,
         (stats.rightsViewed || 0) + (stats.schemesViewed || 0)
       ],
-      backgroundColor: [
-        '#06b6d4',
-        '#f59e0b',
-        '#3b82f6',
-        '#ef4444',
-        '#8b5cf6'
-      ],
+      backgroundColor: ['#6366f1', '#f59e0b', '#06b6d4', '#ef4444', '#a855f7'],
       borderWidth: 0,
-      hoverOffset: 12
+      hoverOffset: 10
     }]
   };
 
@@ -934,54 +923,46 @@ function AchievementsTab({ achievements, stats, loading }) {
       legend: {
         position: 'right',
         labels: {
-          color: '#e2e8f0',
-          font: { family: 'Inter', size: 11, weight: '500' },
-          padding: 16
+          color: '#cbd5e1',
+          font: { size: 11, weight: '500' },
+          padding: 14
         }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(15,14,23,0.95)',
-        titleFont: { size: 13, family: 'Inter' },
-        bodyFont: { size: 13, family: 'Inter' },
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 8
       }
     },
-    cutout: '65%'
+    cutout: '70%'
   };
 
   return (
-    <div className="d-flex flex-column gap-4">
-      {loading ? <div className="text-center py-5"><span className="spinner-border" /></div> : (
+    <div className="d-flex flex-column gap-4 text-start">
+      {loading ? (
+        <div className="text-center py-5"><span className="spinner-border" /></div>
+      ) : (
         <>
-          {/* Stats & Charts row */}
           <div className="row g-4">
-            {/* Doughnut Chart Card */}
+            {/* Doughnut Chart */}
             <div className="col-md-6">
-              <div className="glass-card" style={{ borderRadius: 20, padding: 28, height: '100%', minHeight: 320 }}>
-                <h6 className="fw-bold mb-3">📈 Activity Distribution</h6>
-                <div style={{ position: 'relative', height: 220 }}>
+              <div className="glass-panel" style={{ borderRadius: 20, padding: 28, height: '100%', minHeight: 310, background: 'var(--surface)' }}>
+                <h6 className="fw-bold mb-4 text-white">📈 Platform Usage Distribution</h6>
+                <div style={{ position: 'relative', height: 210 }}>
                   <Doughnut data={doughnutData} options={doughnutOptions} />
                 </div>
               </div>
             </div>
 
-            {/* General Stats Column */}
+            {/* Usage summary cards */}
             <div className="col-md-6">
-              <div className="glass-card" style={{ borderRadius: 20, padding: 28, height: '100%' }}>
-                <h6 className="fw-bold mb-3">📊 Usage Summary</h6>
+              <div className="glass-panel" style={{ borderRadius: 20, padding: 28, height: '100%', background: 'var(--surface)' }}>
+                <h6 className="fw-bold mb-4 text-white">📊 Usage Statistics</h6>
                 <div className="row g-3">
-                  {statCards.slice(0, 6).map(({ label, value, icon, color }) => (
-                    <div key={label} className="col-6">
-                      <div style={{
-                        background: `${color}11`, border: `1px solid ${color}22`,
-                        borderRadius: 14, padding: '14px 10px', textAlign: 'center'
+                  {statCards.map(({ label, value, icon, color }) => (
+                    <div key={label} className="col-6 col-sm-4">
+                      <div className="animate-hover" style={{
+                        background: 'rgba(255,255,255,0.02)', border: `1px solid var(--border)`,
+                        borderRadius: 14, padding: '16px 10px', textAlign: 'center'
                       }}>
                         <div style={{ fontSize: '1.4rem', marginBottom: 4 }}>{icon}</div>
-                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color }}>{value}</div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{label}</div>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color }}>{value}</div>
+                        <div className="text-secondary" style={{ fontSize: '0.72rem' }}>{label}</div>
                       </div>
                     </div>
                   ))}
@@ -990,29 +971,28 @@ function AchievementsTab({ achievements, stats, loading }) {
             </div>
           </div>
 
-          {/* Achievements list */}
-          <div className="glass-card" style={{ borderRadius: 20, padding: 28 }}>
+          {/* Badges */}
+          <div className="glass-panel" style={{ borderRadius: 20, padding: 28, background: 'var(--surface)' }}>
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <h6 className="fw-bold mb-0">🏆 Achievements & Badges</h6>
-              <span style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1', borderRadius: 20, padding: '4px 12px', fontSize: '0.8rem', fontWeight: 700 }}>
-                {achievements.filter(a => a.unlocked).length}/{achievements.length}
+              <h6 className="fw-bold mb-0 text-white">🏆 Unlocked Achievements</h6>
+              <span className="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3 py-1.5 fw-bold" style={{ fontSize: '0.75rem' }}>
+                {achievements.filter(a => a.unlocked).length} / {achievements.length} Badges
               </span>
             </div>
             <div className="row g-3">
               {achievements.map(a => (
-                <div key={a.name} className="col-6 col-md-4">
-                  <div style={{
-                    padding: '16px 14px', borderRadius: 16, textAlign: 'center',
-                    background: a.unlocked ? `${a.color}12` : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${a.unlocked ? a.color + '40' : 'rgba(255,255,255,0.06)'}`,
+                <div key={a.name} className="col-12 col-sm-6 col-md-4">
+                  <div className="animate-hover" style={{
+                    padding: '16px', borderRadius: 16,
+                    background: a.unlocked ? `${a.color}08` : 'rgba(255,255,255,0.01)',
+                    border: `1px solid ${a.unlocked ? a.color + '33' : 'var(--border)'}`,
                     opacity: a.unlocked ? 1 : 0.45,
-                    transition: 'all 0.2s',
-                    filter: a.unlocked ? 'none' : 'grayscale(1)',
+                    filter: a.unlocked ? 'none' : 'grayscale(0.8)'
                   }}>
-                    <div style={{ fontSize: '2rem', marginBottom: 6 }}>{a.icon}</div>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: a.unlocked ? a.color : 'var(--text-secondary)' }}>{a.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 3 }}>{a.description}</div>
-                    {a.unlocked && <div style={{ fontSize: '0.68rem', color: a.color, marginTop: 6, fontWeight: 600 }}>✓ Unlocked</div>}
+                    <div style={{ fontSize: '2.2rem', marginBottom: 6 }}>{a.icon}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: a.unlocked ? 'white' : 'var(--text-secondary)' }}>{a.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 3 }}>{a.description}</div>
+                    {a.unlocked && <div style={{ fontSize: '0.65rem', color: a.color, marginTop: 8, fontWeight: 700 }}>✓ Completed</div>}
                   </div>
                 </div>
               ))}
@@ -1024,32 +1004,37 @@ function AchievementsTab({ achievements, stats, loading }) {
   );
 }
 
-// ─── Preferences Tab ───────────────────────────────────────────────────────────
+// Preferences Tab
 function PreferencesTab({ prefs, setPrefs, saving, onSave }) {
   const Toggle = ({ label, desc, k }) => (
-    <div className="d-flex justify-content-between align-items-center py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+    <div className="d-flex justify-content-between align-items-center py-3 text-start animate-hover" style={{ borderBottom: '1px solid var(--border)' }}>
       <div>
-        <p className="mb-0 fw-semibold" style={{ fontSize: '0.9rem' }}>{label}</p>
-        <small style={{ color: 'var(--text-secondary)' }}>{desc}</small>
+        <p className="mb-0 fw-semibold text-white" style={{ fontSize: '0.92rem' }}>{label}</p>
+        <small className="text-secondary">{desc}</small>
       </div>
       <div className="form-check form-switch mb-0">
         <input className="form-check-input" type="checkbox" checked={!!prefs[k]}
           onChange={e => setPrefs(p => ({ ...p, [k]: e.target.checked }))}
-          style={{ width: 44, height: 24, cursor: 'pointer' }} />
+          style={{ width: 44, height: 22, cursor: 'pointer' }} />
       </div>
     </div>
   );
 
   return (
-    <div className="glass-card" style={{ borderRadius: 20, padding: 28 }}>
-      <h5 className="fw-bold mb-4">⚙️ Notification Preferences</h5>
-      <Toggle label="Email Notifications" desc="Receive updates via email" k="emailNotifications" />
-      <Toggle label="Push Notifications" desc="Browser push notifications" k="pushNotifications" />
-      <Toggle label="Reminder Notifications" desc="Deadline and activity reminders" k="reminderNotifications" />
-      <Toggle label="Marketing Emails" desc="News, offers, and promotions" k="marketingEmails" />
-      <Toggle label="Product Updates" desc="New features and improvements" k="productUpdates" />
+    <div className="glass-panel" style={{ borderRadius: 20, padding: 32, background: 'var(--surface)' }}>
+      <h5 className="fw-bold mb-4 text-white"><i className="bi bi-sliders text-primary me-1.5"></i> Notification Preference Controls</h5>
+      <Toggle label="Email Notifications" desc="Get automatic summaries and updates directly in your inbox" k="emailNotifications" />
+      <Toggle label="Push Notifications" desc="Browser pop-up reminders and warnings" k="pushNotifications" />
+      <Toggle label="Reminder Notifications" desc="Deadline and event timeline indicators alerts" k="reminderNotifications" />
+      <Toggle label="Marketing Materials" desc="Tips, new laws drafts, and platform announcements" k="marketingEmails" />
+      <Toggle label="System Release Updates" desc="New features and upgrades details" k="productUpdates" />
+      
       <div className="mt-4 text-end">
-        <button className="btn btn-glass px-5 py-2 fw-semibold" onClick={onSave} disabled={saving}>
+        <button className="btn btn-glass px-5 py-2.5 fw-semibold" onClick={onSave} disabled={saving} style={{
+          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+          border: 'none',
+          borderRadius: 12
+        }}>
           {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving...</> : '💾 Save Preferences'}
         </button>
       </div>
@@ -1057,51 +1042,58 @@ function PreferencesTab({ prefs, setPrefs, saving, onSave }) {
   );
 }
 
-// ─── Privacy Tab ───────────────────────────────────────────────────────────────
+// Privacy Tab
 function PrivacyTab({ onDownload, onExportCsv, onExportPdf, deletePassword, setDeletePassword, showDeleteConfirm, setShowDeleteConfirm, onDeleteAccount, deleting }) {
   return (
-    <div className="d-flex flex-column gap-4">
-      <div className="glass-card" style={{ borderRadius: 20, padding: 28 }}>
-        <h5 className="fw-bold mb-2">🛡️ Privacy & Data Center</h5>
-        <p className="text-secondary small mb-4">Manage your data exports and credentials settings.</p>
+    <div className="d-flex flex-column gap-4 text-start">
+      <div className="glass-panel" style={{ borderRadius: 20, padding: 32, background: 'var(--surface)' }}>
+        <h5 className="fw-bold mb-2 text-white"><i className="bi bi-shield-check text-primary me-1.5"></i> Data Privacy & Exports</h5>
+        <p className="text-secondary small mb-4">Under data guidelines, you have full ownership of your records.</p>
+        
         <div className="d-flex flex-column gap-3">
-          <button className="btn btn-glass text-start py-3 px-4" onClick={onDownload}>
-            <strong>📥 Download My Data (JSON)</strong>
-            <p className="mb-0 small text-secondary">Export profile settings, verification statuses, and activity log in JSON format.</p>
+          <button className="btn btn-glass text-start py-3 px-4 animate-hover" onClick={onDownload} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+            <strong className="text-white">📥 Download All Data (JSON)</strong>
+            <p className="mb-0 small text-secondary">Export personal details, bookmarks, and verification records in clean JSON format.</p>
           </button>
-          <button className="btn btn-glass text-start py-3 px-4" onClick={onExportCsv}>
-            <strong>📊 Export Activity Log (CSV)</strong>
-            <p className="mb-0 small text-secondary">Download audit logs as a spreadsheet for legal record keeping.</p>
+          
+          <button className="btn btn-glass text-start py-3 px-4 animate-hover" onClick={onExportCsv} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+            <strong className="text-white">📊 Export Activity Logs (CSV)</strong>
+            <p className="mb-0 small text-secondary">Download complete activity logs for archiving and legal history tracking.</p>
           </button>
-          <button className="btn btn-glass text-start py-3 px-4" onClick={onExportPdf}>
-            <strong>📄 Print Profile Summary Report (PDF)</strong>
-            <p className="mb-0 small text-secondary">Generate and print a certified, professional audit report of your CitizenLex profile.</p>
+          
+          <button className="btn btn-glass text-start py-3 px-4 animate-hover" onClick={onExportPdf} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+            <strong className="text-white">📄 Print Profile Summary (PDF)</strong>
+            <p className="mb-0 small text-secondary">Print a certified printable summary of your account standing and logs.</p>
           </button>
         </div>
       </div>
 
       {/* Danger Zone */}
-      <div style={{ borderRadius: 20, padding: 28, border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.04)' }}>
-        <h6 className="fw-bold mb-1" style={{ color: '#f87171' }}>⚠️ Danger Zone</h6>
-        <p className="text-secondary small mb-4">These actions are permanent and cannot be undone.</p>
+      <div style={{ borderRadius: 20, padding: 32, border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.03)' }}>
+        <h6 className="fw-bold mb-1 text-danger">⚠️ Danger Zone</h6>
+        <p className="text-secondary small mb-4">This action is permanent and deletes all your files, drafts, and logs from our servers.</p>
+        
         {!showDeleteConfirm ? (
-          <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '8px 20px' }}
+          <button className="btn btn-sm animate-hover" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '10px 22px', fontWeight: 600 }}
             onClick={() => setShowDeleteConfirm(true)}>
-            🗑️ Delete My Account
+            🗑️ Delete Profile Account
           </button>
         ) : (
           <div>
-            <p className="fw-semibold mb-2" style={{ color: '#f87171' }}>Enter your password to confirm deletion:</p>
+            <p className="fw-semibold mb-2 text-danger">Please enter password to confirm permanent profile deletion:</p>
             <div className="d-flex gap-2">
-              <input type="password" className="form-control" placeholder="Your password" value={deletePassword}
+              <input type="password" className="form-control form-glass-control" placeholder="Verify password" value={deletePassword}
                 onChange={e => setDeletePassword(e.target.value)}
-                style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--text)', borderRadius: 12, maxWidth: 250 }} />
-              <button className="btn btn-sm" style={{ background: '#ef4444', color: '#fff', borderRadius: 10, padding: '0 18px' }}
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(239,68,68,0.3)', color: 'white', borderRadius: 12, maxWidth: 260 }} />
+              
+              <button className="btn text-white" style={{ background: '#ef4444', borderRadius: 12, padding: '0 22px', border: 'none', fontWeight: 600 }}
                 onClick={onDeleteAccount} disabled={deleting}>
-                {deleting ? '...' : 'Confirm Delete'}
+                {deleting ? 'Terminating...' : 'Delete Permanently'}
               </button>
-              <button className="btn btn-sm" style={{ background: 'none', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10 }}
-                onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+              
+              <button className="btn btn-glass-secondary" onClick={() => setShowDeleteConfirm(false)} style={{ borderRadius: 12 }}>
+                Cancel
+              </button>
             </div>
           </div>
         )}

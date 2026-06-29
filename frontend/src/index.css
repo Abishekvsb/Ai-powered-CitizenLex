@@ -6,70 +6,69 @@
    DESIGN SYSTEM TOKENS
    ========================================= */
 :root {
-  --primary: #102a5c; /* Deep official navy blue */
-  --primary-dark: #071530; /* Darker navy */
-  --primary-light: #1f478a; /* Lighter royal-ish navy */
-  --accent: #c49d3f; /* Legal gold accent */
-  --accent-dark: #9e7d2c; /* Darker gold */
+  --primary: #4f46e5; /* Indigo */
+  --primary-dark: #3730a3;
+  --primary-light: #6366f1;
+  --accent: #f59e0b; /* Amber Gold */
+  --accent-dark: #d97706;
 
-  --bg: #f8fafc; /* Premium light gray/slate background */
-  --bg-secondary: #f1f5f9; /* Slate secondary */
-  --surface: rgba(255, 255, 255, 0.95);
-  --surface-border: #e2e8f0;
+  --bg: #f8fafc; /* Slate Light */
+  --bg-secondary: #f1f5f9;
+  --surface: rgba(255, 255, 255, 0.75);
+  --surface-border: rgba(226, 232, 240, 0.8);
   --surface-solid: #ffffff;
 
   --text: #0f172a; /* Slate 900 */
-  --text-secondary: #475569; /* Slate 600 */
-  --text-muted: #64748b; /* Slate 500 */
+  --text-secondary: #334155;
+  --text-muted: #64748b;
 
-  --nav-bg: rgba(255, 255, 255, 0.96);
-  --footer-bg: #071530; /* Deep navy footer background */
-  --border: #e2e8f0;
+  --nav-bg: rgba(255, 255, 255, 0.8);
+  --footer-bg: #0f172a;
+  --border: rgba(148, 163, 184, 0.15);
 
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 18px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.12);
-  --shadow-glow: 0 0 25px rgba(196, 157, 63, 0.15); /* Gold glow shadow */
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 12px 30px -10px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.12);
+  --shadow-glow: 0 0 25px rgba(79, 70, 229, 0.1);
 
-  --blur: blur(12px);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 18px;
+  --blur: blur(20px);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
 
   --skeleton-from: #e2e8f0;
   --skeleton-to: #f1f5f9;
 
-  /* Auth page gradient */
-  --auth-bg-1: #071530;
-  --auth-bg-2: #102a5c;
-  --auth-bg-3: #1e3a8a;
+  --auth-bg-1: #030712;
+  --auth-bg-2: #0b0f19;
+  --auth-bg-3: #1e1b4b;
 }
 
 [data-theme='dark'] {
-  --primary: #8da4d0; /* Soft steel blue-gray */
-  --primary-dark: #4f6999;
-  --primary-light: #b0c2e6;
-  --accent: #d4af37; /* Radiant gold */
-  --accent-dark: #b39124;
+  --primary: #6366f1; /* Neon Indigo */
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --accent: #f59e0b; /* Golden Amber */
+  --accent-dark: #d97706;
 
-  --bg: #0b0f19; /* Deep slate-black */
-  --bg-secondary: #111827; /* Gray 900 */
-  --surface: rgba(17, 24, 39, 0.9);
-  --surface-border: rgba(255, 255, 255, 0.07);
-  --surface-solid: #1f2937;
+  --bg: #030712; /* Vercel Dark */
+  --bg-secondary: #0b0f19;
+  --surface: rgba(11, 15, 25, 0.65);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-solid: #0f172a;
 
-  --text: #f9fafb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --text: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
 
-  --nav-bg: rgba(11, 15, 25, 0.95);
-  --footer-bg: #030712;
-  --border: rgba(55, 65, 81, 0.7);
+  --nav-bg: rgba(3, 7, 18, 0.75);
+  --footer-bg: #020617;
+  --border: rgba(255, 255, 255, 0.08);
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 18px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 25px rgba(212, 175, 55, 0.15);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 12px 35px -10px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 28px 50px -15px rgba(0, 0, 0, 0.85);
+  --shadow-glow: 0 0 35px rgba(99, 102, 241, 0.16);
 
   --skeleton-from: #1f2937;
   --skeleton-to: #374151;
