@@ -22,24 +22,6 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-
-server:
-  port: 8080
-
-app:
-  jwt:
-    secret: 9a4f2c8d3e5f1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c
-    expiration-ms: 86400000
-  gemini:
-    key: ${GEMINI_API_KEY:mock}
-    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
-
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:mock}
-  api-key: ${CLOUDINARY_API_KEY:mock}
-  api-secret: ${CLOUDINARY_API_SECRET:mock}
-
-spring:
   mail:
     host: ${SPRING_MAIL_HOST:smtp.gmail.com}
     port: ${SPRING_MAIL_PORT:587}
@@ -52,9 +34,18 @@ spring:
           starttls:
             enable: true
 
+server:
+  port: 8080
+
 app:
+  jwt:
+    secret: 9a4f2c8d3e5f1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c
+    expiration-ms: 86400000
+  gemini:
+    key: ${GEMINI_API_KEY:mock}
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
   sms:
-    provider: ${SMS_PROVIDER:mock} # Options: mock, twilio, fast2sms, msg91
+    provider: ${SMS_PROVIDER:mock}
     twilio:
       account-sid: ${TWILIO_ACCOUNT_SID:}
       auth-token: ${TWILIO_AUTH_TOKEN:}
@@ -64,3 +55,8 @@ app:
     msg91:
       auth-key: ${MSG91_AUTH_KEY:}
       template-id: ${MSG91_TEMPLATE_ID:}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:mock}
+  api-key: ${CLOUDINARY_API_KEY:mock}
+  api-secret: ${CLOUDINARY_API_SECRET:mock}
