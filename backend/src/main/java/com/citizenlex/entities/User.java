@@ -67,7 +67,7 @@ public class User {
     private LocalDateTime createdAt;
 
     // --- Email Verification ---
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "email_verified")
     private Boolean emailVerified = false;
 
     @Column(name = "email_verification_token", length = 200)
@@ -77,7 +77,7 @@ public class User {
     private LocalDateTime emailVerificationTokenExpiry;
 
     // --- Mobile OTP Verification ---
-    @Column(name = "mobile_verified", nullable = false)
+    @Column(name = "mobile_verified")
     private Boolean mobileVerified = false;
 
     @Column(name = "mobile_otp", length = 10)
@@ -97,19 +97,19 @@ public class User {
     private String lastLoginIp;
 
     // --- Notification Preferences ---
-    @Column(name = "email_notifications", nullable = false)
+    @Column(name = "email_notifications")
     private Boolean emailNotifications = true;
 
-    @Column(name = "push_notifications", nullable = false)
+    @Column(name = "push_notifications")
     private Boolean pushNotifications = true;
 
-    @Column(name = "reminder_notifications", nullable = false)
+    @Column(name = "reminder_notifications")
     private Boolean reminderNotifications = true;
 
-    @Column(name = "marketing_emails", nullable = false)
+    @Column(name = "marketing_emails")
     private Boolean marketingEmails = false;
 
-    @Column(name = "product_updates", nullable = false)
+    @Column(name = "product_updates")
     private Boolean productUpdates = true;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -194,13 +194,13 @@ public class User {
     public String getOccupation() { return occupation; }
     public void setOccupation(String occupation) { this.occupation = occupation; }
 
-    public Boolean getEnabled() { return enabled; }
+    public Boolean getEnabled() { return enabled != null && enabled; }
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public Boolean getEmailVerified() { return emailVerified; }
+    public Boolean getEmailVerified() { return emailVerified != null && emailVerified; }
     public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
 
     public String getEmailVerificationToken() { return emailVerificationToken; }
@@ -209,7 +209,7 @@ public class User {
     public LocalDateTime getEmailVerificationTokenExpiry() { return emailVerificationTokenExpiry; }
     public void setEmailVerificationTokenExpiry(LocalDateTime emailVerificationTokenExpiry) { this.emailVerificationTokenExpiry = emailVerificationTokenExpiry; }
 
-    public Boolean getMobileVerified() { return mobileVerified; }
+    public Boolean getMobileVerified() { return mobileVerified != null && mobileVerified; }
     public void setMobileVerified(Boolean mobileVerified) { this.mobileVerified = mobileVerified; }
 
     public String getMobileOtp() { return mobileOtp; }
@@ -227,19 +227,19 @@ public class User {
     public String getLastLoginIp() { return lastLoginIp; }
     public void setLastLoginIp(String lastLoginIp) { this.lastLoginIp = lastLoginIp; }
 
-    public Boolean getEmailNotifications() { return emailNotifications; }
+    public Boolean getEmailNotifications() { return emailNotifications == null || emailNotifications; }
     public void setEmailNotifications(Boolean emailNotifications) { this.emailNotifications = emailNotifications; }
 
-    public Boolean getPushNotifications() { return pushNotifications; }
+    public Boolean getPushNotifications() { return pushNotifications == null || pushNotifications; }
     public void setPushNotifications(Boolean pushNotifications) { this.pushNotifications = pushNotifications; }
 
-    public Boolean getReminderNotifications() { return reminderNotifications; }
+    public Boolean getReminderNotifications() { return reminderNotifications == null || reminderNotifications; }
     public void setReminderNotifications(Boolean reminderNotifications) { this.reminderNotifications = reminderNotifications; }
 
-    public Boolean getMarketingEmails() { return marketingEmails; }
+    public Boolean getMarketingEmails() { return marketingEmails != null && marketingEmails; }
     public void setMarketingEmails(Boolean marketingEmails) { this.marketingEmails = marketingEmails; }
 
-    public Boolean getProductUpdates() { return productUpdates; }
+    public Boolean getProductUpdates() { return productUpdates == null || productUpdates; }
     public void setProductUpdates(Boolean productUpdates) { this.productUpdates = productUpdates; }
 
     public Set<Role> getRoles() { return roles; }
