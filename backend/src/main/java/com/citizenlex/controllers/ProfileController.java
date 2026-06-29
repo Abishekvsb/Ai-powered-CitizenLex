@@ -75,10 +75,22 @@ public class ProfileController {
             User updated = userService.updateProfileImage(principal.getId(), uploadResult.get("url"), uploadResult.get("publicId"));
             return ResponseEntity.ok(toFullDto(updated));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Invalid file parameters.",
+                "details", e.getMessage(),
+                "timestamp", java.time.LocalDateTime.now().toString(),
+                "path", "/api/profile/upload-photo"
+            ));
         } catch (Exception e) {
             logger.error("Error uploading profile photo for user {}: {}", principal.getId(), e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Upload failed: " + e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "Failed to upload image. Please try again.",
+                "details", e.getMessage() != null ? e.getMessage() : e.toString(),
+                "timestamp", java.time.LocalDateTime.now().toString(),
+                "path", "/api/profile/upload-photo"
+            ));
         }
     }
 

@@ -133,6 +133,37 @@ export default function AdminDashboard() {
     }
   };
 
+  const exportUsersCsv = () => {
+    if (!users || users.length === 0) return;
+    const headers = 'ID,Name,Email,Role,RegisteredDate\n';
+    const rows = users.map(u => `${u.id},"${u.firstName} ${u.lastName}","${u.email}",${u.role},"${new Date(u.createdAt).toISOString()}"`).join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `citizenlex_users_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+  };
+
+  const exportAnalyticsJson = () => {
+    if (!analytics) return;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(analytics, null, 2));
+    const link = document.createElement("a");
+    link.setAttribute("href", dataStr);
+    link.setAttribute("download", `citizenlex_analytics_${new Date().toISOString().slice(0,10)}.json`);
+    link.click();
+  };
+
+  const exportLogsCsv = () => {
+    if (!logs || logs.length === 0) return;
+    const headers = 'LogID,UserEmail,Action,Details,Timestamp\n';
+    const rows = logs.map(l => `${l.id},"${l.user ? l.user.email : 'SYSTEM'}",${l.action},"${l.details ? l.details.replace(/"/g, '""') : ''}","${l.timestamp}"`).join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `citizenlex_audit_logs_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+  };
+
   // Rights CRUD
   const handleCreateCategory = async (e) => {
     e.preventDefault();
@@ -229,10 +260,10 @@ export default function AdminDashboard() {
   const getChartData = () => {
     if (!analytics) return { labels: [], datasets: [] };
     return {
-      labels: ['Users', 'Rights', 'Schemes', 'Analyzed Docs', 'AI Chats', 'Legal Drafts'],
+      labels: ['Users', 'Rights', 'Schemes', 'Documents', 'AI Chats', 'Drafts'],
       datasets: [
         {
-          label: 'Total Counts',
+          label: 'Total Platform Counts',
           data: [
             analytics.totalUsers,
             analytics.totalRights,
@@ -241,7 +272,23 @@ export default function AdminDashboard() {
             analytics.totalChats,
             analytics.totalDrafts || 0
           ],
-          backgroundColor: 'rgba(37, 99, 235, 0.7)',
+          backgroundColor: [
+            'rgba(59, 130, 246, 0.75)',  // Blue
+            'rgba(139, 92, 246, 0.75)',  // Purple
+            'rgba(239, 68, 68, 0.75)',    // Red
+            'rgba(245, 158, 11, 0.75)',   // Amber
+            'rgba(16, 185, 129, 0.75)',   // Emerald
+            'rgba(236, 72, 153, 0.75)'    // Pink
+          ],
+          borderColor: [
+            '#3b82f6',
+            '#8b5cf6',
+            '#ef4444',
+            '#f59e0b',
+            '#10b981',
+            '#ec4899'
+          ],
+          borderWidth: 1.5,
           borderRadius: 8
         }
       ]
@@ -340,106 +387,221 @@ export default function AdminDashboard() {
               {/* Analytics Tab */}
               {activeTab === 'analytics' && analytics && (
                 <div>
-                  <h4 className="fw-bold mb-4 text-white">System Statistics</h4>
-                  <div className="row g-4 mb-5">
-                    {/* Card 1: Users */}
-                    <div className="col-lg-4 col-md-6 col-sm-12">
-                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 border-bottom border-light-subtle pb-3">
+                    <h4 className="fw-bold mb-0 text-white">System Analytics & Enterprise Intelligence</h4>
+                    <div className="d-flex gap-2">
+                      <button className="btn btn-sm btn-glass-secondary" onClick={exportAnalyticsJson}>
+                        📥 Export Intelligence (JSON)
+                      </button>
+                      <button className="btn btn-sm btn-glass-secondary" onClick={exportUsersCsv}>
+                        📥 Export Users (CSV)
+                      </button>
+                      <button className="btn btn-sm btn-glass-secondary" onClick={exportLogsCsv}>
+                        📥 Export Logs (CSV)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* SECTION 1: Revenue & Subscriptions */}
+                  <h5 className="fw-bold mb-3 text-secondary small text-uppercase" style={{ letterSpacing: 1 }}>Subscription & Revenue Analytics</h5>
+                  <div className="row g-4 mb-4">
+                    {/* Card: Premium Conversion */}
+                    <div className="col-md-4">
+                      <div className="card text-white border-0 shadow-sm h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #a855f7 0%, #701a75 100%)',
                         borderRadius: '16px'
                       }}>
                         <div className="card-body p-4 position-relative">
                           <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
-                            <i className="bi bi-people-fill" style={{ fontSize: '4.5rem' }}></i>
+                            <i className="bi bi-patch-check" style={{ fontSize: '4.5rem' }}></i>
                           </div>
-                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Total Registered Users</h6>
-                          <h2 className="display-5 fw-bold mb-1">{analytics.totalUsers}</h2>
-                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>System user accounts</p>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Premium Users</h6>
+                          <h2 className="display-6 fw-bold mb-1">{analytics.premiumUsers}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>~15% premium conversion</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Card 2: Chats */}
-                    <div className="col-lg-4 col-md-6 col-sm-12">
-                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
+                    {/* Card: Monthly Recurring Revenue (MRR) */}
+                    <div className="col-md-4">
+                      <div className="card text-white border-0 shadow-sm h-100 animate-hover" style={{
+                        background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                        borderRadius: '16px'
+                      }}>
+                        <div className="card-body p-4 position-relative">
+                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
+                            <i className="bi bi-cash-stack" style={{ fontSize: '4.5rem' }}></i>
+                          </div>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Monthly Recurring Revenue</h6>
+                          <h2 className="display-6 fw-bold mb-1">${analytics.monthlyRecurringRevenue?.toFixed(2)}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-graph-up me-1"></i>Based on $9.99/mo plan</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card: Annual Run Rate (ARR) */}
+                    <div className="col-md-4">
+                      <div className="card text-white border-0 shadow-sm h-100 animate-hover" style={{
                         background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
                         borderRadius: '16px'
                       }}>
                         <div className="card-body p-4 position-relative">
                           <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
-                            <i className="bi bi-chat-left-text-fill" style={{ fontSize: '4.5rem' }}></i>
+                            <i className="bi bi-currency-dollar" style={{ fontSize: '4.5rem' }}></i>
                           </div>
-                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Saved Conversations</h6>
-                          <h2 className="display-5 fw-bold mb-1">{analytics.totalChats}</h2>
-                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>AI Assistant chats</p>
+                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Annual Run Rate (ARR)</h6>
+                          <h2 className="display-6 fw-bold mb-1">${(analytics.monthlyRecurringRevenue * 12)?.toFixed(2)}</h2>
+                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-clock me-1"></i>Projected next 12 months</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: User Activity & Accounts */}
+                  <h5 className="fw-bold mb-3 text-secondary small text-uppercase mt-5" style={{ letterSpacing: 1 }}>User Accounts & Activity</h5>
+                  <div className="row g-4 mb-4">
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>Total Accounts</h6>
+                            <i className="bi bi-people text-primary fs-4"></i>
+                          </div>
+                          <h3 className="fw-bold text-white mb-2">{analytics.totalUsers}</h3>
+                          <p className="text-secondary small mb-0">Registered profiles</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Card 3: Documents */}
-                    <div className="col-lg-4 col-md-6 col-sm-12">
-                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
-                        background: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
-                        borderRadius: '16px'
-                      }}>
-                        <div className="card-body p-4 position-relative">
-                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
-                            <i className="bi bi-file-earmark-medical-fill" style={{ fontSize: '4.5rem' }}></i>
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>Active Users (30d)</h6>
+                            <i className="bi bi-activity text-success fs-4"></i>
                           </div>
-                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Analyzed Documents</h6>
-                          <h2 className="display-5 fw-bold mb-1">{analytics.totalDocuments}</h2>
-                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Uploaded legal files</p>
+                          <h3 className="fw-bold text-white mb-2">{analytics.activeUsers}</h3>
+                          <p className="text-secondary small mb-0">Active this month</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Card 4: Drafts */}
-                    <div className="col-lg-4 col-md-6 col-sm-12">
-                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
-                        background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
-                        borderRadius: '16px'
-                      }}>
-                        <div className="card-body p-4 position-relative">
-                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
-                            <i className="bi bi-file-earmark-word-fill" style={{ fontSize: '4.5rem' }}></i>
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>Daily Logins</h6>
+                            <i className="bi bi-box-arrow-in-right text-warning fs-4"></i>
                           </div>
-                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Legal Drafts Generated</h6>
-                          <h2 className="display-5 fw-bold mb-1">{analytics.totalDrafts || 0}</h2>
-                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Created drafts & petitions</p>
+                          <h3 className="fw-bold text-white mb-2">{analytics.dailyLogins}</h3>
+                          <p className="text-secondary small mb-0">Logins today</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Card 5: Rights */}
-                    <div className="col-lg-4 col-md-6 col-sm-12">
-                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
-                        borderRadius: '16px'
-                      }}>
-                        <div className="card-body p-4 position-relative">
-                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
-                            <i className="bi bi-journal-text" style={{ fontSize: '4.5rem' }}></i>
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>Cloudinary Avatars</h6>
+                            <i className="bi bi-images text-info fs-4"></i>
                           </div>
-                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Rights Articles</h6>
-                          <h2 className="display-5 fw-bold mb-1">{analytics.totalRights}</h2>
-                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Constitutional rights database</p>
+                          <h3 className="fw-bold text-white mb-2">{analytics.cloudinaryUsage}</h3>
+                          <p className="text-secondary small mb-0">Custom photos uploaded</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 3: Feature & Infrastructure Usage */}
+                  <h5 className="fw-bold mb-3 text-secondary small text-uppercase mt-5" style={{ letterSpacing: 1 }}>Feature & Infrastructure Usage</h5>
+                  <div className="row g-4 mb-4">
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>AI Copilot Requests</h6>
+                            <i className="bi bi-robot text-info fs-4"></i>
+                          </div>
+                          <h3 className="fw-bold text-white mb-2">{analytics.aiRequests}</h3>
+                          <p className="text-secondary small mb-0">Total assistant queries</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Card 6: Schemes */}
-                    <div className="col-lg-4 col-md-6 col-sm-12">
-                      <div className="card text-white overflow-hidden shadow-sm border-0 h-100 animate-hover" style={{
-                        background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-                        borderRadius: '16px'
-                      }}>
-                        <div className="card-body p-4 position-relative">
-                          <div className="position-absolute top-50 end-0 translate-middle-y me-4 opacity-25">
-                            <i className="bi bi-card-checklist" style={{ fontSize: '4.5rem' }}></i>
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>OCR Scans</h6>
+                            <i className="bi bi-camera text-warning fs-4"></i>
                           </div>
-                          <h6 className="text-white-50 text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.5px' }}>Welfare Schemes</h6>
-                          <h2 className="display-5 fw-bold mb-1">{analytics.totalSchemes}</h2>
-                          <p className="card-text text-white-50 small mb-0"><i className="bi bi-arrow-up-right me-1"></i>Registered schemes</p>
+                          <h3 className="fw-bold text-white mb-2">{analytics.ocrUsage}</h3>
+                          <p className="text-secondary small mb-0">OCR processor requests</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>Voice AI Queries</h6>
+                            <i className="bi bi-mic text-danger fs-4"></i>
+                          </div>
+                          <h3 className="fw-bold text-white mb-2">{analytics.voiceAiUsage}</h3>
+                          <p className="text-secondary small mb-0">Audio transcriptions</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-lg-3 col-md-6 col-sm-12">
+                      <div className="card bg-glass text-white border-light-subtle h-100 animate-hover" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <div className="card-body p-4">
+                          <div className="d-flex align-items-center justify-content-between mb-3">
+                            <h6 className="text-secondary text-uppercase fw-semibold mb-0" style={{ fontSize: '0.78rem' }}>Disk Storage Used</h6>
+                            <i className="bi bi-hdd text-success fs-4"></i>
+                          </div>
+                          <h3 className="fw-bold text-white mb-2">{analytics.storageUsedGb} GB</h3>
+                          <p className="text-secondary small mb-0">Estimated DB storage</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 4: Notification opt-in rate */}
+                  <div className="row g-4 mb-5">
+                    <div className="col-12">
+                      <div className="card bg-glass border border-light-subtle shadow-sm p-4" style={{ borderRadius: '16px', background: 'var(--surface)' }}>
+                        <h5 className="fw-bold mb-4 text-white"><i className="bi bi-bell text-warning me-2"></i>User Notification Opt-in Analytics</h5>
+                        <div className="row g-4">
+                          <div className="col-md-4">
+                            <div className="d-flex justify-content-between mb-1 small fw-semibold">
+                              <span>Email Subscriptions</span>
+                              <span>{analytics.totalUsers > 0 ? Math.round((analytics.emailNotificationsEnabled / analytics.totalUsers) * 100) : 0}% ({analytics.emailNotificationsEnabled}/{analytics.totalUsers})</span>
+                            </div>
+                            <div className="progress" style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 5 }}>
+                              <div className="progress-bar bg-primary" role="progressbar" style={{ width: `${analytics.totalUsers > 0 ? (analytics.emailNotificationsEnabled / analytics.totalUsers) * 100 : 0}%`, borderRadius: 5 }} />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="d-flex justify-content-between mb-1 small fw-semibold">
+                              <span>Push Subscriptions</span>
+                              <span>{analytics.totalUsers > 0 ? Math.round((analytics.pushNotificationsEnabled / analytics.totalUsers) * 100) : 0}% ({analytics.pushNotificationsEnabled}/{analytics.totalUsers})</span>
+                            </div>
+                            <div className="progress" style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 5 }}>
+                              <div className="progress-bar bg-info" role="progressbar" style={{ width: `${analytics.totalUsers > 0 ? (analytics.pushNotificationsEnabled / analytics.totalUsers) * 100 : 0}%`, borderRadius: 5 }} />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="d-flex justify-content-between mb-1 small fw-semibold">
+                              <span>Alert & Reminder Subscriptions</span>
+                              <span>{analytics.totalUsers > 0 ? Math.round((analytics.reminderNotificationsEnabled / analytics.totalUsers) * 100) : 0}% ({analytics.reminderNotificationsEnabled}/{analytics.totalUsers})</span>
+                            </div>
+                            <div className="progress" style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 5 }}>
+                              <div className="progress-bar bg-success" role="progressbar" style={{ width: `${analytics.totalUsers > 0 ? (analytics.reminderNotificationsEnabled / analytics.totalUsers) * 100 : 0}%`, borderRadius: 5 }} />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

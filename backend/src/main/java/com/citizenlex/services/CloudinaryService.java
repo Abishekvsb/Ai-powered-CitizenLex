@@ -75,14 +75,13 @@ public class CloudinaryService {
                 "overwrite", true,
                 "resource_type", "image",
                 "folder", "citizenlex/profiles",
-                "transformation", ObjectUtils.asMap(
-                        "width", 400,
-                        "height", 400,
-                        "crop", "fill",
-                        "gravity", "face",
-                        "quality", "auto",
-                        "fetch_format", "auto"
-                )
+                "transformation", new com.cloudinary.Transformation()
+                        .width(400)
+                        .height(400)
+                        .crop("fill")
+                        .gravity("face")
+                        .quality("auto")
+                        .fetchFormat("auto")
         ));
 
         String secureUrl = (String) uploadResult.get("secure_url");

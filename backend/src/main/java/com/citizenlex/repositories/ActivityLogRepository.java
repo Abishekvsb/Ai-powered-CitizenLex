@@ -30,4 +30,6 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     // Count by action in date range
     @Query("SELECT a.action, COUNT(a) FROM ActivityLog a GROUP BY a.action")
     List<Object[]> countByActionGrouped();
+
+    long countByActionAndTimestampAfter(String action, java.time.LocalDateTime since);
 }
