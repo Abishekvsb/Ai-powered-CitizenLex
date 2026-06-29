@@ -77,12 +77,8 @@ public class ProfileController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            logger.error("Error uploading profile photo for user {}: {}", principal.getId(), e.getMessage());
-            String friendlyMsg = "Failed to upload image. Please try again.";
-            if (e.getMessage() != null && e.getMessage().contains("cloud_name is disabled")) {
-                friendlyMsg = "Photo upload service is not configured. Please contact support.";
-            }
-            return ResponseEntity.status(500).body(Map.of("error", friendlyMsg));
+            logger.error("Error uploading profile photo for user {}: {}", principal.getId(), e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Upload failed: " + e.getMessage()));
         }
     }
 

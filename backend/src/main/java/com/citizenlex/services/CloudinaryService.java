@@ -24,18 +24,24 @@ public class CloudinaryService {
     );
 
     private final Cloudinary cloudinary;
+    private final boolean isMockMode;
 
     public CloudinaryService(
             @Value("${cloudinary.cloud-name}") String cloudName,
             @Value("${cloudinary.api-key}") String apiKey,
             @Value("${cloudinary.api-secret}") String apiSecret) {
+        this.isMockMode = "mock".equalsIgnoreCase(cloudName) || "mock".equalsIgnoreCase(apiKey) || "mock".equalsIgnoreCase(apiSecret) ||
+                          cloudName == null || cloudName.isBlank() ||
+                          apiKey == null || apiKey.isBlank() ||
+                          apiSecret == null || apiSecret.isBlank();
+        
         this.cloudinary = new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", cloudName,
-                "api_key", apiKey,
-                "api_secret", apiSecret,
+                "cloud_name", isMockMode ? "mock" : cloudName,
+                "api_key", isMockMode ? "mock" : apiKey,
+                "api_secret", isMockMode ? "mock" : apiSecret,
                 "secure", true
         ));
-        logger.info("CloudinaryService initialized for cloud: {}", cloudName);
+        logger.info("CloudinaryService initialized. Mock mode: {}", isMockMode);
     }
 
     /**
@@ -45,6 +51,10 @@ public class CloudinaryService {
      * @return a Map with "url" (secure URL) and "publicId" keys
      */
     public Map<String, String> uploadProfileImage(MultipartFile file, Long userId) throws IOException {
+        if (isMockMode) {
+            throw new IllegalStateException("Cloudinary photo upload service is not configured on the server. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
+        }
+
         // Validate file size
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new IllegalArgumentException("File size exceeds 5 MB limit. Please upload a smaller image.");

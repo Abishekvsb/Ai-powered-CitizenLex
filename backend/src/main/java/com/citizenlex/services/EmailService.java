@@ -39,8 +39,12 @@ public class EmailService {
         sendHtmlEmail(toEmail, subject, html);
     }
 
+    public boolean isConfigured() {
+        return mailSender != null && senderEmail != null && !senderEmail.isBlank();
+    }
+
     private void sendHtmlEmail(String to, String subject, String html) {
-        if (mailSender == null || senderEmail == null || senderEmail.isBlank()) {
+        if (!isConfigured()) {
             // Mock mode — log to console
             logger.info("=== [MOCK EMAIL] To: {} | Subject: {} ===", to, subject);
             logger.info("HTML content length: {} chars", html.length());
@@ -57,8 +61,8 @@ public class EmailService {
             mailSender.send(message);
             logger.info("Email sent to: {}", to);
         } catch (Exception e) {
-            logger.error("Failed to send email to {}: {}", to, e.getMessage());
-            // Don't throw — email failure shouldn't break the flow
+            logger.error("Failed to send email to {}: {}", to, e.getMessage(), e);
+            throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
         }
     }
 

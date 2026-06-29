@@ -116,6 +116,7 @@ export default function Profile() {
   const [mobileVerifyLoading, setMobileVerifyLoading] = useState(false);
   const [otpInput, setOtpInput] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
+  const [mockOtp, setMockOtp] = useState('');
 
   // Privacy
   const [deletePassword, setDeletePassword] = useState('');
@@ -238,9 +239,13 @@ export default function Profile() {
   // ─── Mobile OTP ────────────────────────────────────────────────────────
   const requestMobileOtp = async () => {
     setMobileVerifyLoading(true);
+    setMockOtp('');
     try {
       const res = await axios.post(`${API}/api/verify/mobile/request`);
       showMsg(res.data.message);
+      if (res.data.isMock && res.data.otp) {
+        setMockOtp(res.data.otp);
+      }
       setShowOtpInput(true);
     } catch (e) {
       showMsg(e.response?.data?.error || 'Failed to send OTP.', 'error');
@@ -477,6 +482,11 @@ export default function Profile() {
       {showOtpInput && (
         <div className="glass-card mb-4 print-hide" style={{ padding: 20, borderRadius: 16 }}>
           <p className="mb-2 fw-semibold">Enter the OTP sent to {user?.mobile}:</p>
+          {mockOtp && (
+            <div className="alert alert-info mb-3 py-2 small" style={{ maxWidth: 400, background: 'rgba(13,202,240,0.12)', color: '#0dcaf0', border: '1px solid rgba(13,202,240,0.3)', borderRadius: 12 }}>
+              💡 <strong>Mock Mode:</strong> SMS is not configured. Use this OTP to verify: <strong style={{ fontSize: '1.1rem', color: '#fff' }}>{mockOtp}</strong>
+            </div>
+          )}
           <div className="d-flex gap-2">
             <input className="form-control" placeholder="6-digit OTP" value={otpInput}
               onChange={e => setOtpInput(e.target.value)} maxLength={6} style={{ maxWidth: 200 }} />

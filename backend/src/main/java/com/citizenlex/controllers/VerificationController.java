@@ -41,16 +41,24 @@ public class VerificationController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is already verified."));
         }
 
+        if (!emailService.isConfigured()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email service is not configured."));
+        }
+
         String token = UUID.randomUUID().toString();
         user.setEmailVerificationToken(token);
         user.setEmailVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
         userService.save(user);
 
         String link = frontendUrl + "/verify-email?token=" + token;
-        emailService.sendEmailVerification(user.getEmail(), user.getFirstName(), link);
-        logger.info("Email verification link for {}: {}", user.getEmail(), link);
-
-        return ResponseEntity.ok(Map.of("message", "Verification email sent. Please check your inbox."));
+        try {
+            emailService.sendEmailVerification(user.getEmail(), user.getFirstName(), link);
+            logger.info("Email verification link for {}: {}", user.getEmail(), link);
+            return ResponseEntity.ok(Map.of("message", "Verification email sent. Please check your inbox."));
+        } catch (Exception e) {
+            logger.error("Failed to send verification email to {}: {}", user.getEmail(), e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to send email: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/email/confirm")
@@ -99,9 +107,22 @@ public class VerificationController {
         user.setMobileOtpExpiry(LocalDateTime.now().plusMinutes(10));
         userService.save(user);
 
-        otpService.sendOtp(user.getMobile(), otp);
-
-        return ResponseEntity.ok(Map.of("message", "OTP sent to " + maskPhone(user.getMobile()) + ". Valid for 10 minutes."));
+        try {
+            otpService.sendOtp(user.getMobile(), otp);
+            
+            if (otpService.isMock()) {
+                return ResponseEntity.ok(Map.of(
+                    "message", "[MOCK MODE] OTP generated successfully.",
+                    "otp", otp,
+                    "isMock", true
+                ));
+            }
+            
+            return ResponseEntity.ok(Map.of("message", "OTP sent to " + maskPhone(user.getMobile()) + ". Valid for 10 minutes."));
+        } catch (Exception e) {
+            logger.error("Failed to send OTP to {}: {}", user.getMobile(), e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to send OTP: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/mobile/confirm")

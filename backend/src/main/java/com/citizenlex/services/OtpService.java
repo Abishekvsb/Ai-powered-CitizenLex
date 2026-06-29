@@ -49,6 +49,10 @@ public class OtpService {
         return String.valueOf(otp);
     }
 
+    public boolean isMock() {
+        return "mock".equalsIgnoreCase(provider) || provider == null || provider.isBlank();
+    }
+
     /**
      * Send OTP to the specified phone number using the configured provider.
      */
@@ -59,15 +63,18 @@ public class OtpService {
             case "twilio" -> sendViaTwilio(phoneNumber, otp);
             case "fast2sms" -> sendViaFast2Sms(phoneNumber, otp);
             case "msg91" -> sendViaMSG91(phoneNumber, otp);
-            default -> logMockOtp(phoneNumber, otp); // mock
+            default -> {
+                if (!isMock()) {
+                    throw new IllegalArgumentException("Unknown SMS provider: " + provider);
+                }
+                logMockOtp(phoneNumber, otp);
+            }
         }
     }
 
     private void sendViaTwilio(String phoneNumber, String otp) {
         if (twilioAccountSid.isBlank() || twilioAuthToken.isBlank()) {
-            logger.warn("Twilio credentials not configured. Falling back to mock.");
-            logMockOtp(phoneNumber, otp);
-            return;
+            throw new IllegalStateException("Twilio credentials are not configured on the server.");
         }
         try {
             RestTemplate rest = new RestTemplate();
@@ -83,15 +90,13 @@ public class OtpService {
             logger.info("Twilio OTP sent to: {}", phoneNumber);
         } catch (Exception e) {
             logger.error("Twilio OTP failed for {}: {}", phoneNumber, e.getMessage());
-            logMockOtp(phoneNumber, otp);
+            throw new RuntimeException("Twilio SMS send failed: " + e.getMessage(), e);
         }
     }
 
     private void sendViaFast2Sms(String phoneNumber, String otp) {
         if (fast2SmsApiKey.isBlank()) {
-            logger.warn("Fast2SMS API key not configured. Falling back to mock.");
-            logMockOtp(phoneNumber, otp);
-            return;
+            throw new IllegalStateException("Fast2SMS API key not configured on the server.");
         }
         try {
             RestTemplate rest = new RestTemplate();
@@ -105,15 +110,13 @@ public class OtpService {
             logger.info("Fast2SMS OTP sent to: {}", phoneNumber);
         } catch (Exception e) {
             logger.error("Fast2SMS OTP failed for {}: {}", phoneNumber, e.getMessage());
-            logMockOtp(phoneNumber, otp);
+            throw new RuntimeException("Fast2SMS SMS send failed: " + e.getMessage(), e);
         }
     }
 
     private void sendViaMSG91(String phoneNumber, String otp) {
         if (msg91AuthKey.isBlank()) {
-            logger.warn("MSG91 credentials not configured. Falling back to mock.");
-            logMockOtp(phoneNumber, otp);
-            return;
+            throw new IllegalStateException("MSG91 credentials not configured on the server.");
         }
         try {
             RestTemplate rest = new RestTemplate();
@@ -128,7 +131,7 @@ public class OtpService {
             logger.info("MSG91 OTP sent to: {}", phoneNumber);
         } catch (Exception e) {
             logger.error("MSG91 OTP failed for {}: {}", phoneNumber, e.getMessage());
-            logMockOtp(phoneNumber, otp);
+            throw new RuntimeException("MSG91 SMS send failed: " + e.getMessage(), e);
         }
     }
 
