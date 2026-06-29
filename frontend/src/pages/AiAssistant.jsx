@@ -467,12 +467,12 @@ export default function AiAssistant() {
             )}
 
             {/* Messages Feed */}
-            <div className="flex-grow-1 overflow-auto p-4 d-flex flex-column gap-3" ref={scrollContainerRef} style={{ background: 'rgba(3,7,18,0.2)' }}>
+            <div className="flex-grow-1 overflow-auto p-4 d-flex flex-column gap-3" ref={scrollContainerRef} style={{ background: 'rgba(3,7,18,0.25)' }}>
               {messages.length === 0 ? (
                 <div className="m-auto text-center py-4" style={{ maxWidth: 480 }}>
                   <div
-                    className="mx-auto mb-4 d-flex align-items-center justify-content-center rounded-4"
-                    style={{ width: 72, height: 72, background: 'rgba(99,102,241,0.08)', fontSize: '2rem' }}
+                    className="mx-auto mb-4 d-flex align-items-center justify-content-center rounded-4 animate-hover"
+                    style={{ width: 72, height: 72, background: 'rgba(99,102,241,0.08)', fontSize: '2rem', border: '1px solid rgba(99,102,241,0.2)', boxShadow: '0 0 20px rgba(99,102,241,0.1)' }}
                   >
                     <i className="bi bi-balance2 text-primary" style={{ color: 'var(--primary)' }}></i>
                   </div>
@@ -487,8 +487,9 @@ export default function AiAssistant() {
                           className="btn w-100 text-start p-3 rounded-3 animate-hover text-white-50"
                           style={{
                             background: 'rgba(255,255,255,0.02)',
-                            border: '1px solid var(--border)',
-                            fontSize: '0.82rem'
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            fontSize: '0.82rem',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                           }}
                           onClick={() => handleSend(s)}
                         >
@@ -521,11 +522,13 @@ export default function AiAssistant() {
                             background: msg.sender === 'user'
                               ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)'
                               : msg.isError
-                              ? 'rgba(239,68,68,0.08)'
-                              : 'var(--surface)',
+                              ? 'rgba(239,68,68,0.12)'
+                              : 'rgba(8, 10, 24, 0.55)',
                             color: msg.sender === 'user' ? 'white' : 'var(--text)',
-                            border: msg.sender !== 'user' ? '1px solid var(--border)' : 'none',
-                            borderRadius: '16px'
+                            border: msg.sender !== 'user' ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                            borderRadius: '16px',
+                            backdropFilter: msg.sender !== 'user' ? 'blur(20px)' : 'none',
+                            boxShadow: msg.sender === 'user' ? '0 4px 15px rgba(99, 102, 241, 0.25)' : '0 8px 30px rgba(0,0,0,0.2)'
                           }}
                         >
                           {/* Rich Formatted Message Layout */}
