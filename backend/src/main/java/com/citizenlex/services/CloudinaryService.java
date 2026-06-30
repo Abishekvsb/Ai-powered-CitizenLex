@@ -20,7 +20,7 @@ public class CloudinaryService {
     private static final Logger logger = LoggerFactory.getLogger(CloudinaryService.class);
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     private static final List<String> ALLOWED_TYPES = Arrays.asList(
-            "image/jpeg", "image/jpg", "image/png", "image/webp"
+            "image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"
     );
 
     private final Cloudinary cloudinary;
@@ -42,6 +42,37 @@ public class CloudinaryService {
                 "secure", true
         ));
         logger.info("CloudinaryService initialized. Mock mode: {}", isMockMode);
+    }
+
+    public Map<String, String> uploadDocument(MultipartFile file, Long userId, String docType) throws IOException {
+        if (isMockMode) {
+            throw new IllegalStateException("Cloudinary document upload service is not configured. Please set CLOUDINARY credentials.");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds 5 MB limit.");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_TYPES.contains(contentType.toLowerCase())) {
+            throw new IllegalArgumentException("Invalid file type. Only JPG, PNG, WEBP, and PDF are allowed.");
+        }
+
+        String publicId = "citizenlex/documents/user_" + userId + "_" + docType + "_" + UUID.randomUUID().toString().substring(0, 8);
+        logger.info("Uploading document for user {} of type {} with publicId {}", userId, docType, publicId);
+
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "public_id", publicId,
+                "overwrite", true,
+                "resource_type", "auto",
+                "folder", "citizenlex/documents"
+        ));
+
+        String secureUrl = (String) uploadResult.get("secure_url");
+        String resultPublicId = (String) uploadResult.get("public_id");
+
+        logger.info("Successfully uploaded document for user {}. URL: {}", userId, secureUrl);
+        return Map.of("url", secureUrl, "publicId", resultPublicId);
     }
 
     /**

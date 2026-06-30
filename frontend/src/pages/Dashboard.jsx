@@ -49,6 +49,8 @@ export default function Dashboard() {
   const [activeScheme, setActiveScheme] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'U';
+
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
@@ -57,17 +59,20 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [chatsRes, docsRes] = await Promise.all([
-          axios.get('/api/chat/history'),
-          axios.get('/api/documents'),
-        ]);
+        const chatsRes = await axios.get('/api/chat/history');
         setChats(chatsRes.data || []);
+      } catch (err) {
+        console.error('Failed to load chats history', err);
+      }
+
+      try {
+        const docsRes = await axios.get('/api/documents');
         setDocs(docsRes.data || []);
       } catch (err) {
-        console.error('Failed to load dashboard data', err);
-      } finally {
-        setLoading(false);
+        console.error('Failed to load documents list', err);
       }
+
+      setLoading(false);
     };
     fetchData();
 

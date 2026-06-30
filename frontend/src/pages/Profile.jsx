@@ -76,6 +76,7 @@ const TABS = [
   { id: 'achievements', label: 'Badges & Summary', icon: <i className="bi bi-trophy me-1"></i> },
   { id: 'preferences', label: 'Preferences', icon: <i className="bi bi-sliders me-1"></i> },
   { id: 'privacy', label: 'Data & Privacy', icon: <i className="bi bi-eye-slash me-1"></i> },
+  { id: 'advocate', label: 'Advocate Portal', icon: <i className="bi bi-balance2 me-1"></i> },
 ];
 
 const STATES = [
@@ -530,6 +531,7 @@ export default function Profile() {
             showDeleteConfirm={showDeleteConfirm} setShowDeleteConfirm={setShowDeleteConfirm}
             onDeleteAccount={deleteAccount} deleting={deletingAccount} />
         )}
+        {activeTab === 'advocate' && <AdvocateTab />}
       </div>
 
       {/* Printable Report PDF */}
@@ -1098,6 +1100,341 @@ function PrivacyTab({ onDownload, onExportCsv, onExportPdf, deletePassword, setD
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Advocate Verification Portal Tab
+function AdvocateTab() {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [specializations, setSpecializations] = useState([]);
+  const [cities, setCities] = useState([]);
+
+  // Form inputs
+  const [advocateId, setAdvocateId] = useState('');
+  const [specId, setSpecId] = useState('');
+  const [cityId, setCityId] = useState('');
+  const [experience, setExperience] = useState('');
+  const [fee, setFee] = useState('');
+  const [court, setCourt] = useState('');
+  const [bio, setBio] = useState('');
+  const [langs, setLangs] = useState('');
+  const [quals, setQuals] = useState('');
+  const [achievements, setAchievements] = useState('');
+
+  // Upload URLs
+  const [urls, setUrls] = useState({
+    bar_council: '',
+    license: '',
+    gov_id: '',
+    profile_photo: ''
+  });
+
+  const [uploadLoading, setUploadLoading] = useState({
+    bar_council: false,
+    license: false,
+    gov_id: false,
+    profile_photo: false
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchStatus = async () => {
+    try {
+      const res = await axios.get('/api/lawyers/me');
+      setProfile(res.data);
+    } catch (err) {
+      // Lawyer profile not found is normal for regular users
+      if (err.response?.status !== 404) {
+        console.error(err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const loadSelects = async () => {
+      try {
+        const [sp, ct] = await Promise.all([
+          axios.get('/api/lawyers/specializations'),
+          axios.get('/api/lawyers/cities')
+        ]);
+        setSpecializations(sp.data || []);
+        setCities(ct.data || []);
+      } catch {}
+    };
+    loadSelects();
+  }, []);
+
+  const handleDocUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadLoading(prev => ({ ...prev, [type]: true }));
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+      const res = await axios.post('/api/lawyers/upload-document', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setUrls(prev => ({ ...prev, [type]: res.data.url }));
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to upload document. Only JPG, PNG, and PDF up to 5MB allowed.");
+    } finally {
+      setUploadLoading(prev => ({ ...prev, [type]: false }));
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!urls.bar_council || !urls.license || !urls.gov_id) {
+      alert("Please upload all verification documents.");
+      return;
+    }
+    setSubmitting(true);
+
+    try {
+      const res = await axios.post('/api/lawyers/register', {
+        advocateId,
+        specializationId: specId,
+        cityId,
+        experienceYears: experience,
+        consultationFee: fee,
+        courtName: court,
+        bio,
+        languages: langs,
+        qualifications: quals,
+        achievements,
+        barCouncilIdUrl: urls.bar_council,
+        licenseCertificateUrl: urls.license,
+        govIdUrl: urls.gov_id,
+        profileImageUrl: urls.profile_photo || null
+      });
+      alert("Advocate verification application submitted successfully!");
+      fetchStatus();
+    } catch (err) {
+      alert(err.response?.data?.error || "Registration failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="glass-panel p-4 text-center">
+        <span className="spinner-border spinner-border-sm me-2 text-primary" />
+        <span className="text-secondary small">Checking advocate verification status...</span>
+      </div>
+    );
+  }
+
+  if (profile) {
+    return (
+      <div className="glass-panel p-5 text-start" style={{ borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <h4 className="fw-extrabold text-white mb-2"><i className="bi bi-balance2 text-primary me-2"></i>Advocate Verification Status</h4>
+        <p className="text-secondary small mb-4">Check your legal advocate credentials review status below.</p>
+
+        {profile.verificationStatus === 'APPROVED' && (
+          <div className="p-4 rounded-4 mb-4" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <div className="d-flex align-items-center gap-3 text-success mb-2.5">
+              <i className="bi bi-patch-check-fill fs-3"></i>
+              <h5 className="fw-bold mb-0">Credentials Verified & Approved!</h5>
+            </div>
+            <p className="small text-secondary mb-3">Your credentials have passed verification. You are listed in our verified search directories.</p>
+            <Link to="/lawyer/dashboard" className="btn btn-sm text-dark fw-bold" style={{ background: 'linear-gradient(135deg, #10b981, #34d399)', border: 'none', borderRadius: '8px', padding: '8px 20px' }}>
+              Open Advocate Panel
+            </Link>
+          </div>
+        )}
+
+        {profile.verificationStatus === 'PENDING' && (
+          <div className="p-4 rounded-4 mb-4" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+            <div className="d-flex align-items-center gap-3 text-warning mb-2.5">
+              <i className="bi bi-hourglass-split fs-3"></i>
+              <h5 className="fw-bold mb-0">Application Pending Review</h5>
+            </div>
+            <p className="small text-secondary mb-0">Our legal registry compliance team is checking your Bar Council ID and Advocate License. This usually takes 24-48 business hours.</p>
+          </div>
+        )}
+
+        {profile.verificationStatus === 'REJECTED' && (
+          <div className="p-4 rounded-4 mb-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div className="d-flex align-items-center gap-3 text-danger mb-2.5">
+              <i className="bi bi-exclamation-triangle-fill fs-3"></i>
+              <h5 className="fw-bold mb-0">Application Rejected</h5>
+            </div>
+            <p className="small text-secondary mb-0">Your credentials check failed due to blur documents or incorrect enrollment number. Please contact superadmin support or re-register.</p>
+          </div>
+        )}
+
+        {/* Profile metadata */}
+        <div className="row g-3 small text-secondary">
+          <div className="col-sm-6">
+            <strong>Advocate Registration ID:</strong> {profile.advocateId}
+          </div>
+          <div className="col-sm-6">
+            <strong>Practice Sector:</strong> {profile.specialization?.name}
+          </div>
+          <div className="col-sm-6">
+            <strong>Practice City:</strong> {profile.city?.name}
+          </div>
+          <div className="col-sm-6">
+            <strong>Experience:</strong> {profile.experienceYears} Years
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass-panel p-4 p-md-5 text-start" style={{ borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <h4 className="fw-extrabold text-white mb-2"><i className="bi bi-shield-lock-fill text-primary me-2"></i>Apply for Verified Legal Advocate Status</h4>
+      <p className="text-secondary small mb-4">Complete your professional registration to consult citizens on the CitizenLex marketplace.</p>
+
+      <form onSubmit={handleRegister}>
+        <div className="row g-3">
+          {/* Enrollment ID */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">Bar Enrollment Number</label>
+            <input type="text" className="form-control form-glass-control" placeholder="e.g. AP-10294/2020" value={advocateId} onChange={e => setAdvocateId(e.target.value)} required />
+          </div>
+
+          {/* Specialization */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">Practice Sector</label>
+            <select className="form-select form-glass-control" value={specId} onChange={e => setSpecId(e.target.value)} required style={{ background: '#07061d', color: 'white' }}>
+              <option value="">Select practice</option>
+              {specializations.map(s => (
+                <option key={s.id} value={s.id} style={{ background: '#07061d' }}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* City */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">City</label>
+            <select className="form-select form-glass-control" value={cityId} onChange={e => setCityId(e.target.value)} required style={{ background: '#07061d', color: 'white' }}>
+              <option value="">Select city</option>
+              {cities.map(c => (
+                <option key={c.id} value={c.id} style={{ background: '#07061d' }}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Experience */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">Experience (Years)</label>
+            <input type="number" className="form-control form-glass-control" placeholder="e.g. 8" value={experience} onChange={e => setExperience(e.target.value)} required />
+          </div>
+
+          {/* Fee */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">Standard Consultation Fee (₹)</label>
+            <input type="number" className="form-control form-glass-control" placeholder="e.g. 1500" value={fee} onChange={e => setFee(e.target.value)} required />
+          </div>
+
+          {/* Court */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">Practicing Court Name</label>
+            <input type="text" className="form-control form-glass-control" placeholder="e.g. Madras High Court" value={court} onChange={e => setCourt(e.target.value)} required />
+          </div>
+
+          {/* Languages */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">Languages Spoken</label>
+            <input type="text" className="form-control form-glass-control" placeholder="e.g. English, Tamil" value={langs} onChange={e => setLangs(e.target.value)} required />
+          </div>
+
+          {/* Qualifications */}
+          <div className="col-md-6">
+            <label className="form-label small text-secondary fw-semibold mb-1">Academic Qualifications</label>
+            <input type="text" className="form-control form-glass-control" placeholder="e.g. B.A. LL.B (Hons), LL.M" value={quals} onChange={e => setQuals(e.target.value)} required />
+          </div>
+
+          {/* Achievements */}
+          <div className="col-12">
+            <label className="form-label small text-secondary fw-semibold mb-1">Key Case Achievements</label>
+            <input type="text" className="form-control form-glass-control" placeholder="List major case milestones..." value={achievements} onChange={e => setAchievements(e.target.value)} />
+          </div>
+
+          {/* Bio */}
+          <div className="col-12">
+            <label className="form-label small text-secondary fw-semibold mb-1">Professional Bio</label>
+            <textarea className="form-control form-glass-control" rows="3" placeholder="Briefly describe your legal career details..." value={bio} onChange={e => setBio(e.target.value)} required />
+          </div>
+
+          <hr className="my-4" style={{ borderColor: 'var(--border)' }} />
+
+          <h5 className="fw-bold text-white mb-3">Upload Credentials Documents (Cloudinary/S3 Integration)</h5>
+
+          {/* Bar Council ID Upload */}
+          <div className="col-md-6 text-start">
+            <label className="form-label small text-secondary fw-semibold mb-1">Bar Council ID Card (PDF/JPG)</label>
+            <input type="file" className="form-control form-glass-control mb-1" onChange={e => handleDocUpload(e, 'bar_council')} required />
+            {uploadLoading.bar_council ? (
+              <span className="small text-warning"><span className="spinner-border spinner-border-sm me-1.5" />Uploading to Cloudinary...</span>
+            ) : urls.bar_council ? (
+              <span className="small text-success"><i className="bi bi-check-circle-fill me-1" />Uploaded: <a href={urls.bar_council} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">View doc</a></span>
+            ) : (
+              <span className="small text-secondary">Document pending upload</span>
+            )}
+          </div>
+
+          {/* License Certificate Upload */}
+          <div className="col-md-6 text-start">
+            <label className="form-label small text-secondary fw-semibold mb-1">Advocate Practice License (PDF/JPG)</label>
+            <input type="file" className="form-control form-glass-control mb-1" onChange={e => handleDocUpload(e, 'license')} required />
+            {uploadLoading.license ? (
+              <span className="small text-warning"><span className="spinner-border spinner-border-sm me-1.5" />Uploading to Cloudinary...</span>
+            ) : urls.license ? (
+              <span className="small text-success"><i className="bi bi-check-circle-fill me-1" />Uploaded: <a href={urls.license} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">View doc</a></span>
+            ) : (
+              <span className="small text-secondary">Document pending upload</span>
+            )}
+          </div>
+
+          {/* Gov ID Upload */}
+          <div className="col-md-6 text-start">
+            <label className="form-label small text-secondary fw-semibold mb-1">Government ID Passport/Aadhaar (PDF/JPG)</label>
+            <input type="file" className="form-control form-glass-control mb-1" onChange={e => handleDocUpload(e, 'gov_id')} required />
+            {uploadLoading.gov_id ? (
+              <span className="small text-warning"><span className="spinner-border spinner-border-sm me-1.5" />Uploading to Cloudinary...</span>
+            ) : urls.gov_id ? (
+              <span className="small text-success"><i className="bi bi-check-circle-fill me-1" />Uploaded: <a href={urls.gov_id} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">View doc</a></span>
+            ) : (
+              <span className="small text-secondary">Document pending upload</span>
+            )}
+          </div>
+
+          {/* Avatar Photo Upload */}
+          <div className="col-md-6 text-start">
+            <label className="form-label small text-secondary fw-semibold mb-1">Professional Profile Photo (JPG/PNG)</label>
+            <input type="file" className="form-control form-glass-control mb-1" onChange={e => handleDocUpload(e, 'profile_photo')} />
+            {uploadLoading.profile_photo ? (
+              <span className="small text-warning"><span className="spinner-border spinner-border-sm me-1.5" />Uploading to Cloudinary...</span>
+            ) : urls.profile_photo ? (
+              <span className="small text-success"><i className="bi bi-check-circle-fill me-1" />Uploaded: <a href={urls.profile_photo} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">View photo</a></span>
+            ) : (
+              <span className="small text-secondary">Optional upload</span>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 text-end">
+          <button type="submit" className="btn px-5 py-3 text-dark fw-bold" disabled={submitting} style={{
+            background: 'linear-gradient(135deg, #a855f7, #f59e0b)',
+            border: 'none',
+            borderRadius: 12
+          }}>
+            {submitting ? 'Submitting Application...' : 'Submit Verification Credentials'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

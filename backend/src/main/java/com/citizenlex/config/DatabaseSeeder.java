@@ -32,28 +32,47 @@ public class DatabaseSeeder implements CommandLineRunner {
     private NotificationRepository notificationRepository;
 
     @Autowired
+    private SpecializationRepository specializationRepository;
+
+    @Autowired
+    private CityRepository cityRepository;
+
+    @Autowired
+    private LawyerRepository lawyerRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
         // 1. Seed Roles
         Role userRole = seedRole("ROLE_USER");
+        Role lawyerRole = seedRole("ROLE_LAWYER");
         Role adminRole = seedRole("ROLE_ADMIN");
 
         // 2. Seed Admin User
         seedAdminUser(adminRole);
 
-        // 3. Seed Rights Categories & Content
+        // 3. Seed Specializations
+        seedSpecializations();
+
+        // 4. Seed Cities
+        seedCities();
+
+        // 5. Seed Mock Lawyers
+        seedMockLawyers(lawyerRole);
+
+        // 6. Seed Rights Categories & Content
         if (categoryRepository.count() == 0) {
             seedRightsAndCategories();
         }
 
-        // 4. Seed Government Schemes
+        // 7. Seed Government Schemes
         if (schemeRepository.count() == 0) {
             seedGovernmentSchemes();
         }
 
-        // 5. Seed Notifications
+        // 8. Seed Notifications
         if (notificationRepository.countByUserIsNull() == 0) {
             seedNotifications();
         }
@@ -266,5 +285,91 @@ public class DatabaseSeeder implements CommandLineRunner {
                 "Visit your savings bank branch, fill out the APY application, and set up auto-debit for contributions.",
                 "https://www.npscra.nsdl.co.in/scheme-details.php"
         ));
+    }
+
+    private void seedSpecializations() {
+        if (specializationRepository.count() == 0) {
+            specializationRepository.save(new Specialization("Civil Litigation"));
+            specializationRepository.save(new Specialization("Criminal Defense"));
+            specializationRepository.save(new Specialization("Corporate Law"));
+            specializationRepository.save(new Specialization("Family Law"));
+            specializationRepository.save(new Specialization("Labor Law"));
+            specializationRepository.save(new Specialization("Intellectual Property"));
+            specializationRepository.save(new Specialization("Real Estate Law"));
+            specializationRepository.save(new Specialization("Constitutional Law"));
+        }
+    }
+
+    private void seedCities() {
+        if (cityRepository.count() == 0) {
+            cityRepository.save(new City("Chennai"));
+            cityRepository.save(new City("Coimbatore"));
+            cityRepository.save(new City("Madurai"));
+            cityRepository.save(new City("Salem"));
+            cityRepository.save(new City("Bangalore"));
+            cityRepository.save(new City("Mumbai"));
+            cityRepository.save(new City("Delhi"));
+        }
+    }
+
+    private void seedMockLawyers(Role lawyerRole) {
+        if (lawyerRepository.count() == 0) {
+            Specialization civil = specializationRepository.findByName("Civil Litigation").orElse(null);
+            Specialization crim = specializationRepository.findByName("Criminal Defense").orElse(null);
+            Specialization fam = specializationRepository.findByName("Family Law").orElse(null);
+            Specialization corp = specializationRepository.findByName("Corporate Law").orElse(null);
+
+            City chennai = cityRepository.findByName("Chennai").orElse(null);
+            City coimbatore = cityRepository.findByName("Coimbatore").orElse(null);
+            City bangalore = cityRepository.findByName("Bangalore").orElse(null);
+
+            createMockLawyer("lawyer1@citizenlex.com", "Abishek", "V", "AP-10294/2020", civil, chennai, 12, 1200.0,
+                    "LL.B, LL.M", "Best Advocate Award 2024", "Senior civil litigation expert at Madras High Court.", lawyerRole);
+
+            createMockLawyer("lawyer2@citizenlex.com", "Rajesh", "Kumar", "AP-93041/2018", crim, coimbatore, 8, 1500.0,
+                    "LL.B", "Successfully defended 50+ criminal appeals", "Criminal defense lawyer practicing before District Session Courts.", lawyerRole);
+
+            createMockLawyer("lawyer3@citizenlex.com", "Sneha", "Rajan", "AP-48201/2017", fam, chennai, 9, 1000.0,
+                    "BA LL.B (Hons)", "Mediation expert certified", "Family disputes advisor, divorce, alimony, child custody mediation expert.", lawyerRole);
+
+            createMockLawyer("lawyer4@citizenlex.com", "Vikram", "Suri", "AP-72013/2015", corp, bangalore, 15, 2500.0,
+                    "LL.B, Corporate Law PG Diploma", "Advises 20+ startup companies", "Corporate legal counsel, mergers, acquisitions, regulatory compliance consultant.", lawyerRole);
+        }
+    }
+
+    private void createMockLawyer(String email, String first, String last, String advocateId,
+                                  Specialization spec, City city, int exp, double fee,
+                                  String qual, String ach, String bio, Role lawyerRole) {
+
+        if (!userRepository.existsByEmail(email)) {
+            User user = new User();
+            user.setEmail(email);
+            user.setPassword(passwordEncoder.encode("Lawyer@123"));
+            user.setFirstName(first);
+            user.setLastName(last);
+            user.setEnabled(true);
+            user.setCreatedAt(LocalDateTime.now());
+            user.getRoles().add(lawyerRole);
+            user = userRepository.save(user);
+
+            Lawyer lawyer = new Lawyer();
+            lawyer.setUser(user);
+            lawyer.setAdvocateId(advocateId);
+            lawyer.setSpecialization(spec);
+            lawyer.setCity(city);
+            lawyer.setExperienceYears(exp);
+            lawyer.setConsultationFee(fee);
+            lawyer.setQualifications(qual);
+            lawyer.setAchievements(ach);
+            lawyer.setBio(bio);
+            lawyer.setLanguages("English, Tamil");
+            lawyer.setWorkingHours("09:00 - 18:00");
+            lawyer.setIsVerified(true);
+            lawyer.setVerificationStatus("APPROVED");
+            lawyer.setIsOnline(true);
+            lawyer.setRating(5.0);
+            lawyer.setTotalReviews(0);
+            lawyerRepository.save(lawyer);
+        }
     }
 }

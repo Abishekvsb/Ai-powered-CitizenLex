@@ -19,6 +19,7 @@ export default function Navbar() {
   };
 
   const isActive = (path) => location.pathname === path;
+  const isLawyer = () => user && (user.role === 'ROLE_LAWYER' || user.role === 'LAWYER');
 
   // Fetch notification badge count
   useEffect(() => {
@@ -94,6 +95,18 @@ export default function Navbar() {
                     OCR Scanner
                   </Link>
                 </li>
+                <li className="nav-item">
+                  <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/consultations') ? 'active' : ''}`} to="/consultations">
+                    Consultations
+                  </Link>
+                </li>
+                {isLawyer() && (
+                  <li className="nav-item">
+                    <Link className={`nav-link nav-link-custom px-2 mx-1 fw-bold ${isActive('/lawyer/dashboard') ? 'active' : ''}`} to="/lawyer/dashboard" style={{ color: 'var(--accent)' }}>
+                      Advocate Panel
+                    </Link>
+                  </li>
+                )}
               </>
             )}
             <li className="nav-item">
@@ -104,6 +117,11 @@ export default function Navbar() {
             <li className="nav-item">
               <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/schemes') ? 'active' : ''}`} to="/schemes">
                 Scheme Finder
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className={`nav-link nav-link-custom px-2 mx-1 ${isActive('/lawDynamic') || isActive('/lawyers') ? 'active' : ''}`} to="/lawyers">
+                Find Lawyers
               </Link>
             </li>
             {user && isAdmin() && (

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
@@ -61,26 +61,26 @@ export const AuthProvider = ({ children }) => {
       axios.interceptors.request.eject(requestInterceptor);
       axios.interceptors.response.eject(responseInterceptor);
     };
-  }, [token]);
+  }, []);
 
-  const login = (jwtToken, userDetails) => {
+  const login = useCallback((jwtToken, userDetails) => {
     localStorage.setItem('token', jwtToken);
     localStorage.setItem('user', JSON.stringify(userDetails));
     setToken(jwtToken);
     setUser(userDetails);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
-  };
+  }, []);
 
-  const updateUserProfileState = (updatedUser) => {
+  const updateUserProfileState = useCallback((updatedUser) => {
     localStorage.setItem('user', JSON.stringify(updatedUser));
     setUser(updatedUser);
-  };
+  }, []);
 
   const isAdmin = () => {
     return user && (user.role === 'ROLE_ADMIN' || user.role === 'ADMIN');

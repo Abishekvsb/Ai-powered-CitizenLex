@@ -19,6 +19,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import OcrScanner from './pages/OcrScanner';
 import LegalCopilot from './pages/LegalCopilot';
 import NotificationCenter from './pages/NotificationCenter';
+import LawyerMarketplace from './pages/LawyerMarketplace';
+import LawyerProfileDetail from './pages/LawyerProfileDetail';
+import LawyerDashboard from './pages/LawyerDashboard';
+import UserConsultations from './pages/UserConsultations';
 import { usePWA } from './context/PWAContext';
 
 // Auth pages do not render Navbar/Footer
@@ -79,6 +83,18 @@ export default function App() {
           <Route path="/notifications" element={
             <ProtectedRoute>
               <NotificationCenter />
+            </ProtectedRoute>
+          } />
+          <Route path="/lawyers" element={<LawyerMarketplace />} />
+          <Route path="/lawyers/:id" element={<LawyerProfileDetail />} />
+          <Route path="/lawyer/dashboard" element={
+            <ProtectedRoute>
+              <LawyerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/consultations" element={
+            <ProtectedRoute>
+              <UserConsultations />
             </ProtectedRoute>
           } />
 

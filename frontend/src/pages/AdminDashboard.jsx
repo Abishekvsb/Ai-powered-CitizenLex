@@ -367,6 +367,9 @@ export default function AdminDashboard() {
             <button className={`btn ${activeTab === 'schemes' ? 'btn-danger text-white' : 'btn-glass-secondary'}`} onClick={() => setActiveTab('schemes')}>
               <i className="bi bi-card-checklist me-2"></i>Welfare Schemes
             </button>
+            <button className={`btn ${activeTab === 'advocates' ? 'btn-danger text-white' : 'btn-glass-secondary'}`} onClick={() => setActiveTab('advocates')}>
+              <i className="bi bi-shield-check me-2"></i>Advocate Approvals
+            </button>
             <button className={`btn ${activeTab === 'logs' ? 'btn-danger text-white' : 'btn-glass-secondary'}`} onClick={() => setActiveTab('logs')}>
               <i className="bi bi-journal-code me-2"></i>Audit Logs
             </button>
@@ -962,6 +965,11 @@ export default function AdminDashboard() {
                 </div>
               )}
 
+              {/* Advocates Approvals Moderation Tab */}
+              {activeTab === 'advocates' && (
+                <AdminAdvocatesTab />
+              )}
+
               {/* Logs Tab */}
               {activeTab === 'logs' && (
                 <div>
@@ -999,6 +1007,141 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Advocates Approvals Moderation Dashboard Tab
+function AdminAdvocatesTab() {
+  const [lawyers, setLawyers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchLawyers = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('/api/lawyers/admin/all');
+      setLawyers(res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLawyers();
+  }, []);
+
+  const handleAction = async (id, action) => {
+    if (!window.confirm(`Are you sure you want to mark this advocate application ${action}?`)) return;
+    try {
+      await axios.put(`/api/lawyers/admin/${id}/${action}`);
+      alert(`Advocate profile successfully marked as ${action}!`);
+      fetchLawyers();
+    } catch (err) {
+      alert("Failed to update advocate status.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <span className="spinner-border spinner-border-sm me-2 text-danger" />
+        <span className="text-secondary small">Loading advocates queue...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h4 className="fw-bold mb-4">Advocate Verification & Approvals Registry</h4>
+      
+      {lawyers.length === 0 ? (
+        <div className="text-center py-5 text-secondary">
+          No registered advocates found in the registry.
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <table className="table table-hover table-glass">
+            <thead>
+              <tr>
+                <th>Advocate ID</th>
+                <th>Name</th>
+                <th>Practice Area</th>
+                <th>Experience</th>
+                <th>Verification Documents</th>
+                <th>Status</th>
+                <th className="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lawyers.map((lawyer) => (
+                <tr key={lawyer.id}>
+                  <td><code className="text-white">{lawyer.advocateId}</code></td>
+                  <td>
+                    <div className="fw-bold text-white">{lawyer.user?.firstName} {lawyer.user?.lastName}</div>
+                    <small className="text-secondary">{lawyer.user?.email}</small>
+                  </td>
+                  <td>{lawyer.specialization?.name}</td>
+                  <td>{lawyer.experienceYears} Years</td>
+                  <td>
+                    <div className="d-flex flex-column gap-1 small">
+                      {lawyer.barCouncilIdUrl ? (
+                        <a href={lawyer.barCouncilIdUrl} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
+                          <i className="bi bi-file-earmark-pdf me-1"></i> Bar Council ID
+                        </a>
+                      ) : (
+                        <span className="text-danger">No Bar ID</span>
+                      )}
+                      {lawyer.licenseCertificateUrl ? (
+                        <a href={lawyer.licenseCertificateUrl} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
+                          <i className="bi bi-file-earmark-pdf me-1"></i> Practice License
+                        </a>
+                      ) : (
+                        <span className="text-danger">No License</span>
+                      )}
+                      {lawyer.govIdUrl ? (
+                        <a href={lawyer.govIdUrl} target="_blank" rel="noreferrer" className="text-primary text-decoration-none">
+                          <i className="bi bi-file-earmark-pdf me-1"></i> Government ID
+                        </a>
+                      ) : (
+                        <span className="text-danger">No Gov ID</span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`badge ${
+                      lawyer.verificationStatus === 'APPROVED' ? 'bg-success' :
+                      lawyer.verificationStatus === 'REJECTED' ? 'bg-danger' : 'bg-warning'
+                    }`}>
+                      {lawyer.verificationStatus}
+                    </span>
+                  </td>
+                  <td className="text-end">
+                    <div className="d-flex gap-1.5 justify-content-end">
+                      {lawyer.verificationStatus !== 'APPROVED' && (
+                        <button onClick={() => handleAction(lawyer.id, 'approve')} className="btn btn-sm btn-success py-1 px-2.5" style={{ borderRadius: '6px' }}>
+                          Approve
+                        </button>
+                      )}
+                      {lawyer.verificationStatus !== 'REJECTED' && (
+                        <button onClick={() => handleAction(lawyer.id, 'reject')} className="btn btn-sm btn-danger py-1 px-2.5" style={{ borderRadius: '6px' }}>
+                          Reject
+                        </button>
+                      )}
+                      {lawyer.verificationStatus === 'APPROVED' && (
+                        <button onClick={() => handleAction(lawyer.id, 'suspend')} className="btn btn-sm btn-outline-warning py-1 px-2.5" style={{ borderRadius: '6px' }}>
+                          Suspend
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

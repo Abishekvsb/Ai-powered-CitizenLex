@@ -125,4 +125,8 @@ public class EmailService {
             </html>
             """.formatted(name, otp);
     }
+
+    public void sendAppointmentNotification(String toEmail, String subject, String htmlContent) {
+        sendHtmlEmail(toEmail, subject, htmlContent);
+    }
 }
