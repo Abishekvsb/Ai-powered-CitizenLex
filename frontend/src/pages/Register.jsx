@@ -1,474 +1,569 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import ThreeDBackground from '../components/ThreeDBackground';
 
 export default function Register() {
-  const [step, setStep] = useState(1);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [smsOptIn, setSmsOptIn] = useState(true);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [registered, setRegistered] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const getPasswordStrength = () => {
-    if (!password) return { score: 0, text: 'No Password Entered', color: '#9ca3af', width: '0%' };
-    if (password.length < 6) return { score: 1, text: 'Too Short (Min 6)', color: '#ef4444', width: '25%' };
-    
-    const hasNum = /\d/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    const hasAlpha = /[a-zA-Z]/.test(password);
+  // --- Login Form State ---
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
-    if (hasNum && hasSpecial && hasAlpha) {
-      return { score: 3, text: 'Strong & Secure!', color: '#10b981', width: '100%' };
-    }
-    return { score: 2, text: 'Medium Complexity', color: '#f59e0b', width: '60%' };
-  };
+  // --- Register Form State ---
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regMobile, setRegMobile] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [regError, setRegError] = useState('');
+  const [regLoading, setRegLoading] = useState(false);
+  const [regSuccess, setRegSuccess] = useState(false);
 
-  const handleNextStep = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    if (step === 1) {
-      if (!firstName.trim() || !lastName.trim()) {
-        setError('Please enter both your first name and last name.');
-        return;
-      }
-      setStep(2);
-    } else if (step === 2) {
-      if (!email.trim() || !email.includes('@')) {
-        setError('Please enter a valid email address.');
-        return;
-      }
-      if (password.length < 6) {
-        setError('Password must contain at least 6 characters.');
-        return;
-      }
-      setStep(3);
-    } else if (step === 3) {
-      handleFinalRegister();
-    }
-  };
-
-  const handleBackStep = () => {
-    setError('');
-    setStep(prev => Math.max(1, prev - 1));
-  };
-
-  const handleFinalRegister = async () => {
-    setError('');
-    setLoading(true);
+    setLoginError('');
+    setLoginLoading(true);
 
     try {
-      await axios.post('/api/auth/register', { 
-        email, 
-        password, 
-        firstName, 
-        lastName,
-        smsNotificationsEnabled: smsOptIn
-      });
-      setRegistered(true);
-      setStep(4);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3500);
+      const res = await axios.post('/api/auth/login', { email: loginEmail, password: loginPassword });
+      login(res.data.accessToken, res.data.user);
+      navigate('/dashboard');
     } catch (err) {
       console.error(err);
       if (err.response && err.response.data) {
-        setError(err.response.data.error || 'Registration failed. Check fields or email availability.');
+        setLoginError(err.response.data.error || 'Invalid credentials or login failure.');
       } else {
-        setError('Connection to backend failed. Please try again.');
+        setLoginError('Connection to backend failed. Please try again.');
       }
     } finally {
-      setLoading(false);
+      setLoginLoading(false);
     }
   };
 
-  const passwordInfo = getPasswordStrength();
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    setRegError('');
+
+    if (regPassword !== regConfirmPassword) {
+      setRegError('Passwords do not match.');
+      return;
+    }
+    if (!agreeTerms) {
+      setRegError('You must agree to the Terms & Conditions.');
+      return;
+    }
+
+    setRegLoading(true);
+    const nameParts = regName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    try {
+      await axios.post('/api/auth/register', {
+        email: regEmail,
+        password: regPassword,
+        firstName,
+        lastName,
+        mobile: regMobile,
+        smsNotificationsEnabled: true
+      });
+      setRegSuccess(true);
+      setTimeout(() => {
+        setRegSuccess(false);
+        setRegName('');
+        setRegEmail('');
+        setRegMobile('');
+        setRegPassword('');
+        setRegConfirmPassword('');
+        setAgreeTerms(false);
+        alert("Account registered successfully! You can now log in using the left panel.");
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.data) {
+        setRegError(err.response.data.error || 'Registration failed. Check fields or email availability.');
+      } else {
+        setRegError('Connection to backend failed. Please try again.');
+      }
+    } finally {
+      setRegLoading(false);
+    }
+  };
 
   return (
     <div className="auth-page-wrapper" style={{
       position: 'relative',
       minHeight: '100vh',
       width: '100%',
+      overflowY: 'auto',
       overflowX: 'hidden',
-      background: 'radial-gradient(circle at 30% 30%, #0c0b24 0%, #020208 100%)'
+      background: 'radial-gradient(circle at 50% 50%, #0a0924 0%, #02020a 100%)',
+      padding: '40px 20px'
     }}>
-      {/* 3D background element */}
+      {/* Background canvas elements */}
       <ThreeDBackground />
 
-      {/* Decorative premium aurora glows */}
-      <div className="glow-orb" style={{
-        top: '20%',
-        left: '15%',
-        width: '350px',
-        height: '350px',
-        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)',
-      }} />
-
-      {/* Confetti Animation nodes for step 4 success */}
-      {registered && (
-        <div className="confetti-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 15 }}>
-          {Array.from({ length: 40 }).map((_, i) => {
-            const left = Math.random() * 100;
-            const delay = Math.random() * 2;
-            const duration = Math.random() * 2 + 2;
-            const size = Math.random() * 8 + 6;
-            const colors = ['#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
-            const bg = colors[i % colors.length];
-            return (
-              <div key={i} style={{
-                position: 'absolute',
-                left: `${left}%`,
-                top: `-20px`,
-                width: size,
-                height: size,
-                borderRadius: '50%',
-                background: bg,
-                opacity: 0.8,
-                animation: `confetti-fall ${duration}s linear ${delay}s infinite`
-              }} />
-            );
-          })}
-          <style>{`
-            @keyframes confetti-fall {
-              0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-              100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-            }
-          `}</style>
-        </div>
-      )}
-
-      {/* Split Screen Grid */}
-      <div className="row g-0 min-vh-100 position-relative" style={{ zIndex: 10 }}>
-        {/* Left Side: Cinematic Atmospheric Visuals Column */}
-        <div className="col-lg-7 d-none d-lg-flex flex-column justify-content-between p-5 text-start">
-          <div>
-            <span className="badge rounded-pill px-3 py-1.5 fw-bold" style={{
-              background: 'rgba(99, 102, 241, 0.15)',
-              color: '#818cf8',
-              border: '1px solid rgba(99,102,241,0.25)',
-              fontSize: '0.78rem'
+      <div className="container-fluid" style={{ maxWidth: '1200px', position: 'relative', zIndex: 10 }}>
+        {/* Unified Side-by-Side Split Grid */}
+        <div className="row g-4 align-items-stretch">
+          
+          {/* ===================================================================
+              LEFT PANEL: LOGIN CARD
+              =================================================================== */}
+          <div className="col-lg-6 col-12">
+            <div className="glass-premium-card shimmer-border h-100 d-flex flex-column justify-content-between" style={{
+              padding: '36px 28px',
+              background: 'rgba(8, 10, 24, 0.45)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '24px',
+              backdropFilter: 'blur(35px)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)'
             }}>
-              ⚖️ Decentralized Legal AI Advisor
-            </span>
-          </div>
-
-          <div style={{ maxWidth: '480px', marginTop: '120px' }}>
-            <h1 className="fw-extrabold text-white mb-3" style={{ fontSize: '3rem', letterSpacing: '-1.5px', lineHeight: 1.1 }}>
-              Secure Onboarding
-            </h1>
-            <p className="text-secondary mb-4" style={{ fontSize: '1.05rem', lineHeight: 1.65 }}>
-              Register your private workspace in seconds. All uploads and documents analysis are encrypted locally.
-            </p>
-            <div className="d-flex gap-2">
-              <span className="badge bg-glass border px-3 py-2 small rounded text-white-50"><i className="bi bi-person-fill text-warning me-1"></i> Interactive Wizard</span>
-              <span className="badge bg-glass border px-3 py-2 small rounded text-white-50"><i className="bi bi-check-circle-fill text-success me-1"></i> Fast Verification</span>
-            </div>
-          </div>
-
-          <div className="text-secondary small">
-            © 2026 CitizenLex. Security-centric legal AI platform.
-          </div>
-        </div>
-
-        {/* Right Side: Credentials Card */}
-        <div className="col-lg-5 col-12 d-flex align-items-center justify-content-center p-4 p-md-5">
-          <div className="auth-content-wrapper w-100" style={{ maxWidth: '460px', minHeight: 'auto', padding: 0 }}>
-            {/* Premium Frosted Glass Card with shimmery gradient outline */}
-            <div className="glass-premium-card shimmer-border w-100" style={{ padding: '40px 32px' }}>
-              
-              {/* Stepper Header */}
-              <div className="text-center mb-4">
-                <div className="auth-logo-icon mx-auto mb-3" style={{
-                  width: '54px',
-                  height: '54px',
-                  borderRadius: '14px',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)',
-                  transform: 'rotate(-4deg)'
-                }}>
-                  <i className="bi bi-balance2 text-white" style={{ fontSize: '1.5rem' }}></i>
+              <div>
+                {/* Header Logo */}
+                <div className="d-flex align-items-center gap-2 mb-4">
+                  <div className="d-flex align-items-center justify-content-center rounded-3" style={{
+                    width: '38px',
+                    height: '38px',
+                    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                    boxShadow: '0 4px 12px rgba(99,102,241,0.35)'
+                  }}>
+                    <i className="bi bi-balance2 text-white" style={{ fontSize: '1.15rem' }}></i>
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-white fw-bold mb-0" style={{ fontSize: '0.88rem', letterSpacing: '0.5px' }}>CITIZENLEX</h6>
+                    <span className="text-secondary small" style={{ fontSize: '0.65rem', opacity: 0.7 }}>AI LEGAL ASSISTANT</span>
+                  </div>
                 </div>
-                <h3 className="fw-extrabold text-white mb-1" style={{ letterSpacing: '-0.8px', fontSize: '1.65rem' }}>CitizenLex</h3>
-                <p className="text-secondary small">Step {step} of 4: Onboarding Journey</p>
 
-                {/* Progress bar dots */}
-                <div className="d-flex justify-content-between align-items-center mt-3 px-3">
-                  {[1, 2, 3, 4].map(s => (
-                    <React.Fragment key={s}>
-                      <div style={{
-                        width: '30px',
-                        height: '30px',
-                        borderRadius: '50%',
-                        background: step >= s 
-                          ? 'linear-gradient(135deg, #6366f1, #a855f7)' 
-                          : 'rgba(255,255,255,0.06)',
-                        border: step === s ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 700,
-                        fontSize: '0.78rem',
-                        color: step >= s ? '#fff' : '#6b7280',
-                        transition: 'all 0.4s'
-                      }}>
-                        {s === 4 && registered ? <i className="bi bi-check-lg"></i> : s}
-                      </div>
-                      {s < 4 && (
-                        <div style={{
-                          flexGrow: 1,
-                          height: '2px',
-                          background: step > s ? 'linear-gradient(90deg, #6366f1, #a855f7)' : 'rgba(255,255,255,0.06)',
-                          margin: '0 6px',
-                          transition: 'background 0.4s'
-                        }} />
-                      )}
-                    </React.Fragment>
-                  ))}
+                {/* Welcome Title */}
+                <div className="text-start mb-4">
+                  <h2 className="fw-extrabold mb-1" style={{
+                    fontSize: '1.9rem',
+                    letterSpacing: '-0.8px',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>Welcome Back</h2>
+                  <p className="text-secondary small">Sign in to continue your legal journey</p>
                 </div>
-              </div>
 
-              {error && (
-                <div className="alert alert-danger d-flex align-items-center mb-4 border-0" role="alert"
-                  style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', borderRadius: '12px', padding: '12px 16px', fontSize: '0.85rem' }}>
-                  <i className="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                  <div className="text-start">{error}</div>
-                </div>
-              )}
-
-              <form onSubmit={handleNextStep}>
-                {/* STEP 1: Personal Details */}
-                {step === 1 && (
-                  <div className="fade-in-el text-start">
-                    <div className="mb-4 text-center">
-                      <h5 className="text-white fw-bold">Profile Details</h5>
-                      <p className="text-secondary small">Tell us who you are so we can address you correctly</p>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label fw-bold small text-secondary mb-1">First Name</label>
-                      <div className="input-group-auth" style={{ position: 'relative' }}>
-                        <i className="bi bi-person input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
-                        <input
-                          id="reg-firstname"
-                          type="text"
-                          className="form-control form-glass-control"
-                          placeholder="Jane"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          required
-                          style={{ paddingLeft: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
-                        />
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <label className="form-label fw-bold small text-secondary mb-1">Last Name</label>
-                      <div className="input-group-auth" style={{ position: 'relative' }}>
-                        <i className="bi bi-person input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
-                        <input
-                          id="reg-lastname"
-                          type="text"
-                          className="form-control form-glass-control"
-                          placeholder="Doe"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          required
-                          style={{ paddingLeft: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
-                        />
-                      </div>
-                    </div>
-
-                    <button type="submit" className="btn w-100 py-3 mt-2 d-flex justify-content-center align-items-center text-white fw-bold"
-                      style={{
-                        height: '48px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                        border: 'none',
-                        fontSize: '0.95rem',
-                        boxShadow: '0 4px 18px rgba(99, 102, 241, 0.35)'
-                      }}>
-                      Next Step <i className="bi bi-arrow-right ms-2"></i>
-                    </button>
+                {loginError && (
+                  <div className="alert alert-danger d-flex align-items-center mb-4 border-0" role="alert"
+                    style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', borderRadius: '12px', padding: '12px 16px', fontSize: '0.85rem' }}>
+                    <i className="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+                    <div className="text-start">{loginError}</div>
                   </div>
                 )}
 
-                {/* STEP 2: Credentials */}
-                {step === 2 && (
-                  <div className="fade-in-el text-start">
-                    <div className="mb-4 text-center">
-                      <h5 className="text-white fw-bold">Secure Credentials</h5>
-                      <p className="text-secondary small">Set up security parameters for your workspace</p>
+                {/* Form Fields */}
+                <form onSubmit={handleLoginSubmit}>
+                  <div className="mb-3 text-start">
+                    <label className="form-label fw-bold small text-secondary mb-1">Email Address</label>
+                    <div className="input-group-auth" style={{ position: 'relative' }}>
+                      <i className="bi bi-envelope input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
+                      <input
+                        type="email"
+                        className="form-control form-glass-control"
+                        placeholder="you@domain.com"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
+                        style={{ paddingLeft: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                      />
                     </div>
-                    <div className="mb-3">
-                      <label className="form-label fw-bold small text-secondary mb-1">Email Address</label>
-                      <div className="input-group-auth" style={{ position: 'relative' }}>
-                        <i className="bi bi-envelope input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
+                  </div>
+
+                  <div className="mb-3 text-start">
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <label className="form-label fw-bold small text-secondary mb-0">Password</label>
+                      <Link to="/forgot-password" style={{ color: '#6366f1', fontSize: '0.78rem', textDecoration: 'none', fontWeight: '600' }}>
+                        Forgot Password?
+                      </Link>
+                    </div>
+                    <div className="input-group-auth" style={{ position: 'relative' }}>
+                      <i className="bi bi-lock input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        className="form-control form-glass-control"
+                        placeholder="••••••••"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                        style={{ paddingLeft: '48px', paddingRight: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                      />
+                      <button
+                        type="button"
+                        className="input-toggle-btn"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        tabIndex={-1}
+                        style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#9ca3af', zIndex: 3, cursor: 'pointer' }}
+                      >
+                        <i className={`bi ${showLoginPassword ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: '1.15rem' }}></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn w-100 py-3 mt-3 d-flex align-items-center justify-content-center gap-2 text-white fw-bold" disabled={loginLoading} style={{
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)',
+                    border: 'none',
+                    fontSize: '0.95rem',
+                    boxShadow: '0 4px 18px rgba(99, 102, 241, 0.35)'
+                  }}>
+                    <span>{loginLoading ? 'Authenticating...' : 'Sign In'}</span>
+                    <i className="bi bi-arrow-right"></i>
+                  </button>
+                </form>
+
+                <div className="my-4 d-flex align-items-center justify-content-between">
+                  <hr className="flex-grow-1" style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+                  <span className="mx-3 text-secondary small text-uppercase" style={{ letterSpacing: '1px', fontSize: '0.68rem' }}>or continue with</span>
+                  <hr className="flex-grow-1" style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+                </div>
+
+                <div className="row g-2 mb-4">
+                  <div className="col-6">
+                    <button className="btn w-100 py-2 d-flex align-items-center justify-content-center gap-2"
+                      onClick={() => alert("Google SSO simulation.")}
+                      style={{ borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}>
+                      <i className="bi bi-google text-danger"></i>
+                      <span className="small">Google</span>
+                    </button>
+                  </div>
+                  <div className="col-6">
+                    <button className="btn w-100 py-2 d-flex align-items-center justify-content-center gap-2"
+                      onClick={() => alert("Apple SSO simulation.")}
+                      style={{ borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}>
+                      <i className="bi bi-apple text-white"></i>
+                      <span className="small">Apple</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Left illustration inside card */}
+              <div>
+                <div className="d-flex flex-column align-items-center justify-content-center p-3 mt-4 position-relative" style={{
+                  background: 'rgba(99, 102, 241, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: '16px',
+                  minHeight: '140px',
+                  overflow: 'hidden'
+                }}>
+                  <svg width="70" height="70" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 15 V85" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" />
+                    <path d="M20 35 H80" stroke="#6366f1" strokeWidth="5" strokeLinecap="round" />
+                    <path d="M20 35 L10 70 H30 Z" stroke="#f59e0b" strokeWidth="2.5" fill="rgba(245,158,11,0.05)" strokeLinejoin="round" />
+                    <path d="M80 35 L70 70 H90 Z" stroke="#f59e0b" strokeWidth="2.5" fill="rgba(245,158,11,0.05)" strokeLinejoin="round" />
+                    <path d="M35 85 H65" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" />
+                  </svg>
+                  <div className="position-absolute w-100 h-100" style={{ pointerEvents: 'none' }}>
+                    <i className="bi bi-file-earmark-text text-primary position-absolute" style={{ top: '20px', left: '30px', fontSize: '1rem', opacity: 0.7 }}></i>
+                    <i className="bi bi-person-fill text-indigo position-absolute" style={{ top: '20px', right: '30px', fontSize: '1rem', opacity: 0.7 }}></i>
+                    <i className="bi bi-shield-fill-check text-success position-absolute" style={{ bottom: '20px', left: '30px', fontSize: '1rem', opacity: 0.7 }}></i>
+                    <i className="bi bi-gavel text-warning position-absolute" style={{ bottom: '20px', right: '30px', fontSize: '1rem', opacity: 0.7 }}></i>
+                  </div>
+                  <span className="small text-secondary fw-bold mt-2" style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}>GLOWING SCALES OF JUSTICE ENGINE</span>
+                </div>
+
+                <div className="text-center mt-3 text-secondary small">
+                  New to CitizenLex?{' '}
+                  <span className="fw-bold text-decoration-none text-primary" style={{ cursor: 'pointer' }} onClick={() => document.getElementById('reg-fullname')?.focus()}>
+                    Create an account
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ===================================================================
+              RIGHT PANEL: REGISTER CARD
+              =================================================================== */}
+          <div className="col-lg-6 col-12">
+            <div className="glass-premium-card shimmer-border h-100 d-flex flex-column justify-content-between" style={{
+              padding: '36px 28px',
+              background: 'rgba(8, 10, 24, 0.45)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '24px',
+              backdropFilter: 'blur(35px)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)'
+            }}>
+              <div>
+                {/* Header Logo */}
+                <div className="d-flex align-items-center gap-2 mb-4">
+                  <div className="d-flex align-items-center justify-content-center rounded-3" style={{
+                    width: '38px',
+                    height: '38px',
+                    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                    boxShadow: '0 4px 12px rgba(99,102,241,0.35)'
+                  }}>
+                    <i className="bi bi-balance2 text-white" style={{ fontSize: '1.15rem' }}></i>
+                  </div>
+                  <div className="text-start">
+                    <h6 className="text-white fw-bold mb-0" style={{ fontSize: '0.88rem', letterSpacing: '0.5px' }}>CITIZENLEX</h6>
+                    <span className="text-secondary small" style={{ fontSize: '0.65rem', opacity: 0.7 }}>AI LEGAL ASSISTANT</span>
+                  </div>
+                </div>
+
+                {/* Welcome Title */}
+                <div className="text-start mb-4">
+                  <h2 className="fw-extrabold mb-1" style={{
+                    fontSize: '1.9rem',
+                    letterSpacing: '-0.8px',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #f59e0b 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>Create Account</h2>
+                  <p className="text-secondary small">Join CitizenLex and empower yourself</p>
+                </div>
+
+                {regError && (
+                  <div className="alert alert-danger d-flex align-items-center mb-4 border-0" role="alert"
+                    style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', borderRadius: '12px', padding: '12px 16px', fontSize: '0.85rem' }}>
+                    <i className="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                    <div className="text-start">{regError}</div>
+                  </div>
+                )}
+
+                {regSuccess && (
+                  <div className="alert alert-success d-flex align-items-center mb-4 border-0" role="alert"
+                    style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', borderRadius: '12px', padding: '12px 16px', fontSize: '0.85rem' }}>
+                    <i className="bi bi-check-circle-fill me-2 fs-5"></i>
+                    <div className="text-start">Registration complete! Swapping context...</div>
+                  </div>
+                )}
+
+                {/* Form Fields */}
+                <form onSubmit={handleRegisterSubmit}>
+                  {/* Full Name */}
+                  <div className="mb-3 text-start">
+                    <label className="form-label fw-bold small text-secondary mb-1">Full Name</label>
+                    <div className="input-group-auth" style={{ position: 'relative' }}>
+                      <i className="bi bi-person input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
+                      <input
+                        id="reg-fullname"
+                        type="text"
+                        className="form-control form-glass-control"
+                        placeholder="Jane Doe"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        required
+                        style={{ paddingLeft: '48px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email Address */}
+                  <div className="mb-3 text-start">
+                    <label className="form-label fw-bold small text-secondary mb-1">Email Address</label>
+                    <div className="input-group-auth" style={{ position: 'relative' }}>
+                      <i className="bi bi-envelope input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
+                      <input
+                        type="email"
+                        className="form-control form-glass-control"
+                        placeholder="you@domain.com"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        required
+                        style={{ paddingLeft: '48px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mobile Number */}
+                  <div className="mb-3 text-start">
+                    <label className="form-label fw-bold small text-secondary mb-1">Mobile Number</label>
+                    <div className="d-flex gap-2">
+                      <select className="form-select text-white border-secondary" style={{
+                        maxWidth: '90px',
+                        background: 'rgba(8, 10, 24, 0.95)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        fontSize: '0.85rem'
+                      }}>
+                        <option value="91">+91 (IN)</option>
+                      </select>
+                      <div className="flex-grow-1 position-relative">
+                        <i className="bi bi-telephone position-absolute" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
                         <input
-                          id="reg-email"
-                          type="email"
+                          type="tel"
                           className="form-control form-glass-control"
-                          placeholder="you@domain.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="9876543210"
+                          value={regMobile}
+                          onChange={(e) => setRegMobile(e.target.value)}
                           required
-                          style={{ paddingLeft: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                          style={{ paddingLeft: '48px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
                         />
                       </div>
                     </div>
+                  </div>
 
-                    <div className="mb-4">
-                      <label className="form-label fw-bold small text-secondary mb-1">Password (min. 6 chars)</label>
+                  {/* Password & Confirm */}
+                  <div className="row g-2 mb-3">
+                    <div className="col-6 text-start">
+                      <label className="form-label fw-bold small text-secondary mb-1">Password</label>
                       <div className="input-group-auth" style={{ position: 'relative' }}>
-                        <i className="bi bi-lock input-icon" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', zIndex: 3 }}></i>
                         <input
-                          id="reg-password"
-                          type={showPassword ? 'text' : 'password'}
+                          type={showRegPassword ? 'text' : 'password'}
                           className="form-control form-glass-control"
                           placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
                           required
-                          style={{ paddingLeft: '48px', paddingRight: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                          style={{ paddingLeft: '16px', paddingRight: '42px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
                         />
                         <button
                           type="button"
                           className="input-toggle-btn"
-                          onClick={() => setShowPassword(!showPassword)}
+                          onClick={() => setShowRegPassword(!showRegPassword)}
                           tabIndex={-1}
-                          style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#9ca3af', zIndex: 3, cursor: 'pointer' }}
+                          style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#9ca3af', zIndex: 3, cursor: 'pointer' }}
                         >
-                          <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: '1.15rem' }}></i>
+                          <i className={`bi ${showRegPassword ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: '1.05rem' }}></i>
                         </button>
                       </div>
+                    </div>
 
-                      {/* Password strength meter */}
-                      <div className="mt-2.5">
-                        <div className="d-flex justify-content-between align-items-center mb-1">
-                          <span className="small text-secondary" style={{ fontSize: '0.75rem' }}>Security Strength:</span>
-                          <span className="fw-semibold" style={{ fontSize: '0.75rem', color: passwordInfo.color }}>{passwordInfo.text}</span>
-                        </div>
-                        <div className="progress" style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px' }}>
-                          <div className="progress-bar" role="progressbar" style={{ width: passwordInfo.width, backgroundColor: passwordInfo.color, transition: 'all 0.3s', borderRadius: '3px' }} />
-                        </div>
+                    <div className="col-6 text-start">
+                      <label className="form-label fw-bold small text-secondary mb-1">Confirm Password</label>
+                      <div className="input-group-auth" style={{ position: 'relative' }}>
+                        <input
+                          type={showRegConfirmPassword ? 'text' : 'password'}
+                          className="form-control form-glass-control"
+                          placeholder="••••••••"
+                          value={regConfirmPassword}
+                          onChange={(e) => setRegConfirmPassword(e.target.value)}
+                          required
+                          style={{ paddingLeft: '16px', paddingRight: '42px', height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                        />
+                        <button
+                          type="button"
+                          className="input-toggle-btn"
+                          onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                          tabIndex={-1}
+                          style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#9ca3af', zIndex: 3, cursor: 'pointer' }}
+                        >
+                          <i className={`bi ${showRegConfirmPassword ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: '1.05rem' }}></i>
+                        </button>
                       </div>
                     </div>
-
-                    <div className="d-flex gap-2">
-                      <button type="button" className="btn btn-glass-secondary py-3 flex-grow-1" onClick={handleBackStep}
-                        style={{ height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', color: 'white', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 600 }}>
-                        Back
-                      </button>
-                      <button type="submit" className="btn py-3 flex-grow-1 text-white fw-bold"
-                        style={{ height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', border: 'none' }}>
-                        Continue
-                      </button>
-                    </div>
                   </div>
-                )}
 
-                {/* STEP 3: Setup & Perks */}
-                {step === 3 && (
-                  <div className="fade-in-el text-start">
-                    <div className="mb-4 text-center">
-                      <h5 className="text-white fw-bold">Platform Safeguards</h5>
-                      <p className="text-secondary small">Review security parameters and data locks</p>
-                    </div>
-
-                    <div className="glass-panel p-3 mb-4 text-start" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px' }}>
-                      <div className="d-flex align-items-start gap-2.5 mb-2.5">
-                        <i className="bi bi-shield-fill-check text-success fs-5"></i>
-                        <div>
-                          <h6 className="text-white fw-bold mb-0" style={{ fontSize: '0.86rem' }}>256-bit Encryption Lock</h6>
-                          <p className="text-secondary small mb-0" style={{ fontSize: '0.72rem' }}>All legal chats and uploaded records are stored securely.</p>
-                        </div>
-                      </div>
-                      <div className="d-flex align-items-start gap-2.5">
-                        <i className="bi bi-robot text-primary fs-5"></i>
-                        <div>
-                          <h6 className="text-white fw-bold mb-0" style={{ fontSize: '0.86rem' }}>AI Legal Assistant</h6>
-                          <p className="text-secondary small mb-0" style={{ fontSize: '0.72rem' }}>Automatic translations, welfares schemes finder, and legal procedures templates.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Opt-in switch */}
-                    <div className="form-check form-switch mb-4 text-start">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        role="switch"
-                        id="smsNotifyToggle"
-                        checked={smsOptIn}
-                        onChange={(e) => setSmsOptIn(e.target.checked)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <label className="form-check-label text-white small fw-bold" htmlFor="smsNotifyToggle" style={{ cursor: 'pointer' }}>
-                        Opt-in to SMS OTP alerts & reminders
-                      </label>
-                      <div className="text-secondary small mt-1" style={{ fontSize: '0.72rem' }}>Receive instant mobile notifications and OTP validation codes automatically.</div>
-                    </div>
-
-                    <div className="d-flex gap-2">
-                      <button type="button" className="btn btn-glass-secondary py-3 flex-grow-1" onClick={handleBackStep}
-                        style={{ height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', color: 'white', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 600 }}>
-                        Back
-                      </button>
-                      <button type="submit" className="btn py-3 flex-grow-1 text-white fw-bold" disabled={loading}
-                        style={{ height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', border: 'none' }}>
-                        {loading ? 'Submitting...' : 'Agree & Finish'}
-                      </button>
-                    </div>
+                  {/* Agree Checkbox */}
+                  <div className="form-check text-start mb-3">
+                    <input
+                      type="checkbox"
+                      className="form-check-input bg-transparent border-secondary"
+                      id="agreeTermsCheck"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <label className="form-check-label small text-secondary" htmlFor="agreeTermsCheck" style={{ cursor: 'pointer', userSelect: 'none' }}>
+                      I agree to the Terms & Conditions and Privacy Policy
+                    </label>
                   </div>
-                )}
 
-                {/* STEP 4: Success & Confetti */}
-                {step === 4 && (
-                  <div className="fade-in-el text-center">
-                    <div className="success-checkmark-wrapper mx-auto mb-4" style={{
-                      width: '72px',
-                      height: '72px',
-                      borderRadius: '50%',
-                      background: 'rgba(16, 185, 129, 0.12)',
-                      border: '2px solid #10b981',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <i className="bi bi-patch-check-fill text-success" style={{ fontSize: '2.4rem' }}></i>
-                    </div>
-                    <h4 className="text-white fw-bold mb-2">Registration Complete!</h4>
-                    <p className="text-secondary small px-2">
-                      Welcome to CitizenLex, <strong>{firstName}</strong>. Redirecting you to sign in to your command center.
-                    </p>
-                    <div className="mt-4 p-3 bg-glass text-secondary small" style={{ borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '0.8rem', height: '0.8rem' }}></span>
-                      Opening credentials portal...
-                    </div>
+                  <button type="submit" className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2 text-white fw-bold" disabled={regLoading} style={{
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #f59e0b 100%)',
+                    border: 'none',
+                    fontSize: '0.95rem',
+                    boxShadow: '0 4px 18px rgba(245, 158, 11, 0.25)'
+                  }}>
+                    <span>{regLoading ? 'Creating Workspace...' : 'Create Account'}</span>
+                    <i className="bi bi-arrow-right"></i>
+                  </button>
+                </form>
+              </div>
+
+              {/* Right illustration inside card */}
+              <div>
+                <div className="d-flex flex-column align-items-center justify-content-center p-3 mt-4 position-relative" style={{
+                  background: 'rgba(245, 158, 11, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: '16px',
+                  minHeight: '140px',
+                  overflow: 'hidden'
+                }}>
+                  <svg width="70" height="70" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 15 L80 25 V55 C80 75 50 85 50 85 C50 85 20 75 20 55 V25 L50 15 Z" stroke="#f59e0b" strokeWidth="4" fill="rgba(245,158,11,0.05)" strokeLinejoin="round" />
+                    <path d="M42 42 H58 V70 H42 Z" stroke="#6366f1" strokeWidth="3" />
+                    <path d="M50 30 V42" stroke="#6366f1" strokeWidth="3" />
+                  </svg>
+                  <div className="position-absolute w-100 h-100" style={{ pointerEvents: 'none' }}>
+                    <i className="bi bi-person position-absolute" style={{ top: '20px', left: '30px', fontSize: '1rem', opacity: 0.7 }}></i>
+                    <i className="bi bi-envelope position-absolute" style={{ top: '20px', right: '30px', fontSize: '1rem', opacity: 0.7 }}></i>
+                    <i className="bi bi-lock position-absolute" style={{ bottom: '20px', left: '30px', fontSize: '1rem', opacity: 0.7 }}></i>
                   </div>
-                )}
-              </form>
-
-              {step < 4 && (
-                <div className="text-center mt-4 text-secondary small">
-                  Already have an account?{' '}
-                  <Link to="/login" className="fw-bold text-decoration-none" style={{ color: '#6366f1', transition: 'color 0.2s' }}
-                    onMouseEnter={e => e.target.style.color = '#a855f7'}
-                    onMouseLeave={e => e.target.style.color = '#6366f1'}
-                  >
-                    Sign in here
-                  </Link>
+                  <span className="small text-secondary fw-bold mt-2" style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}>SECURE ENCRYPTED SHIELD PLATFORM</span>
                 </div>
-              )}
+
+                <div className="text-center mt-3 text-secondary small">
+                  Already have an account?{' '}
+                  <span className="fw-bold text-decoration-none text-primary" style={{ cursor: 'pointer' }} onClick={() => document.getElementById('login-email')?.focus()}>
+                    Sign in
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
+
+        </div>
+
+        {/* ===================================================================
+            BOTTOM FEATURE STRIP (SHARED)
+            =================================================================== */}
+        <div className="row g-3 justify-content-center mt-5 px-3">
+          {[
+            { icon: 'bi-cpu-fill', title: 'AI Powered', desc: 'Smart Legal Assistance', color: '#6366f1' },
+            { icon: 'bi-shield-fill-check', title: 'Secure & Private', desc: 'Your data is protected', color: '#10b981' },
+            { icon: 'bi-chat-right-text-fill', title: 'Real-time Support', desc: '24/7 AI Assistance', color: '#f59e0b' },
+            { icon: 'bi-people-fill', title: 'Trusted by Millions', desc: 'Join our legal community', color: '#ec4899' },
+          ].map((b, idx) => (
+            <div key={idx} className="col-12 col-sm-6 col-lg-3">
+              <div className="d-flex align-items-center gap-3 p-3 rounded-4 animate-hover" style={{
+                background: 'rgba(8, 10, 24, 0.45)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+              }}>
+                <div className="d-flex align-items-center justify-content-center rounded-3" style={{
+                  width: '42px',
+                  height: '42px',
+                  background: `${b.color}15`,
+                  color: b.color,
+                  fontSize: '1.25rem',
+                  border: `1px solid ${b.color}30`
+                }}>
+                  <i className={`bi ${b.icon}`}></i>
+                </div>
+                <div className="text-start">
+                  <h6 className="text-white fw-bold mb-0.5" style={{ fontSize: '0.85rem' }}>{b.title}</h6>
+                  <p className="text-secondary mb-0" style={{ fontSize: '0.72rem', opacity: 0.85 }}>{b.desc}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Centered Small Footer */}
+        <div className="text-center mt-5 text-secondary small" style={{ opacity: 0.7 }}>
+          © 2025 CitizenLex. All rights reserved.
         </div>
       </div>
     </div>
