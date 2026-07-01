@@ -156,6 +156,11 @@ public class GeminiService {
         return response;
     }
 
+    // ================= GENERAL GENERATE RESPONSE API =================
+    public String generateResponse(String prompt) {
+        return getGeminiResponse(prompt, null, 0.4);
+    }
+
     // ================= SCHEME API =================
     public String getAISchemeResponse(String query) {
 
