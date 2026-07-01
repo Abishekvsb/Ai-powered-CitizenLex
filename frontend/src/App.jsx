@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import IntroAnimation from './components/IntroAnimation';
 
 // Import Pages
 import Landing from './pages/Landing';
@@ -32,6 +33,14 @@ export default function App() {
   const location = useLocation();
   const { installedSuccess } = usePWA();
   const isAuthPage = AUTH_ROUTES.includes(location.pathname);
+
+  const [showIntro, setShowIntro] = useState(
+    () => sessionStorage.getItem('citizenlex_intro_played') !== 'true'
+  );
+
+  if (showIntro) {
+    return <IntroAnimation onComplete={() => setShowIntro(false)} />;
+  }
 
   return (
     <div className="d-flex flex-column min-vh-100" style={{ position: 'relative', zIndex: 1 }}>
