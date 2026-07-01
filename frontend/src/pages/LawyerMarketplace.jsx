@@ -7,6 +7,7 @@ export default function LawyerMarketplace() {
   const [specializations, setSpecializations] = useState([]);
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(!!window.google);
 
   // --- Search & Filters State ---
   const [search, setSearch] = useState('');
@@ -94,15 +95,40 @@ export default function LawyerMarketplace() {
         script.async = true;
         script.defer = true;
         script.onload = () => {
-          initializeMap();
+          setIsScriptLoaded(true);
+        };
+        script.onerror = () => {
+          console.error("Failed to load Google Maps script.");
         };
         document.head.appendChild(script);
       } else {
-        initializeMap();
+        setIsScriptLoaded(true);
       }
     };
     loadGoogleMaps();
   }, []);
+
+  // Initialize Map when script is loaded and DOM ref is ready
+  useEffect(() => {
+    if (isScriptLoaded && mapRef.current && !map) {
+      initializeMap();
+    }
+  }, [isScriptLoaded, map, mapRef]);
+
+  const getLawyerLatLng = (lawyer, center) => {
+    const latBase = center?.lat || 13.0827;
+    const lngBase = center?.lng || 80.2707;
+    
+    // Deterministic offset based on lawyer ID to prevent marker layout drift
+    const seed = (lawyer.id || 1) * 123.456;
+    const offsetLat = Math.sin(seed) * 0.015;
+    const offsetLng = Math.cos(seed) * 0.015;
+    
+    return {
+      lat: latBase + offsetLat,
+      lng: lngBase + offsetLng
+    };
+  };
 
   const initializeMap = () => {
     if (!window.google || !mapRef.current) return;
@@ -150,7 +176,7 @@ export default function LawyerMarketplace() {
       });
     }
 
-    // Get current location
+    // Get current location with timeout config
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -171,11 +197,12 @@ export default function LawyerMarketplace() {
           // Fetch nearby courts/police stations
           searchNearbyLegalPlaces(mapInstance, userLatLng, nearbyType);
         },
-        () => {
-          console.warn("Geolocation denied or unavailable.");
+        (error) => {
+          console.warn("Geolocation denied, timed out, or unavailable:", error.message);
           setUserLocation(defaultLatLng);
           searchNearbyLegalPlaces(mapInstance, defaultLatLng, nearbyType);
-        }
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
       );
     } else {
       setUserLocation(defaultLatLng);
@@ -231,14 +258,21 @@ export default function LawyerMarketplace() {
     lawyerMarkersRef.current.forEach(m => m.setMap(null));
     lawyerMarkersRef.current = [];
 
-    lawyerList.forEach((lawyer) => {
-      // Mock latitude/longitude offset around user location or default Chennai center for real plotting
-      const offsetLat = (Math.random() - 0.5) * 0.05;
-      const offsetLng = (Math.random() - 0.5) * 0.05;
-      const lat = (userLocation?.lat || 13.0827) + offsetLat;
-      const lng = (userLocation?.lng || 80.2707) + offsetLng;
+    if (lawyerList.length === 0) return;
 
-      const lawyerLatLng = { lat, lng };
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasValidBounds = false;
+
+    if (userLocation) {
+      bounds.extend(userLocation);
+      hasValidBounds = true;
+    }
+
+    lawyerList.forEach((lawyer) => {
+      const lawyerLatLng = getLawyerLatLng(lawyer, userLocation || { lat: 13.0827, lng: 80.2707 });
+      
+      bounds.extend(lawyerLatLng);
+      hasValidBounds = true;
 
       const marker = new window.google.maps.Marker({
         position: lawyerLatLng,
@@ -248,14 +282,25 @@ export default function LawyerMarketplace() {
       });
 
       const contentString = `
-        <div style="color: #030712; padding: 12px; font-family: sans-serif; text-align: left; min-width: 180px;">
-          <h6 style="margin: 0 0 6px 0; font-weight: bold; color: #1e1b4b; font-size: 13px;">Advocate ${lawyer.user?.firstName || ''} ${lawyer.user?.lastName || ''}</h6>
-          <p style="margin: 0 0 8px 0; font-size: 11px; color: #4b5563; font-weight: 500;">${lawyer.specialization?.name || 'Practice Area'} | ${lawyer.experienceYears || 0} Yrs Exp</p>
-          <div style="font-size: 11px; margin-bottom: 10px; color: #374151;">
-            <strong>Fee:</strong> ₹${lawyer.consultationFee || 0} <br/> 
-            <strong>Rating:</strong> ⭐ ${lawyer.rating || 5.0} (${lawyer.totalReviews || 0} Reviews)
+        <div style="color: #030712; padding: 12px; font-family: sans-serif; text-align: left; min-width: 220px; overflow: hidden;">
+          <div style="margin-bottom: 8px; overflow: hidden;">
+            <img src="${lawyer.user?.profileImageUrl || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=50'}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover; float: left; margin-right: 10px; border: 1.5px solid #6366f1;" />
+            <div style="float: left; width: 140px;">
+              <h6 style="margin: 0 0 2px 0; font-weight: bold; color: #1e1b4b; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Advocate ${lawyer.user?.firstName || ''} ${lawyer.user?.lastName || ''}</h6>
+              <p style="margin: 0 0 4px 0; font-size: 11px; color: #4b5563; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lawyer.specialization?.name || 'Practice Area'}</p>
+              <div style="font-size: 10px; color: #6b7280; font-weight: 500;">
+                <i class="bi bi-geo-alt-fill text-danger"></i> ${lawyer.city?.name || 'Tamil Nadu'}
+              </div>
+            </div>
           </div>
-          <a href="/lawyers/${lawyer.id}" style="display: block; text-align: center; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: bold; box-shadow: 0 4px 6px rgba(99,102,241,0.2);">Book Appointment / Profile</a>
+          <div style="font-size: 11px; margin-bottom: 10px; clear: both; border-top: 1px solid #f3f4f6; padding-top: 6px; color: #374151;">
+            <strong>Experience:</strong> ${lawyer.experienceYears || 0} Years <br/>
+            <strong>Fee:</strong> ₹${lawyer.consultationFee || 0} | <strong>Rating:</strong> ⭐ ${lawyer.rating || 5.0}
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <a href="/lawyers/${lawyer.id}" style="flex: 1; text-align: center; background: #e0e7ff; color: #4338ca; padding: 6px 4px; border-radius: 6px; text-decoration: none; font-size: 10px; font-weight: bold; border: 1px solid #c7d2fe;">View Profile</a>
+            <a href="/lawyers/${lawyer.id}?book=true" style="flex: 1; text-align: center; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 6px 4px; border-radius: 6px; text-decoration: none; font-size: 10px; font-weight: bold; box-shadow: 0 3px 6px rgba(99,102,241,0.2);">Book Appt</a>
+          </div>
         </div>
       `;
 
@@ -272,19 +317,20 @@ export default function LawyerMarketplace() {
 
       lawyerMarkersRef.current.push(marker);
     });
+
+    if (hasValidBounds) {
+      map.fitBounds(bounds);
+      const listener = window.google.maps.event.addListener(map, "idle", () => {
+        if (map.getZoom() > 14) map.setZoom(14);
+        window.google.maps.event.removeListener(listener);
+      });
+    }
   };
 
   const calculateDirections = (lawyer) => {
     if (!window.google || !map || !userLocation) return;
 
-    // Simulate lawyer lat/lng for route display
-    const offsetLat = 0.02;
-    const offsetLng = -0.01;
-    const destination = {
-      lat: userLocation.lat + offsetLat,
-      lng: userLocation.lng + offsetLng
-    };
-
+    const destination = getLawyerLatLng(lawyer, userLocation);
     const directionsService = new window.google.maps.DirectionsService();
 
     directionsService.route(
@@ -300,7 +346,7 @@ export default function LawyerMarketplace() {
           setDirectionsInfo({
             distance: route.distance.text,
             duration: route.duration.text,
-            lawyerName: `${lawyer.user?.firstName} ${lawyer.user?.lastName}`
+            lawyerName: `${lawyer.user?.firstName || ''} ${lawyer.user?.lastName || ''}`
           });
         } else {
           console.error("Directions search failed:", status);

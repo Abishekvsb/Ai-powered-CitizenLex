@@ -71,10 +71,8 @@ public class DatabaseSeeder implements CommandLineRunner {
         // 4. Seed Cities
         seedCities();
 
-        // 5. Seed Mock Lawyers (only in dev/local environment)
-        if (isDevelopmentMode()) {
-            seedMockLawyers(lawyerRole);
-        }
+        // 5. Seed Mock Lawyers (always seed if database is empty to guarantee demo data availability)
+        seedMockLawyers(lawyerRole);
 
         // 6. Seed Rights Categories & Content
         if (categoryRepository.count() == 0) {
