@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { useGLTF, useAnimations } from '@react-three/drei';
+import * as THREE from 'three';
 import gsap from 'gsap';
 
-// ================= PROCEDURAL AUDIO SYNTHESIZER =================
-class IntroAudioSynth {
+// Preload the real rigged eagle model to avoid loading delays
+useGLTF.preload('/bald_eagle.glb');
+
+// ================= AAA CINEMATIC AUDIO SYNTHESIZER =================
+class AAACinematicAudio {
   constructor() {
     this.ctx = null;
-    this.masterVolume = null;
+    this.masterGain = null;
     this.isMuted = false;
     this.ambienceNodes = null;
   }
@@ -16,43 +20,43 @@ class IntroAudioSynth {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
     this.ctx = new AudioContext();
-    this.masterVolume = this.ctx.createGain();
-    this.masterVolume.gain.setValueAtTime(0.4, this.ctx.currentTime);
-    this.masterVolume.connect(this.ctx.destination);
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.setValueAtTime(0.45, this.ctx.currentTime);
+    this.masterGain.connect(this.ctx.destination);
   }
   mute(state) {
     this.isMuted = state;
-    if (this.masterVolume && this.ctx) {
-      this.masterVolume.gain.setValueAtTime(state ? 0 : 0.4, this.ctx.currentTime);
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(state ? 0 : 0.45, this.ctx.currentTime);
     }
   }
   playAmbience() {
     if (!this.ctx || this.isMuted) return;
     try {
+      // Orchestral drone / Cinematic pad
       const osc1 = this.ctx.createOscillator();
       const osc2 = this.ctx.createOscillator();
       const filter = this.ctx.createBiquadFilter();
       const gain = this.ctx.createGain();
 
       osc1.type = 'sawtooth';
-      osc1.frequency.setValueAtTime(55, this.ctx.currentTime); // Low bass A1
+      osc1.frequency.setValueAtTime(55, this.ctx.currentTime); // A1
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(110, this.ctx.currentTime); // A2
 
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(150, this.ctx.currentTime);
+      filter.frequency.setValueAtTime(120, this.ctx.currentTime);
 
       gain.gain.setValueAtTime(0, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + 3);
+      gain.gain.linearRampToValueAtTime(0.22, this.ctx.currentTime + 3.0);
 
       osc1.connect(filter);
       osc2.connect(filter);
       filter.connect(gain);
-      gain.connect(this.masterVolume);
+      gain.connect(this.masterGain);
 
       osc1.start();
       osc2.start();
-
       this.ambienceNodes = { osc1, osc2, gain };
     } catch (e) {
       console.warn("Audio Context error:", e);
@@ -62,93 +66,95 @@ class IntroAudioSynth {
     if (this.ambienceNodes && this.ctx) {
       const { osc1, osc2, gain } = this.ambienceNodes;
       try {
-        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1.2);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1.5);
         setTimeout(() => {
           try {
             osc1.stop();
             osc2.stop();
           } catch (err) {}
-        }, 1500);
+        }, 1800);
       } catch (e) {}
     }
   }
   playFlap() {
     if (!this.ctx || this.isMuted) return;
     try {
+      // Deep low-pitched wind thud
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      osc.frequency.setValueAtTime(55, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(12, this.ctx.currentTime + 0.25);
+      osc.frequency.setValueAtTime(45, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.3);
 
-      gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.38, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
 
       osc.connect(gain);
-      gain.connect(this.masterVolume);
+      gain.connect(this.masterGain);
       osc.start();
-      osc.stop(this.ctx.currentTime + 0.35);
+      osc.stop(this.ctx.currentTime + 0.4);
     } catch (e) {}
   }
   playScreech() {
     if (!this.ctx || this.isMuted) return;
     try {
+      // Frequency-modulated eagle call
       const carrier = this.ctx.createOscillator();
       const modulator = this.ctx.createOscillator();
       const modGain = this.ctx.createGain();
       const mainGain = this.ctx.createGain();
 
       carrier.type = 'sawtooth';
-      carrier.frequency.setValueAtTime(800, this.ctx.currentTime);
-      carrier.frequency.exponentialRampToValueAtTime(1400, this.ctx.currentTime + 0.15);
-      carrier.frequency.exponentialRampToValueAtTime(550, this.ctx.currentTime + 0.6);
+      carrier.frequency.setValueAtTime(850, this.ctx.currentTime);
+      carrier.frequency.exponentialRampToValueAtTime(1450, this.ctx.currentTime + 0.15);
+      carrier.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.65);
 
       modulator.type = 'sawtooth';
-      modulator.frequency.setValueAtTime(180, this.ctx.currentTime);
-      modulator.frequency.linearRampToValueAtTime(60, this.ctx.currentTime + 0.6);
+      modulator.frequency.setValueAtTime(160, this.ctx.currentTime);
+      modulator.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.65);
 
-      modGain.gain.setValueAtTime(450, this.ctx.currentTime);
+      modGain.gain.setValueAtTime(400, this.ctx.currentTime);
 
       mainGain.gain.setValueAtTime(0, this.ctx.currentTime);
-      mainGain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.05);
-      mainGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.7);
+      mainGain.gain.linearRampToValueAtTime(0.18, this.ctx.currentTime + 0.05);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.85);
 
       modulator.connect(modGain);
       modGain.connect(carrier.frequency);
       carrier.connect(mainGain);
-      mainGain.connect(this.masterVolume);
+      mainGain.connect(this.masterGain);
 
       carrier.start();
       modulator.start();
-      carrier.stop(this.ctx.currentTime + 0.8);
-      modulator.stop(this.ctx.currentTime + 0.8);
+      carrier.stop(this.ctx.currentTime + 0.9);
+      modulator.stop(this.ctx.currentTime + 0.9);
     } catch (e) {}
   }
   playLanding() {
     if (!this.ctx || this.isMuted) return;
     try {
-      // Sub-bass hit
+      // Heavy orchestral impact
       const subOsc = this.ctx.createOscillator();
       const subGain = this.ctx.createGain();
-      subOsc.frequency.setValueAtTime(60, this.ctx.currentTime);
-      subOsc.frequency.exponentialRampToValueAtTime(15, this.ctx.currentTime + 0.75);
-      subGain.gain.setValueAtTime(0.55, this.ctx.currentTime);
-      subGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
+      subOsc.frequency.setValueAtTime(65, this.ctx.currentTime);
+      subOsc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.8);
+      subGain.gain.setValueAtTime(0.65, this.ctx.currentTime);
+      subGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.85);
       subOsc.connect(subGain);
-      subGain.connect(this.masterVolume);
+      subGain.connect(this.masterGain);
       subOsc.start();
-      subOsc.stop(this.ctx.currentTime + 0.85);
+      subOsc.stop(this.ctx.currentTime + 0.9);
 
-      // Gold orchestral chime
-      const freqs = [293.66, 349.23, 440.00, 587.33, 698.46, 880.00]; // D minor/Gold chord
-      freqs.forEach((f, idx) => {
+      // Gold shine bell chimes (arpeggiated)
+      const chimes = [293.66, 349.23, 440.00, 587.33, 698.46, 880.00]; // Dm pentatonic/royal glow
+      chimes.forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, this.ctx.currentTime + idx * 0.04);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime + idx * 0.04);
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.05);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime + idx * 0.05);
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.5);
         osc.connect(gain);
-        gain.connect(this.masterVolume);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 2.7);
       });
@@ -157,7 +163,8 @@ class IntroAudioSynth {
   playWhoosh() {
     if (!this.ctx || this.isMuted) return;
     try {
-      const bufferSize = this.ctx.sampleRate * 2.5;
+      // High-speed wind glide sound
+      const bufferSize = this.ctx.sampleRate * 2.8;
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
@@ -168,294 +175,134 @@ class IntroAudioSynth {
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.Q.setValueAtTime(3.5, this.ctx.currentTime);
+      filter.Q.setValueAtTime(3.0, this.ctx.currentTime);
       filter.frequency.setValueAtTime(80, this.ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(1100, this.ctx.currentTime + 1.0);
-      filter.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 2.2);
+      filter.frequency.exponentialRampToValueAtTime(1000, this.ctx.currentTime + 1.2);
+      filter.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 2.4);
 
       const gain = this.ctx.createGain();
       gain.gain.setValueAtTime(0, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.35, this.ctx.currentTime + 1.0);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.4);
+      gain.gain.linearRampToValueAtTime(0.38, this.ctx.currentTime + 1.2);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.6);
 
       noise.connect(filter);
       filter.connect(gain);
-      gain.connect(this.masterVolume);
+      gain.connect(this.masterGain);
       noise.start();
-      noise.stop(this.ctx.currentTime + 2.5);
+      noise.stop(this.ctx.currentTime + 2.8);
     } catch (e) {}
   }
 }
 
-// ================= PROCEDURAL 3D GOLDEN EAGLE =================
-function GoldenEagle({ flightProgress, hasLanded, audioSynth }) {
+// ================= PROFESSIONALLY RIGGED EAGLE COMPONENT =================
+function RealRiggedEagle({ flightProgress, hasLanded, audioSynth }) {
   const groupRef = useRef();
-  const leftWingRef = useRef();
-  const leftWingOuterRef = useRef();
-  const rightWingRef = useRef();
-  const rightWingOuterRef = useRef();
-  const tailRef = useRef();
-  const headRef = useRef();
-  const leftEyeRef = useRef();
-  const rightEyeRef = useRef();
-  const bodyRef = useRef();
+  const { scene, animations } = useGLTF('/bald_eagle.glb');
+  const { ref, actions, names } = useAnimations(animations, groupRef);
 
   const flapTrackerRef = useRef(0);
 
+  // Set gold PBR texture properties on the model's meshes dynamically
+  useEffect(() => {
+    if (scene) {
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          // Apply luxurious gold material to the model to fit our CitizenLex theme
+          child.material = new THREE.MeshStandardMaterial({
+            color: new THREE.Color("#d4af37"),
+            roughness: 0.15,
+            metalness: 0.9,
+            envMapIntensity: 2.5
+          });
+        }
+      });
+    }
+  }, [scene]);
+
+  // Handle animation transitions based on flight vs landed state
+  useEffect(() => {
+    if (actions && names.length > 0) {
+      // Find default actions
+      const flightActionName = names.find(n => n.toLowerCase().includes('fly') || n.toLowerCase().includes('flight') || n.toLowerCase().includes('flap') || n.toLowerCase().includes('run')) || names[0];
+      const idleActionName = names.find(n => n.toLowerCase().includes('idle') || n.toLowerCase().includes('stand') || n.toLowerCase().includes('land') || n.toLowerCase().includes('pose')) || names[names.length - 1] || names[0];
+
+      if (!hasLanded) {
+        if (actions[flightActionName]) {
+          actions[flightActionName].reset().fadeIn(0.5).play();
+        }
+      } else {
+        if (actions[flightActionName]) {
+          actions[flightActionName].fadeOut(0.6);
+        }
+        if (actions[idleActionName]) {
+          actions[idleActionName].reset().fadeIn(0.6).play();
+        }
+      }
+    }
+  }, [actions, names, hasLanded]);
+
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
+    const progress = flightProgress.current;
 
-    // 1. Procedural Flight Path Calculation
-    const pathVal = flightProgress.current; // 0 (start) to 1 (landed)
-    
-    if (pathVal < 1.0) {
-      // Eagle path: starts far back, flies forward, circles screen, lands on Y: 1.8
-      const radius = 25 * (1 - pathVal);
-      const angle = t * 2.8 + pathVal * Math.PI * 2.5;
-      
-      const startZ = -110;
+    // Orbit path calculation
+    if (progress < 1.0) {
+      const radius = 24 * (1 - progress);
+      const angle = t * 2.8 + progress * Math.PI * 2.5;
+
+      const startZ = -105;
       const endZ = 0;
-      const curZ = startZ + (endZ - startZ) * pathVal;
+      const curZ = startZ + (endZ - startZ) * progress;
 
-      const startY = 15;
+      const startY = 16;
       const endY = 1.6;
-      const curY = startY + (endY - startY) * Math.pow(pathVal, 1.8);
+      const curY = startY + (endY - startY) * Math.pow(progress, 1.8);
 
       groupRef.current.position.x = Math.sin(angle) * radius;
-      groupRef.current.position.y = curY + Math.sin(t * 8) * 0.12 * (1 - pathVal); // flutter
+      groupRef.current.position.y = curY + Math.sin(t * 8) * 0.1 * (1 - progress); // dynamic hover wobble
       groupRef.current.position.z = curZ;
 
       // Rotate group toward flight direction
       const nextAngle = angle + 0.05;
       const nextX = Math.sin(nextAngle) * radius;
-      const nextZ = startZ + (endZ - startZ) * (pathVal + 0.01);
+      const nextZ = startZ + (endZ - startZ) * (progress + 0.01);
       const dirX = nextX - groupRef.current.position.x;
       const dirZ = nextZ - groupRef.current.position.z;
-      
+
       const heading = Math.atan2(dirX, dirZ);
       groupRef.current.rotation.y = heading + Math.PI;
-      groupRef.current.rotation.z = Math.sin(t * 3.5) * 0.25 * (1 - pathVal); // body roll
-      groupRef.current.rotation.x = -0.15 * (1 - pathVal); // tilt forward
-    } else {
-      // Landed state positioning
-      groupRef.current.position.set(0, 1.6, 0);
-      groupRef.current.rotation.set(0.12, Math.PI, 0); // slightly tilted up, looking front (facing negative Z)
-    }
+      groupRef.current.rotation.z = Math.sin(t * 3.5) * 0.22 * (1 - progress); // flight rolls
+      groupRef.current.rotation.x = -0.12 * (1 - progress); // forward tilt
 
-    // 2. Wing Flap Physics
-    if (pathVal < 0.98) {
-      const flapSpeed = 16 - pathVal * 8; // wings flap slower as gliding/landing
-      const flapAngle = Math.sin(t * flapSpeed) * 0.45;
-      
-      // Left Wing segment rotations (sine offset for organic bone movement)
-      leftWingRef.current.rotation.z = 0.45 + flapAngle;
-      leftWingOuterRef.current.rotation.z = 0.3 + Math.sin(t * flapSpeed + 0.5) * 0.3;
-      
-      // Right Wing (symmetric inverse)
-      rightWingRef.current.rotation.z = -0.45 - flapAngle;
-      rightWingOuterRef.current.rotation.z = -0.3 - Math.sin(t * flapSpeed + 0.5) * 0.3;
-
-      // Play audio wing flap synchronized at peak downstroke
-      const isPeakDownstroke = flapAngle > 0.43;
-      if (isPeakDownstroke && t - flapTrackerRef.current > 0.3) {
+      // Synchronize periodic thud audio sound on flight flaps
+      if (progress < 0.95 && Math.sin(t * 12) > 0.9 && t - flapTrackerRef.current > 0.35) {
         flapTrackerRef.current = t;
         audioSynth.current.playFlap();
       }
-
-      // Tail steering movement
-      tailRef.current.rotation.y = Math.sin(t * 4) * 0.15;
-      tailRef.current.rotation.x = Math.sin(t * 8) * 0.1;
     } else {
-      // Wings slow folding animation
-      const foldSpeed = 0.08;
-      leftWingRef.current.rotation.z = gsap.utils.interpolate(leftWingRef.current.rotation.z, 1.35, foldSpeed);
-      leftWingOuterRef.current.rotation.z = gsap.utils.interpolate(leftWingOuterRef.current.rotation.z, 0.95, foldSpeed);
-      
-      rightWingRef.current.rotation.z = gsap.utils.interpolate(rightWingRef.current.rotation.z, -1.35, foldSpeed);
-      rightWingOuterRef.current.rotation.z = gsap.utils.interpolate(rightWingOuterRef.current.rotation.z, -0.95, foldSpeed);
-
-      // Tail settles down
-      tailRef.current.rotation.set(0.2, 0, 0);
-
-      // Head looking left/right naturally
-      const lookTime = t * 0.5;
-      headRef.current.rotation.y = Math.sin(lookTime) * Math.cos(lookTime * 0.5) * 0.5;
-      headRef.current.rotation.x = Math.sin(lookTime * 2) * 0.12;
-    }
-
-    // 3. Periodic Eye Blinking (scaling down Y axis of eye spheres)
-    const isBlinking = Math.floor(t * 1.5) % 5 === 0 && (t % 1 < 0.12);
-    if (isBlinking) {
-      leftEyeRef.current.scale.y = 0.05;
-      rightEyeRef.current.scale.y = 0.05;
-    } else {
-      leftEyeRef.current.scale.y = 1;
-      rightEyeRef.current.scale.y = 1;
+      // Landed stance facing the screen
+      groupRef.current.position.set(0, 1.6, 0);
+      groupRef.current.rotation.set(0.1, Math.PI, 0);
     }
   });
 
-  // Premium Gold Legal-Tech PBR Material
-  const goldMaterial = (
-    <meshStandardMaterial
-      color="#d4af37"
-      roughness={0.15}
-      metalness={0.9}
-      envMapIntensity={2.5}
-      bumpScale={0.05}
-    />
-  );
-
-  const featherMaterial = (
-    <meshStandardMaterial
-      color="#b8860b"
-      roughness={0.22}
-      metalness={0.8}
-      envMapIntensity={2.0}
-    />
-  );
-
   return (
     <group ref={groupRef}>
-      {/* 3D Eagle Body */}
-      <mesh ref={bodyRef} castShadow receiveShadow>
-        <sphereGeometry args={[0.38, 32, 32]} />
-        {goldMaterial}
-      </mesh>
-
-      {/* Tail Feathers */}
-      <group ref={tailRef} position={[0, -0.15, -0.3]}>
-        <mesh position={[0, 0, -0.35]} rotation={[0.1, 0, 0]}>
-          <boxGeometry args={[0.25, 0.02, 0.45]} />
-          {featherMaterial}
-        </mesh>
-        <mesh position={[-0.1, 0, -0.32]} rotation={[0.1, -0.18, 0]}>
-          <boxGeometry args={[0.2, 0.02, 0.4]} />
-          {featherMaterial}
-        </mesh>
-        <mesh position={[0.1, 0, -0.32]} rotation={[0.1, 0.18, 0]}>
-          <boxGeometry args={[0.2, 0.02, 0.4]} />
-          {featherMaterial}
-        </mesh>
-      </group>
-
-      {/* Rigged Left Wing (Hierarchical bone nodes) */}
-      <group ref={leftWingRef} position={[-0.22, 0.1, 0]}>
-        <mesh position={[-0.45, 0, 0]}>
-          <boxGeometry args={[0.9, 0.03, 0.35]} />
-          {goldMaterial}
-        </mesh>
-        {/* Left Outer Wing Segment */}
-        <group ref={leftWingOuterRef} position={[-0.9, 0, 0]}>
-          <mesh position={[-0.4, 0, 0]}>
-            <boxGeometry args={[0.8, 0.02, 0.3]} />
-            {goldMaterial}
-          </mesh>
-          {/* Individual flight feathers */}
-          {[0, 1, 2, 3, 4].map(idx => (
-            <mesh
-              key={idx}
-              position={[-0.2 - idx * 0.12, -0.015, -0.2 - idx * 0.02]}
-              rotation={[0, 0.2 + idx * 0.08, -0.12]}
-            >
-              <boxGeometry args={[0.18, 0.005, 0.45]} />
-              {featherMaterial}
-            </mesh>
-          ))}
-        </group>
-      </group>
-
-      {/* Rigged Right Wing */}
-      <group ref={rightWingRef} position={[0.22, 0.1, 0]}>
-        <mesh position={[0.45, 0, 0]}>
-          <boxGeometry args={[0.9, 0.03, 0.35]} />
-          {goldMaterial}
-        </mesh>
-        {/* Right Outer Wing Segment */}
-        <group ref={rightWingOuterRef} position={[0.9, 0, 0]}>
-          <mesh position={[0.4, 0, 0]}>
-            <boxGeometry args={[0.8, 0.02, 0.3]} />
-            {goldMaterial}
-          </mesh>
-          {/* Individual flight feathers */}
-          {[0, 1, 2, 3, 4].map(idx => (
-            <mesh
-              key={idx}
-              position={[0.2 + idx * 0.12, -0.015, -0.2 - idx * 0.02]}
-              rotation={[0, -0.2 - idx * 0.08, 0.12]}
-            >
-              <boxGeometry args={[0.18, 0.005, 0.45]} />
-              {featherMaterial}
-            </mesh>
-          ))}
-        </group>
-      </group>
-
-      {/* Rigged Head, Beak, and Eyes */}
-      <group ref={headRef} position={[0, 0.16, 0.28]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.18, 16, 16]} />
-          {goldMaterial}
-        </mesh>
-        {/* Gold Beak */}
-        <mesh position={[0, -0.04, 0.19]} rotation={[0.45, 0, 0]}>
-          <coneGeometry args={[0.07, 0.18, 4]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.1} metalness={0.95} />
-        </mesh>
-        {/* Left Blinking Eye */}
-        <mesh ref={leftEyeRef} position={[-0.09, 0.05, 0.09]}>
-          <sphereGeometry args={[0.032, 8, 8]} />
-          <meshBasicMaterial color="#ffffff" />
-        </mesh>
-        {/* Right Blinking Eye */}
-        <mesh ref={rightEyeRef} position={[0.09, 0.05, 0.09]}>
-          <sphereGeometry args={[0.032, 8, 8]} />
-          <meshBasicMaterial color="#ffffff" />
-        </mesh>
-      </group>
-
-      {/* Segmented Talons */}
-      <group position={[-0.1, -0.32, 0.05]}>
-        <mesh rotation={[0.4, 0, 0]}>
-          <boxGeometry args={[0.04, 0.1, 0.04]} />
-          {goldMaterial}
-        </mesh>
-        <mesh position={[0, -0.05, 0.05]} rotation={[-0.4, 0, 0]}>
-          <boxGeometry args={[0.03, 0.03, 0.08]} />
-          <meshStandardMaterial color="#000000" roughness={0.5} />
-        </mesh>
-      </group>
-      <group position={[0.1, -0.32, 0.05]}>
-        <mesh rotation={[0.4, 0, 0]}>
-          <boxGeometry args={[0.04, 0.1, 0.04]} />
-          {goldMaterial}
-        </mesh>
-        <mesh position={[0, -0.05, 0.05]} rotation={[-0.4, 0, 0]}>
-          <boxGeometry args={[0.03, 0.03, 0.08]} />
-          <meshStandardMaterial color="#000000" roughness={0.5} />
-        </mesh>
-      </group>
+      <primitive object={scene} scale={[1.3, 1.3, 1.3]} />
     </group>
   );
 }
 
-// ================= VOLUMETRIC EMBER & SMOKE PARTICLES =================
-function SparkParticles({ count = 220, flightProgress }) {
+// ================= VOLUMETRIC FOG & EMBER SYSTEMS =================
+function VolumetricFog({ count = 80 }) {
   const pointsRef = useRef();
 
   const particles = useRef(
     new Float32Array(
-      Array.from({ length: count * 3 }, (_, idx) => {
-        if (idx % 3 === 0) return (Math.random() - 0.5) * 35; // X
-        if (idx % 3 === 1) return (Math.random() - 0.5) * 20; // Y
-        return (Math.random() - 0.8) * 80; // Z
-      })
-    )
-  );
-
-  const velocities = useRef(
-    new Float32Array(
-      Array.from({ length: count }, () => {
-        return (Math.random() * 0.1 + 0.05); // Speed upwards
+      Array.from({ length: count * 3 }, () => {
+        return (Math.random() - 0.5) * 60; // Spread wide across coordinates
       })
     )
   );
@@ -465,18 +312,9 @@ function SparkParticles({ count = 220, flightProgress }) {
     const positions = geo.attributes.position.array;
 
     for (let i = 0; i < count; i++) {
-      const idxY = i * 3 + 1;
-      const idxZ = i * 3 + 2;
-
-      // Spars drift up and closer to camera
-      positions[idxY] += velocities.current[i];
-      positions[idxZ] += 0.22;
-
-      // Recycle particles when they move past camera view
-      if (positions[idxZ] > 10 || positions[idxY] > 15) {
-        positions[i * 3] = (Math.random() - 0.5) * 35;
-        positions[idxY] = (Math.random() - 0.5) * 10 - 5;
-        positions[idxZ] = (Math.random() - 0.8) * 80;
+      positions[i * 3 + 2] += 0.06; // Drift forward slowly
+      if (positions[i * 3 + 2] > 20) {
+        positions[i * 3 + 2] = -60; // recycle back
       }
     }
     geo.attributes.position.needsUpdate = true;
@@ -491,17 +329,63 @@ function SparkParticles({ count = 220, flightProgress }) {
         />
       </bufferGeometry>
       <pointsMaterial
-        color="#f59e0b"
-        size={0.065}
+        color="#2b3b6b"
+        size={4.5}
         transparent
-        opacity={0.7}
+        opacity={0.16}
         depthWrite={false}
+        blending={THREE.AdditiveBlending}
       />
     </points>
   );
 }
 
-// ================= DYNAMIC CAMERA DIRECTIVES =================
+function Embers({ count = 180 }) {
+  const pointsRef = useRef();
+
+  const particles = useRef(
+    new Float32Array(
+      Array.from({ length: count * 3 }, () => {
+        return (Math.random() - 0.5) * 20; // localized center sparks
+      })
+    )
+  );
+
+  useFrame((state) => {
+    const geo = pointsRef.current.geometry;
+    const positions = geo.attributes.position.array;
+
+    for (let i = 0; i < count; i++) {
+      positions[i * 3 + 1] += 0.08; // float upward
+      positions[i * 3] += Math.sin(state.clock.getElapsedTime() + i) * 0.015; // drift horizontal
+      if (positions[i * 3 + 1] > 10) {
+        positions[i * 3 + 1] = -5; // recycle below
+      }
+    }
+    geo.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[particles.current, 3]}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        color="#d4af37"
+        size={0.08}
+        transparent
+        opacity={0.65}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// ================= CINEMATIC CAMERA SYSTEM =================
 function CinematicCamera({ flightProgress, hasLanded }) {
   const { camera } = useThree();
 
@@ -510,10 +394,10 @@ function CinematicCamera({ flightProgress, hasLanded }) {
     const progress = flightProgress.current;
 
     if (progress < 0.98) {
-      // Dynamic camera orbit path following the eagle
-      const zoomDepth = 45 * (1 - progress) + 7.5;
-      camera.position.x = Math.sin(t * 0.8) * 4 * (1 - progress);
-      camera.position.y = 3.5 * (1 - progress) + 1.8;
+      // Cinematic camera orbit path following the eagle
+      const zoomDepth = 40 * (1 - progress) + 7.2;
+      camera.position.x = Math.sin(t * 0.8) * 3.5 * (1 - progress);
+      camera.position.y = 3.0 * (1 - progress) + 1.8;
       camera.position.z = zoomDepth;
       camera.lookAt(0, 1.8 * progress, 0);
     } else {
@@ -540,7 +424,7 @@ export default function IntroAnimation({ onComplete }) {
   const [hasStarted, setHasStarted] = useState(false);
   const [logoAssembled, setLogoAssembled] = useState(false);
 
-  const audioSynth = useRef(new IntroAudioSynth());
+  const audioSynth = useRef(new AAACinematicAudio());
   const flightProgress = useRef(0);
   const introContainerRef = useRef();
   const taglineRef = useRef();
@@ -550,7 +434,7 @@ export default function IntroAnimation({ onComplete }) {
   const triggerSkip = () => {
     gsap.killTweensOf(flightProgress);
     audioSynth.current.stopAmbience();
-    
+
     // Smooth transition fade-out to prevent white flash
     gsap.to(introContainerRef.current, {
       opacity: 0,
@@ -582,13 +466,13 @@ export default function IntroAnimation({ onComplete }) {
     // 8-12 seconds duration (10s)
     gsap.to(flightProgress, {
       current: 1.0,
-      duration: 7.2,
+      duration: 7.5,
       ease: 'power1.inOut',
       onStart: () => {
         // Play eagle screech midway through flight
         setTimeout(() => {
           audioSynth.current.playScreech();
-        }, 2800);
+        }, 3000);
       },
       onComplete: () => {
         // Trigger landing impact
@@ -669,7 +553,7 @@ export default function IntroAnimation({ onComplete }) {
           width: '100%', height: '100%',
           justifyContent: 'center'
         }}>
-          <h2 style={{ color: '#fff', fontWeight: 800, letterSpacing: '1px' }}>GUIDE<span style={{ color: '#d4af37' }}>LEX</span></h2>
+          <h2 style={{ color: '#fff', fontWeight: 800, letterSpacing: '1.2px' }}>CITIZEN<span style={{ color: '#d4af37' }}>LEX</span></h2>
           <button
             onClick={startSequence}
             className="btn btn-lg"
@@ -724,38 +608,45 @@ export default function IntroAnimation({ onComplete }) {
       {/* 3D WebGL Canvas Layer */}
       {hasStarted && (
         <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
-          <Canvas shadows>
-            {/* Dark Cinematic Lighting */}
-            <ambientLight intensity={0.2} />
+          <Canvas shadows camera={{ fov: 45, near: 0.1, far: 300 }}>
+            {/* Cinematic Lighting Setup */}
+            <ambientLight intensity={0.15} />
             <directionalLight
-              position={[10, 15, 10]}
-              intensity={2.8}
+              position={[10, 20, 10]}
+              intensity={3.2}
               color="#ffffff"
               castShadow
             />
-            <pointLight position={[0, 1.8, 0]} intensity={logoAssembled ? 5 : 0.5} color="#d4af37" />
+            {/* Landing Spotlight with intense beam */}
             <spotLight
-              position={[0, 10, -5]}
-              intensity={4}
-              angle={0.6}
-              penumbra={1}
+              position={[0, 12, -3]}
+              intensity={5}
+              angle={0.5}
+              penumbra={0.8}
               color="#d4af37"
+              castShadow
             />
+            {/* Strong Rim light behind eagle */}
+            <pointLight position={[0, 3, -8]} intensity={8} color="#ffffff" />
+            <pointLight position={[0, 1.6, 0]} intensity={logoAssembled ? 6 : 0.8} color="#d4af37" />
 
-            {/* Glowing Golden Eagle */}
-            <GoldenEagle
-              flightProgress={flightProgress}
-              hasLanded={logoAssembled}
-              audioSynth={audioSynth}
-            />
+            {/* VOLUMETRIC ATMOSPHERE */}
+            <VolumetricFog />
+            <Embers />
 
-            {/* Sparks and Volumetric Embers */}
-            <SparkParticles flightProgress={flightProgress} />
+            {/* RIGGED EAGLE */}
+            <Suspense fallback={null}>
+              <RealRiggedEagle
+                flightProgress={flightProgress}
+                hasLanded={logoAssembled}
+                audioSynth={audioSynth}
+              />
+            </Suspense>
 
-            {/* Cinematic Camera */}
+            {/* Cinematic Camera tracking */}
             <CinematicCamera flightProgress={flightProgress} hasLanded={logoAssembled} />
 
-            {/* Logo Landing Platform */}
+            {/* Platform Floor */}
             <mesh position={[0, -0.4, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
               <planeGeometry args={[100, 100]} />
               <shadowMaterial opacity={0.35} />
