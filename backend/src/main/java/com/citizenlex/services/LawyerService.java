@@ -2,6 +2,7 @@ package com.citizenlex.services;
 
 import com.citizenlex.entities.*;
 import com.citizenlex.repositories.*;
+import com.citizenlex.config.DatabaseSeeder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,9 @@ public class LawyerService {
 
     @Autowired
     private GeminiService geminiService;
+
+    @Autowired
+    private DatabaseSeeder databaseSeeder;
 
     @Transactional
     public Lawyer registerLawyer(User user, String advocateId, Long specializationId, Integer experienceYears,
@@ -91,6 +95,17 @@ public class LawyerService {
                                            Integer minExperience, Double maxFee, Double minRating,
                                            String searchQuery, String sortBy) {
 
+        if (lawyerRepository.count() == 0 && databaseSeeder.isDevelopmentMode()) {
+            try {
+                Role lawyerRole = roleRepository.findByName("ROLE_LAWYER")
+                        .orElseGet(() -> roleRepository.save(new Role("ROLE_LAWYER")));
+                databaseSeeder.seedSpecializationsAndCitiesIfEmpty();
+                databaseSeeder.seedMockLawyersList(lawyerRole);
+            } catch (Exception e) {
+                System.err.println("Auto-seeding from service failed: " + e.getMessage());
+            }
+        }
+
         return lawyerRepository.findAll((Specification<Lawyer>) (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -121,7 +136,9 @@ public class LawyerService {
                 Predicate lastNameMatch = cb.like(cb.lower(root.get("user").get("lastName")), pattern);
                 Predicate bioMatch = cb.like(cb.lower(root.get("bio")), pattern);
                 Predicate courtMatch = cb.like(cb.lower(root.get("courtName")), pattern);
-                predicates.add(cb.or(nameMatch, lastNameMatch, bioMatch, courtMatch));
+                Predicate specMatch = cb.like(cb.lower(root.get("specialization").get("name")), pattern);
+                Predicate cityMatch = cb.like(cb.lower(root.get("city").get("name")), pattern);
+                predicates.add(cb.or(nameMatch, lastNameMatch, bioMatch, courtMatch, specMatch, cityMatch));
             }
 
             if ("fee_asc".equals(sortBy)) {

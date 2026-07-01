@@ -43,6 +43,18 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private org.springframework.core.env.Environment environment;
+
+    public boolean isDevelopmentMode() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        List<String> profiles = Arrays.asList(activeProfiles);
+        if (profiles.contains("prod") || profiles.contains("production")) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void run(String... args) throws Exception {
         // 1. Seed Roles
@@ -59,8 +71,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         // 4. Seed Cities
         seedCities();
 
-        // 5. Seed Mock Lawyers
-        seedMockLawyers(lawyerRole);
+        // 5. Seed Mock Lawyers (only in dev/local environment)
+        if (isDevelopmentMode()) {
+            seedMockLawyers(lawyerRole);
+        }
 
         // 6. Seed Rights Categories & Content
         if (categoryRepository.count() == 0) {
@@ -312,64 +326,122 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
     }
 
+    public void seedSpecializationsAndCitiesIfEmpty() {
+        seedSpecializations();
+        seedCities();
+    }
+
+    public long seedMockLawyersList(Role lawyerRole) {
+        Specialization civil = specializationRepository.findByName("Civil Litigation").orElse(null);
+        Specialization crim = specializationRepository.findByName("Criminal Defense").orElse(null);
+        Specialization fam = specializationRepository.findByName("Family Law").orElse(null);
+        Specialization corp = specializationRepository.findByName("Corporate Law").orElse(null);
+        Specialization labor = specializationRepository.findByName("Labor Law").orElse(null);
+        Specialization ip = specializationRepository.findByName("Intellectual Property").orElse(null);
+        Specialization realEstate = specializationRepository.findByName("Real Estate Law").orElse(null);
+        Specialization constitutional = specializationRepository.findByName("Constitutional Law").orElse(null);
+
+        City chennai = cityRepository.findByName("Chennai").orElse(null);
+        City coimbatore = cityRepository.findByName("Coimbatore").orElse(null);
+        City bangalore = cityRepository.findByName("Bangalore").orElse(null);
+        City madurai = cityRepository.findByName("Madurai").orElse(null);
+        City salem = cityRepository.findByName("Salem").orElse(null);
+        City mumbai = cityRepository.findByName("Mumbai").orElse(null);
+        City delhi = cityRepository.findByName("Delhi").orElse(null);
+
+        long countBefore = lawyerRepository.count();
+
+        createMockLawyer("lawyer1@citizenlex.com", "Abishek", "V", "AP-10294/2020", civil, chennai, 12, 1200.0,
+                "LL.B, LL.M", "Best Advocate Award 2024", "Senior civil litigation expert at Madras High Court.",
+                "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150", 4.9, "English, Tamil", lawyerRole);
+
+        createMockLawyer("lawyer2@citizenlex.com", "Rajesh", "Kumar", "AP-93041/2018", crim, coimbatore, 8, 1500.0,
+                "LL.B", "Successfully defended 50+ criminal appeals", "Criminal defense lawyer practicing before District Session Courts.",
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150", 4.8, "English, Tamil", lawyerRole);
+
+        createMockLawyer("lawyer3@citizenlex.com", "Sneha", "Rajan", "AP-48201/2017", fam, chennai, 9, 1000.0,
+                "BA LL.B (Hons)", "Mediation expert certified", "Family disputes advisor, divorce, alimony, child custody mediation expert.",
+                "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150", 5.0, "English, Tamil", lawyerRole);
+
+        createMockLawyer("lawyer4@citizenlex.com", "Vikram", "Suri", "AP-72013/2015", corp, bangalore, 15, 2500.0,
+                "LL.B, Corporate Law PG Diploma", "Advises 20+ startup companies", "Corporate legal counsel, mergers, acquisitions, regulatory compliance consultant.",
+                "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150", 4.9, "English, Kannada", lawyerRole);
+
+        createMockLawyer("lawyer5@citizenlex.com", "Amit", "Patel", "AP-83921/2019", labor, mumbai, 6, 900.0,
+                "LL.B", "Labor rights advocate of the year", "Labor disputes and trade union legal advisor.",
+                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150", 4.7, "English, Hindi, Marathi", lawyerRole);
+
+        createMockLawyer("lawyer6@citizenlex.com", "Priya", "Sharma", "AP-91203/2012", ip, delhi, 11, 1800.0,
+                "LL.B, LL.M in IP Law", "Registered patent agent", "Specializes in patent filing, copyright, and trademark litigation.",
+                "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150", 5.0, "English, Hindi", lawyerRole);
+
+        createMockLawyer("lawyer7@citizenlex.com", "Karthik", "Raja", "AP-38491/2016", realEstate, madurai, 7, 1100.0,
+                "B.A. LL.B", "Completed 200+ property verifications", "Property registry, title deeds check, and real estate litigation specialist.",
+                "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150", 4.6, "English, Tamil", lawyerRole);
+
+        createMockLawyer("lawyer8@citizenlex.com", "Arun", "Kumar", "AP-77402/2010", constitutional, salem, 14, 2000.0,
+                "LL.M", "Argued multiple public interest litigations", "Constitutional rights, PILs, and administrative law practice.",
+                "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150", 4.9, "English, Tamil", lawyerRole);
+
+        createMockLawyer("lawyer9@citizenlex.com", "Divya", "Nair", "AP-66381/2014", civil, bangalore, 10, 1300.0,
+                "LL.B", "Gold medalist in Civil Law", "Breach of contract, property dispute, and civil appeals lawyer.",
+                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150", 4.8, "English, Malayalam, Kannada", lawyerRole);
+
+        createMockLawyer("lawyer10@citizenlex.com", "Manoj", "Singh", "AP-55291/2011", crim, delhi, 13, 1600.0,
+                "LL.B, LL.M in Criminal Law", "Expert defense attorney", "Bail applications, trial court defense, and criminal appeals.",
+                "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150", 4.7, "English, Hindi", lawyerRole);
+
+        return lawyerRepository.count() - countBefore;
+    }
+
     private void seedMockLawyers(Role lawyerRole) {
-        if (lawyerRepository.count() == 0) {
-            Specialization civil = specializationRepository.findByName("Civil Litigation").orElse(null);
-            Specialization crim = specializationRepository.findByName("Criminal Defense").orElse(null);
-            Specialization fam = specializationRepository.findByName("Family Law").orElse(null);
-            Specialization corp = specializationRepository.findByName("Corporate Law").orElse(null);
-
-            City chennai = cityRepository.findByName("Chennai").orElse(null);
-            City coimbatore = cityRepository.findByName("Coimbatore").orElse(null);
-            City bangalore = cityRepository.findByName("Bangalore").orElse(null);
-
-            createMockLawyer("lawyer1@citizenlex.com", "Abishek", "V", "AP-10294/2020", civil, chennai, 12, 1200.0,
-                    "LL.B, LL.M", "Best Advocate Award 2024", "Senior civil litigation expert at Madras High Court.", lawyerRole);
-
-            createMockLawyer("lawyer2@citizenlex.com", "Rajesh", "Kumar", "AP-93041/2018", crim, coimbatore, 8, 1500.0,
-                    "LL.B", "Successfully defended 50+ criminal appeals", "Criminal defense lawyer practicing before District Session Courts.", lawyerRole);
-
-            createMockLawyer("lawyer3@citizenlex.com", "Sneha", "Rajan", "AP-48201/2017", fam, chennai, 9, 1000.0,
-                    "BA LL.B (Hons)", "Mediation expert certified", "Family disputes advisor, divorce, alimony, child custody mediation expert.", lawyerRole);
-
-            createMockLawyer("lawyer4@citizenlex.com", "Vikram", "Suri", "AP-72013/2015", corp, bangalore, 15, 2500.0,
-                    "LL.B, Corporate Law PG Diploma", "Advises 20+ startup companies", "Corporate legal counsel, mergers, acquisitions, regulatory compliance consultant.", lawyerRole);
+        if (lawyerRepository.count() < 10) {
+            seedMockLawyersList(lawyerRole);
         }
     }
 
-    private void createMockLawyer(String email, String first, String last, String advocateId,
+    public void createMockLawyer(String email, String first, String last, String advocateId,
                                   Specialization spec, City city, int exp, double fee,
-                                  String qual, String ach, String bio, Role lawyerRole) {
+                                  String qual, String ach, String bio, String profileImageUrl,
+                                  double rating, String languages, Role lawyerRole) {
 
-        if (!userRepository.existsByEmail(email)) {
-            User user = new User();
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        User user;
+        if (userOpt.isEmpty()) {
+            user = new User();
             user.setEmail(email);
             user.setPassword(passwordEncoder.encode("Lawyer@123"));
             user.setFirstName(first);
             user.setLastName(last);
+            user.setProfileImageUrl(profileImageUrl);
             user.setEnabled(true);
             user.setCreatedAt(LocalDateTime.now());
             user.getRoles().add(lawyerRole);
             user = userRepository.save(user);
-
-            Lawyer lawyer = new Lawyer();
-            lawyer.setUser(user);
-            lawyer.setAdvocateId(advocateId);
-            lawyer.setSpecialization(spec);
-            lawyer.setCity(city);
-            lawyer.setExperienceYears(exp);
-            lawyer.setConsultationFee(fee);
-            lawyer.setQualifications(qual);
-            lawyer.setAchievements(ach);
-            lawyer.setBio(bio);
-            lawyer.setLanguages("English, Tamil");
-            lawyer.setWorkingHours("09:00 - 18:00");
-            lawyer.setIsVerified(true);
-            lawyer.setVerificationStatus("APPROVED");
-            lawyer.setIsOnline(true);
-            lawyer.setRating(5.0);
-            lawyer.setTotalReviews(0);
-            lawyerRepository.save(lawyer);
+        } else {
+            user = userOpt.get();
+            user.setProfileImageUrl(profileImageUrl);
+            user = userRepository.save(user);
         }
+
+        Optional<Lawyer> lawyerOpt = lawyerRepository.findByUser(user);
+        Lawyer lawyer = lawyerOpt.orElseGet(Lawyer::new);
+        lawyer.setUser(user);
+        lawyer.setAdvocateId(advocateId);
+        lawyer.setSpecialization(spec);
+        lawyer.setCity(city);
+        lawyer.setExperienceYears(exp);
+        lawyer.setConsultationFee(fee);
+        lawyer.setQualifications(qual);
+        lawyer.setAchievements(ach);
+        lawyer.setBio(bio);
+        lawyer.setLanguages(languages);
+        lawyer.setWorkingHours("09:00 - 18:00");
+        lawyer.setIsVerified(true);
+        lawyer.setVerificationStatus("APPROVED");
+        lawyer.setIsOnline(true);
+        lawyer.setRating(rating);
+        lawyer.setTotalReviews(0);
+        lawyerRepository.save(lawyer);
     }
 }

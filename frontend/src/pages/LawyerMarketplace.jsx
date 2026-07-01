@@ -34,6 +34,7 @@ export default function LawyerMarketplace() {
   const mapRef = useRef(null);
   const directionsRendererRef = useRef(null);
   const markersRef = useRef([]);
+  const lawyerMarkersRef = useRef([]);
   const autocompleteInputRef = useRef(null);
 
   const fetchLawyers = async () => {
@@ -87,7 +88,9 @@ export default function LawyerMarketplace() {
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
       if (!window.google) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.src = apiKey
+          ? `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
+          : `https://maps.googleapis.com/maps/api/js?libraries=places`;
         script.async = true;
         script.defer = true;
         script.onload = () => {
@@ -224,6 +227,10 @@ export default function LawyerMarketplace() {
   const plotLawyerMarkers = (lawyerList) => {
     if (!window.google || !map) return;
 
+    // Clear existing lawyer markers
+    lawyerMarkersRef.current.forEach(m => m.setMap(null));
+    lawyerMarkersRef.current = [];
+
     lawyerList.forEach((lawyer) => {
       // Mock latitude/longitude offset around user location or default Chennai center for real plotting
       const offsetLat = (Math.random() - 0.5) * 0.05;
@@ -233,12 +240,37 @@ export default function LawyerMarketplace() {
 
       const lawyerLatLng = { lat, lng };
 
-      new window.google.maps.Marker({
+      const marker = new window.google.maps.Marker({
         position: lawyerLatLng,
         map: map,
-        title: `Advocate ${lawyer.user?.firstName} ${lawyer.user?.lastName}`,
+        title: `Advocate ${lawyer.user?.firstName || 'Lawyer'} ${lawyer.user?.lastName || ''}`,
         icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
       });
+
+      const contentString = `
+        <div style="color: #030712; padding: 12px; font-family: sans-serif; text-align: left; min-width: 180px;">
+          <h6 style="margin: 0 0 6px 0; font-weight: bold; color: #1e1b4b; font-size: 13px;">Advocate ${lawyer.user?.firstName || ''} ${lawyer.user?.lastName || ''}</h6>
+          <p style="margin: 0 0 8px 0; font-size: 11px; color: #4b5563; font-weight: 500;">${lawyer.specialization?.name || 'Practice Area'} | ${lawyer.experienceYears || 0} Yrs Exp</p>
+          <div style="font-size: 11px; margin-bottom: 10px; color: #374151;">
+            <strong>Fee:</strong> ₹${lawyer.consultationFee || 0} <br/> 
+            <strong>Rating:</strong> ⭐ ${lawyer.rating || 5.0} (${lawyer.totalReviews || 0} Reviews)
+          </div>
+          <a href="/lawyers/${lawyer.id}" style="display: block; text-align: center; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: bold; box-shadow: 0 4px 6px rgba(99,102,241,0.2);">Book Appointment / Profile</a>
+        </div>
+      `;
+
+      const infowindow = new window.google.maps.InfoWindow({
+        content: contentString,
+      });
+
+      marker.addListener("click", () => {
+        infowindow.open({
+          anchor: marker,
+          map,
+        });
+      });
+
+      lawyerMarkersRef.current.push(marker);
     });
   };
 
@@ -285,6 +317,20 @@ export default function LawyerMarketplace() {
       localStorage.setItem('recentSearches', JSON.stringify(updated));
     }
     fetchLawyers();
+  };
+
+  const handleAutoSeed = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post('/api/lawyers/seed');
+      alert(res.data.message || 'Demo lawyers seeded successfully!');
+      fetchLawyers();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to seed demo lawyers.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAiRecommend = async (e) => {
@@ -514,10 +560,13 @@ export default function LawyerMarketplace() {
               ))}
             </div>
           ) : lawyers.length === 0 ? (
-            <div className="glass-panel text-center py-5 text-secondary" style={{ borderRadius: '20px' }}>
+            <div className="glass-panel text-center py-5 text-secondary" style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
               <i className="bi bi-person-slash fs-1 d-block mb-3 opacity-25"></i>
               <h5 className="text-white fw-bold">No Lawyers Found</h5>
-              <p className="small">Try refining your filter preferences or write a different search query.</p>
+              <p className="small mb-3">Try refining your filter preferences or write a different search query.</p>
+              <button onClick={handleAutoSeed} className="btn btn-sm btn-glass text-white border border-light-subtle px-3 py-1.5" style={{ borderRadius: '10px' }}>
+                Seed Demo Dataset <i className="bi bi-database-fill-add ms-1"></i>
+              </button>
             </div>
           ) : (
             <div className="row g-3">
@@ -561,30 +610,44 @@ export default function LawyerMarketplace() {
                           <p className="text-secondary small mb-2.5 fw-semibold" style={{ fontSize: '0.8rem' }}>
                             {lawyer.specialization?.name} | {lawyer.courtName || 'District Courts'}
                           </p>
-
+ 
                           <div className="d-flex flex-wrap gap-2.5 align-items-center text-white-50" style={{ fontSize: '0.78rem' }}>
                             <span><i className="bi bi-briefcase me-1 text-primary"></i>{lawyer.experienceYears} Years Exp</span>
                             <span className="text-secondary">|</span>
                             <span><i className="bi bi-translate me-1 text-primary"></i>{lawyer.languages || 'English'}</span>
                             <span className="text-secondary">|</span>
+                            <span><i className="bi bi-geo-alt me-1 text-primary"></i>{lawyer.city?.name || 'Tamil Nadu'}</span>
+                            <span className="text-secondary">|</span>
                             <span><i className="bi bi-star-fill text-warning me-1"></i>{lawyer.rating} ({lawyer.totalReviews} Reviews)</span>
                           </div>
                         </div>
                       </div>
-
+ 
                       {/* Right: Actions */}
-                      <div className="d-flex flex-row flex-md-column gap-2 justify-content-end align-items-stretch">
+                      <div className="d-flex flex-row flex-md-column gap-2 justify-content-end align-items-stretch" style={{ minWidth: '180px' }}>
                         <div className="text-md-end mb-1">
                           <span className="small text-secondary">Consultation Fee</span>
                           <h4 className="fw-extrabold text-white mb-0" style={{ letterSpacing: '-0.5px' }}>₹{lawyer.consultationFee}</h4>
                         </div>
-                        <div className="d-flex gap-2">
-                          <button onClick={() => calculateDirections(lawyer)} className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1.5" style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.82rem' }}>
-                            <i className="bi bi-geo-alt-fill text-danger"></i> Directions
-                          </button>
-                          <Link to={`/lawyers/${lawyer.id}`} className="btn btn-sm text-white fw-bold d-flex align-items-center justify-content-center gap-1.5" style={{
-                            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                        <div className="d-flex flex-column gap-2">
+                          <div className="d-flex gap-2">
+                            <button onClick={() => calculateDirections(lawyer)} className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1.5 flex-grow-1 justify-content-center" style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                              <i className="bi bi-geo-alt-fill text-danger"></i> Route
+                            </button>
+                            <Link to="/consultations" className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1.5 flex-grow-1 justify-content-center" style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                              <i className="bi bi-chat-square-dots text-info"></i> Chat
+                            </Link>
+                          </div>
+                          <Link to={`/lawyers/${lawyer.id}?book=true`} className="btn btn-sm text-dark fw-bold d-flex align-items-center justify-content-center gap-1.5" style={{
+                            background: 'linear-gradient(135deg, #a855f7, #f59e0b)',
                             border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            fontSize: '0.82rem'
+                          }}>
+                            <i className="bi bi-calendar-event-fill"></i> Book Appointment
+                          </Link>
+                          <Link to={`/lawyers/${lawyer.id}`} className="btn btn-sm btn-glass text-white border border-light-subtle d-flex align-items-center justify-content-center gap-1.5" style={{
                             borderRadius: '8px',
                             padding: '8px 16px',
                             fontSize: '0.82rem'

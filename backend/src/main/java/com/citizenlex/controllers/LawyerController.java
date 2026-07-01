@@ -4,6 +4,8 @@ import com.citizenlex.entities.*;
 import com.citizenlex.repositories.CityRepository;
 import com.citizenlex.repositories.SpecializationRepository;
 import com.citizenlex.repositories.UserRepository;
+import com.citizenlex.repositories.RoleRepository;
+import com.citizenlex.config.DatabaseSeeder;
 import com.citizenlex.security.UserPrincipal;
 import com.citizenlex.services.LawyerService;
 import com.citizenlex.services.UserService;
@@ -39,6 +41,12 @@ public class LawyerController {
 
     @Autowired
     private com.citizenlex.services.CloudinaryService cloudinaryService;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private DatabaseSeeder databaseSeeder;
 
     /**
      * POST /api/lawyers/upload-document — Upload verification document to Cloudinary.
@@ -229,6 +237,35 @@ public class LawyerController {
         try {
             lawyerService.suspendLawyer(id);
             return ResponseEntity.ok(Map.of("message", "Lawyer suspended successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/lawyers/seed — Seed 10 verified lawyers for testing (admin or dev mode).
+     */
+    @PostMapping("/seed")
+    public ResponseEntity<?> seedDemoLawyers() {
+        boolean isDev = databaseSeeder.isDevelopmentMode();
+        boolean isAdmin = false;
+        UserPrincipal principal = getAuthenticatedPrincipal();
+        if (principal != null) {
+            isAdmin = principal.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        }
+
+        if (!isDev && !isAdmin) {
+            return ResponseEntity.status(403).body(Map.of("error", "Seeding is disabled in production for non-admin users."));
+        }
+
+        try {
+            Role lawyerRole = roleRepository.findByName("ROLE_LAWYER")
+                    .orElseGet(() -> roleRepository.save(new Role("ROLE_LAWYER")));
+
+            databaseSeeder.seedSpecializationsAndCitiesIfEmpty();
+            long seededCount = databaseSeeder.seedMockLawyersList(lawyerRole);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Seeded " + seededCount + " demo lawyers successfully."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
