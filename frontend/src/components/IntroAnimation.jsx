@@ -24,6 +24,22 @@ class StorytellingAudioSynth {
     this.masterGain.gain.setValueAtTime(0.5, this.ctx.currentTime);
     this.masterGain.connect(this.ctx.destination);
   }
+  playStatusConfirm() {
+    if (!this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch (e) {}
+  }
   mute(state) {
     this.isMuted = state;
     if (this.masterGain && this.ctx) {
@@ -661,6 +677,8 @@ export default function IntroAnimation({ onComplete }) {
   const [isMuted, setIsMuted] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [logoAssembled, setLogoAssembled] = useState(false);
+  const [statusLines, setStatusLines] = useState([]);
+  const [showStatusPanel, setShowStatusPanel] = useState(false);
 
   // Storyboard phases: 'boot' | 'ai' | 'flight' | 'landing' | 'reveal' | 'transition'
   const [scenePhase, setScenePhase] = useState('boot');
@@ -759,11 +777,35 @@ export default function IntroAnimation({ onComplete }) {
             });
           }, 400);
 
-          // Scene 6: Zoom into Logo & Transition (7.4s mark)
+          // Scene 6: Status Panel & Zoom Transition
           setTimeout(() => {
-            setScenePhase('transition');
-            triggerSkip();
-          }, 2000);
+            setShowStatusPanel(true);
+            
+            setTimeout(() => {
+              setStatusLines(prev => [...prev, "✓ Legal Intelligence Online"]);
+              audioSynth.current.playStatusConfirm();
+            }, 0);
+            
+            setTimeout(() => {
+              setStatusLines(prev => [...prev, "✓ Secure Connection Established"]);
+              audioSynth.current.playStatusConfirm();
+            }, 450);
+            
+            setTimeout(() => {
+              setStatusLines(prev => [...prev, "✓ AI Legal Assistant Ready"]);
+              audioSynth.current.playStatusConfirm();
+            }, 900);
+            
+            setTimeout(() => {
+              setStatusLines(prev => [...prev, "✓ Welcome to CitizenLex"]);
+              audioSynth.current.playStatusConfirm();
+            }, 1350);
+            
+            setTimeout(() => {
+              setScenePhase('transition');
+              triggerSkip();
+            }, 2500);
+          }, 1200);
         }
       });
     }, 3000);
@@ -998,6 +1040,60 @@ export default function IntroAnimation({ onComplete }) {
           >
             Justice Powered by Artificial Intelligence
           </p>
+        </div>
+      )}
+
+      {/* Dynamic Keyframe Styles */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translate(-50%, 10px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+
+      {/* SCENE 6: FUTURISTIC SYSTEM STATUS PANEL */}
+      {showStatusPanel && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '7%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100002,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            alignItems: 'flex-start',
+            fontFamily: "'Courier New', Courier, monospace",
+            fontSize: '0.88rem',
+            background: 'rgba(2, 3, 10, 0.7)',
+            padding: '16px 24px',
+            borderRadius: '8px',
+            border: '1px solid rgba(0, 210, 255, 0.25)',
+            boxShadow: '0 0 16px rgba(0, 210, 255, 0.15)',
+            minWidth: '310px',
+            backdropFilter: 'blur(4px)',
+            opacity: 0,
+            animation: 'fadeIn 0.4s ease-out forwards'
+          }}
+        >
+          {statusLines.map((line, idx) => (
+            <div
+              key={idx}
+              style={{
+                color: idx === 3 ? '#d4af37' : '#00d2ff',
+                textShadow: idx === 3 ? '0 0 8px rgba(212,175,55,0.4)' : '0 0 8px rgba(0,210,255,0.4)',
+                fontWeight: idx === 3 ? 700 : 500,
+                letterSpacing: '1px'
+              }}
+            >
+              {line}
+            </div>
+          ))}
         </div>
       )}
     </div>
