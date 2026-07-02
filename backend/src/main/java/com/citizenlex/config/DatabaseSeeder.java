@@ -313,14 +313,20 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     private void seedCities() {
-        if (cityRepository.count() == 0) {
-            cityRepository.save(new City("Chennai"));
-            cityRepository.save(new City("Coimbatore"));
-            cityRepository.save(new City("Madurai"));
-            cityRepository.save(new City("Salem"));
-            cityRepository.save(new City("Bangalore"));
-            cityRepository.save(new City("Mumbai"));
-            cityRepository.save(new City("Delhi"));
+        String[] tnDistricts = {
+            "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore",
+            "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
+            "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai",
+            "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai",
+            "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi",
+            "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
+            "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur",
+            "Vellore", "Viluppuram", "Virudhunagar", "Bangalore", "Mumbai", "Delhi"
+        };
+        for (String name : tnDistricts) {
+            if (cityRepository.findByName(name).isEmpty()) {
+                cityRepository.save(new City(name));
+            }
         }
     }
 
@@ -339,55 +345,124 @@ public class DatabaseSeeder implements CommandLineRunner {
         Specialization realEstate = specializationRepository.findByName("Real Estate Law").orElse(null);
         Specialization constitutional = specializationRepository.findByName("Constitutional Law").orElse(null);
 
-        City chennai = cityRepository.findByName("Chennai").orElse(null);
-        City coimbatore = cityRepository.findByName("Coimbatore").orElse(null);
-        City bangalore = cityRepository.findByName("Bangalore").orElse(null);
-        City madurai = cityRepository.findByName("Madurai").orElse(null);
-        City salem = cityRepository.findByName("Salem").orElse(null);
-        City mumbai = cityRepository.findByName("Mumbai").orElse(null);
-        City delhi = cityRepository.findByName("Delhi").orElse(null);
-
         long countBefore = lawyerRepository.count();
 
-        createMockLawyer("lawyer1@citizenlex.com", "Abishek", "V", "AP-10294/2020", civil, chennai, 12, 1200.0,
-                "LL.B, LL.M", "Best Advocate Award 2024", "Senior civil litigation expert at Madras High Court.",
-                "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150", 4.9, "English, Tamil", lawyerRole);
+        String[] tnDistricts = {
+            "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore",
+            "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
+            "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai",
+            "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai",
+            "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi",
+            "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
+            "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur",
+            "Vellore", "Viluppuram", "Virudhunagar"
+        };
 
-        createMockLawyer("lawyer2@citizenlex.com", "Rajesh", "Kumar", "AP-93041/2018", crim, coimbatore, 8, 1500.0,
-                "LL.B", "Successfully defended 50+ criminal appeals", "Criminal defense lawyer practicing before District Session Courts.",
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150", 4.8, "English, Tamil", lawyerRole);
+        double[] lats = {
+            11.1401, 12.6917, 13.0827, 11.0168, 11.7480,
+            12.1353, 10.3673, 11.3410, 11.7384, 12.8387,
+            8.0883, 10.9601, 12.5186, 9.9252, 11.1018,
+            10.7656, 11.2189, 11.4102, 11.2342, 10.3797,
+            9.3639, 12.9274, 11.6643, 9.8433, 8.9593,
+            10.7870, 10.0104, 8.7642, 10.7905, 8.7139,
+            12.4929, 11.1085, 13.1438, 12.2280, 10.7722,
+            12.9165, 11.9401, 9.5680
+        };
 
-        createMockLawyer("lawyer3@citizenlex.com", "Sneha", "Rajan", "AP-48201/2017", fam, chennai, 9, 1000.0,
-                "BA LL.B (Hons)", "Mediation expert certified", "Family disputes advisor, divorce, alimony, child custody mediation expert.",
-                "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150", 5.0, "English, Tamil", lawyerRole);
+        double[] lons = {
+            79.0747, 79.9750, 80.2707, 76.9558, 79.7714,
+            78.1560, 77.9803, 77.7172, 78.9639, 79.7016,
+            77.5385, 78.0766, 78.2137, 78.1198, 79.6522,
+            79.8433, 78.1673, 76.6950, 78.8797, 78.8202,
+            78.8394, 79.3327, 78.1460, 78.4833, 77.3142,
+            79.1378, 77.4777, 78.1348, 78.7047, 77.7567,
+            78.5678, 77.3411, 79.9077, 79.0665, 79.6361,
+            79.1325, 79.4861, 77.9624
+        };
 
-        createMockLawyer("lawyer4@citizenlex.com", "Vikram", "Suri", "AP-72013/2015", corp, bangalore, 15, 2500.0,
-                "LL.B, Corporate Law PG Diploma", "Advises 20+ startup companies", "Corporate legal counsel, mergers, acquisitions, regulatory compliance consultant.",
-                "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150", 4.9, "English, Kannada", lawyerRole);
+        Specialization[] specs = { civil, crim, fam, corp, labor, ip, realEstate, constitutional };
 
-        createMockLawyer("lawyer5@citizenlex.com", "Amit", "Patel", "AP-83921/2019", labor, mumbai, 6, 900.0,
-                "LL.B", "Labor rights advocate of the year", "Labor disputes and trade union legal advisor.",
-                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150", 4.7, "English, Hindi, Marathi", lawyerRole);
+        String[] firstNamesA = { "Karthik", "Arun", "Rajesh", "Vikram", "Manoj", "Suresh", "Kannan", "Ramesh", "Hari", "Vijay",
+                                 "Sanjay", "Ganesh", "Kumar", "Babu", "Bala", "Manikandan", "Saravanan", "Murugan", "Selvam", "Prabhu",
+                                 "Senthil", "Velu", "Kathir", "Jaya", "Prakash", "Dinesh", "Naveen", "Deepak", "Anand", "Raghu",
+                                 "Sudhakar", "Prasad", "Shankar", "Vasu", "Ram", "Krishna", "Madhavan", "Govind" };
+                                 
+        String[] lastNamesA = { "Raman", "Kumar", "Balaji", "Sethupathi", "Moorthy", "Krishnan", "Nair", "Prasad", "Raman", "Raghavan",
+                                "V", "Rajan", "Suri", "Patel", "Sharma", "Raja", "Kumar", "Nair", "Singh", "Sundaram",
+                                "Pillai", "Gounder", "Thevar", "Naicker", "Chettiar", "Iyer", "Iyengar", "Reddy", "Naidu", "Rao",
+                                "Mudaliar", "Achari", "Devar", "Kounder", "Pandi", "Dharman", "Samy", "Karthikeyan" };
 
-        createMockLawyer("lawyer6@citizenlex.com", "Priya", "Sharma", "AP-91203/2012", ip, delhi, 11, 1800.0,
-                "LL.B, LL.M in IP Law", "Registered patent agent", "Specializes in patent filing, copyright, and trademark litigation.",
-                "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150", 5.0, "English, Hindi", lawyerRole);
+        String[] firstNamesB = { "Sneha", "Priya", "Divya", "Lakshmi", "Anitha", "Meera", "Sandhya", "Chitra", "Radha", "Revathi",
+                                 "Uma", "Geetha", "Kavitha", "Sangeetha", "Vidya", "Asha", "Rekha", "Sita", "Saraswathi", "Malathi",
+                                 "Shanthi", "Preethi", "Deepa", "Vasanthi", "Kokila", "Subha", "Nithya", "Abirami", "Aarthi", "Bindu",
+                                 "Pooja", "Harini", "Swathi", "Shruthi", "Pavithra", "Sindhu", "Gayathri", "Janani" };
 
-        createMockLawyer("lawyer7@citizenlex.com", "Karthik", "Raja", "AP-38491/2016", realEstate, madurai, 7, 1100.0,
-                "B.A. LL.B", "Completed 200+ property verifications", "Property registry, title deeds check, and real estate litigation specialist.",
-                "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150", 4.6, "English, Tamil", lawyerRole);
+        String[] lastNamesB = { "Rajan", "Sharma", "Nair", "Priya", "Devi", "Nair", "Raman", "Raghavan", "Kari", "Mani",
+                                "Selvi", "Latha", "Kumari", "Valli", "Chidambaram", "Ananth", "Sundari", "Gowri", "Lakshmi", "Banumathi",
+                                "Vidhya", "Kalpana", "Archana", "Nisha", "Rani", "Amutha", "Chitra", "Soundari", "Kala", "Roopa",
+                                "Aswini", "Meenakshi", "Kamala", "Bharathi", "Kavya", "Divya", "Sowmya", "Janaki" };
 
-        createMockLawyer("lawyer8@citizenlex.com", "Arun", "Kumar", "AP-77402/2010", constitutional, salem, 14, 2000.0,
-                "LL.M", "Argued multiple public interest litigations", "Constitutional rights, PILs, and administrative law practice.",
-                "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150", 4.9, "English, Tamil", lawyerRole);
+        String[] avatarsA = {
+            "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+            "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+            "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150",
+            "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150",
+            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
+            "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150",
+            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150"
+        };
 
-        createMockLawyer("lawyer9@citizenlex.com", "Divya", "Nair", "AP-66381/2014", civil, bangalore, 10, 1300.0,
-                "LL.B", "Gold medalist in Civil Law", "Breach of contract, property dispute, and civil appeals lawyer.",
-                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150", 4.8, "English, Malayalam, Kannada", lawyerRole);
+        String[] avatarsB = {
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+            "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+            "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150",
+            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+            "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150",
+            "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150",
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+            "https://images.unsplash.com/photo-1548142813-c348350df52b?w=150",
+            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
+            "https://images.unsplash.com/photo-1534751516642-a131fed10495?w=150"
+        };
 
-        createMockLawyer("lawyer10@citizenlex.com", "Manoj", "Singh", "AP-55291/2011", crim, delhi, 13, 1600.0,
-                "LL.B, LL.M in Criminal Law", "Expert defense attorney", "Bail applications, trial court defense, and criminal appeals.",
-                "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150", 4.7, "English, Hindi", lawyerRole);
+        for (int i = 0; i < tnDistricts.length; i++) {
+            String districtName = tnDistricts[i];
+            City city = cityRepository.findByName(districtName).orElse(null);
+            if (city == null) continue;
+
+            // Lawyer A in district
+            Specialization specA = specs[(i * 2) % specs.length];
+            String emailA = "lawyer_" + districtName.toLowerCase().replace(" ", "_") + "_a@citizenlex.com";
+            String advIdA = "AP-" + (20000 + i) + "/202" + (i % 5 + 1);
+            double feeA = 700.0 + (i * 30) % 900;
+            int expA = 5 + (i * 2) % 12;
+            double ratingA = 4.4 + (i * 0.05) % 0.6;
+            String avatarA = avatarsA[i % avatarsA.length];
+            String officeAddrA = "No. " + (i + 1) + ", Court Road, Near District Court, " + districtName + ", Tamil Nadu";
+
+            createMockLawyer(emailA, firstNamesA[i], lastNamesA[i], advIdA, specA, city, expA, feeA,
+                    "LL.B, State Bar Enrollment", "Distinguished Panel Advocate Award",
+                    "Dedicated and results-oriented advocate specializing in " + specA.getName() + ", with over " + expA + " years of active court practice in " + districtName + ".",
+                    avatarA, ratingA, "English, Tamil", "Tamil Nadu", districtName, officeAddrA, lats[i], lons[i], lawyerRole);
+
+            // Lawyer B in district (with slightly offset coordinates)
+            Specialization specB = specs[(i * 2 + 1) % specs.length];
+            String emailB = "lawyer_" + districtName.toLowerCase().replace(" ", "_") + "_b@citizenlex.com";
+            String advIdB = "AP-" + (30000 + i) + "/202" + (i % 5 + 1);
+            double feeB = 900.0 + (i * 40) % 1100;
+            int expB = 7 + (i * 3) % 15;
+            double ratingB = 4.5 + (i * 0.04) % 0.5;
+            String avatarB = avatarsB[i % avatarsB.length];
+            String officeAddrB = "Chamber Suite " + (char)('A' + (i % 6)) + "-" + (i * 3 + 2) + ", Bar Council Chambers, " + districtName + ", Tamil Nadu";
+
+            createMockLawyer(emailB, firstNamesB[i], lastNamesB[i], advIdB, specB, city, expB, feeB,
+                    "LL.B, LL.M, Senior Counsel", "Member of Bar Association Council",
+                    "Renowned legal counsel in " + specB.getName() + " representing individuals and corporations at all judicial levels across " + districtName + ".",
+                    avatarB, ratingB, "English, Tamil", "Tamil Nadu", districtName, officeAddrB, lats[i] + 0.008, lons[i] - 0.008, lawyerRole);
+        }
 
         return lawyerRepository.count() - countBefore;
     }
@@ -401,7 +476,8 @@ public class DatabaseSeeder implements CommandLineRunner {
     public void createMockLawyer(String email, String first, String last, String advocateId,
                                   Specialization spec, City city, int exp, double fee,
                                   String qual, String ach, String bio, String profileImageUrl,
-                                  double rating, String languages, Role lawyerRole) {
+                                  double rating, String languages, String state, String district,
+                                  String officeAddress, Double latitude, Double longitude, Role lawyerRole) {
 
         Optional<User> userOpt = userRepository.findByEmail(email);
         User user;
@@ -440,6 +516,11 @@ public class DatabaseSeeder implements CommandLineRunner {
         lawyer.setIsOnline(true);
         lawyer.setRating(rating);
         lawyer.setTotalReviews(0);
+        lawyer.setState(state);
+        lawyer.setDistrict(district);
+        lawyer.setOfficeAddress(officeAddress);
+        lawyer.setLatitude(latitude);
+        lawyer.setLongitude(longitude);
         lawyerRepository.save(lawyer);
     }
 }

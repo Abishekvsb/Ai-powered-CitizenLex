@@ -93,7 +93,8 @@ public class LawyerService {
 
     public List<Lawyer> getFilteredLawyers(Long specializationId, Long cityId, String language,
                                            Integer minExperience, Double maxFee, Double minRating,
-                                           String searchQuery, String sortBy) {
+                                           String searchQuery, String sortBy, String state, String district,
+                                           String city, Boolean isOnline) {
 
         if (lawyerRepository.count() == 0 && databaseSeeder.isDevelopmentMode()) {
             try {
@@ -130,6 +131,18 @@ public class LawyerService {
             if (minRating != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("rating"), minRating));
             }
+            if (state != null && !state.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("state")), "%" + state.toLowerCase() + "%"));
+            }
+            if (district != null && !district.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("district")), "%" + district.toLowerCase() + "%"));
+            }
+            if (city != null && !city.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("city").get("name")), "%" + city.toLowerCase() + "%"));
+            }
+            if (isOnline != null) {
+                predicates.add(cb.equal(root.get("isOnline"), isOnline));
+            }
             if (searchQuery != null && !searchQuery.isEmpty()) {
                 String pattern = "%" + searchQuery.toLowerCase() + "%";
                 Predicate nameMatch = cb.like(cb.lower(root.get("user").get("firstName")), pattern);
@@ -138,7 +151,8 @@ public class LawyerService {
                 Predicate courtMatch = cb.like(cb.lower(root.get("courtName")), pattern);
                 Predicate specMatch = cb.like(cb.lower(root.get("specialization").get("name")), pattern);
                 Predicate cityMatch = cb.like(cb.lower(root.get("city").get("name")), pattern);
-                predicates.add(cb.or(nameMatch, lastNameMatch, bioMatch, courtMatch, specMatch, cityMatch));
+                Predicate districtMatch = cb.like(cb.lower(root.get("district")), pattern);
+                predicates.add(cb.or(nameMatch, lastNameMatch, bioMatch, courtMatch, specMatch, cityMatch, districtMatch));
             }
 
             if ("fee_asc".equals(sortBy)) {
@@ -309,6 +323,6 @@ public class LawyerService {
         }
 
         // Fallback: return verified lawyers sorted by highest rating
-        return getFilteredLawyers(null, null, null, null, null, null, null, "rating_desc");
+        return getFilteredLawyers(null, null, null, null, null, null, null, "rating_desc", null, null, null, null);
     }
 }

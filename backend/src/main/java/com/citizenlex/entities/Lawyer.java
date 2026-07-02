@@ -74,6 +74,21 @@ public class Lawyer {
     @Column(name = "gov_id_url", length = 500)
     private String govIdUrl;
 
+    @Column(name = "office_address", length = 500)
+    private String officeAddress;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "state", length = 100)
+    private String state;
+
+    @Column(name = "district", length = 100)
+    private String district;
+
     public Lawyer() {
         this.isVerified = false;
         this.verificationStatus = "PENDING";
@@ -144,4 +159,19 @@ public class Lawyer {
 
     public String getGovIdUrl() { return govIdUrl; }
     public void setGovIdUrl(String govIdUrl) { this.govIdUrl = govIdUrl; }
+
+    public String getOfficeAddress() { return officeAddress; }
+    public void setOfficeAddress(String officeAddress) { this.officeAddress = officeAddress; }
+
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
+
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+
+    public String getDistrict() { return district; }
+    public void setDistrict(String district) { this.district = district; }
 }

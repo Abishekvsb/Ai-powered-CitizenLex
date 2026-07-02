@@ -48,6 +48,7 @@ export default function Dashboard() {
   const [activeRight, setActiveRight] = useState(null);
   const [activeScheme, setActiveScheme] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [appointments, setAppointments] = useState([]);
 
   const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'U';
 
@@ -70,6 +71,13 @@ export default function Dashboard() {
         setDocs(docsRes.data || []);
       } catch (err) {
         console.error('Failed to load documents list', err);
+      }
+
+      try {
+        const apptsRes = await axios.get('/api/appointments/user');
+        setAppointments(apptsRes.data || []);
+      } catch (err) {
+        console.error('Failed to load appointments history', err);
       }
 
       setLoading(false);
@@ -381,6 +389,67 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Booked Consultations */}
+      <div className="row g-4 mb-5 fade-in-el-delay-2">
+        <div className="col-12">
+          <div className="glass-panel p-4" style={{ borderRadius: '22px', background: 'rgba(8, 10, 24, 0.4)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h5 className="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+                <i className="bi bi-calendar-check-fill text-primary"></i>
+                Booked Consultations History
+              </h5>
+              <Link to="/lawyers" className="btn btn-sm btn-glass text-white border border-light-subtle" style={{ fontSize: '0.8rem', padding: '6px 14px', borderRadius: '8px' }}>
+                Book New Consultation
+              </Link>
+            </div>
+
+            {appointments.length === 0 ? (
+              <div className="text-center py-5 text-secondary">
+                <i className="bi bi-calendar-x fs-1 d-block mb-3 opacity-25"></i>
+                <p className="mb-2 fw-semibold text-white">No consultations booked yet</p>
+                <p className="small mb-3 text-secondary">Browse our verified advocates list to schedule a slot.</p>
+              </div>
+            ) : (
+              <div className="row g-3">
+                {appointments.map((appt) => (
+                  <div className="col-md-6 col-lg-4" key={appt.id}>
+                    <div className="p-3 rounded-4 h-100" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="d-flex align-items-center gap-2.5 mb-2.5">
+                        <img
+                          src={appt.lawyer?.user?.profileImageUrl || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=50'}
+                          alt="Lawyer"
+                          style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }}
+                        />
+                        <div className="text-start">
+                          <h6 className="fw-bold text-white mb-0" style={{ fontSize: '0.88rem' }}>Advocate {appt.lawyer?.user?.firstName} {appt.lawyer?.user?.lastName}</h6>
+                          <span className="text-secondary" style={{ fontSize: '0.72rem' }}>{appt.lawyer?.specialization?.name}</span>
+                        </div>
+                      </div>
+                      <div className="text-secondary small mb-3 text-start" style={{ fontSize: '0.78rem' }}>
+                        <div><i className="bi bi-calendar-event me-1.5 text-primary"></i>Date: {appt.appointmentDate}</div>
+                        <div><i className="bi bi-clock me-1.5 text-primary"></i>Time: {appt.timeSlot}</div>
+                        <div><i className="bi bi-currency-rupee me-1.5 text-primary"></i>Fee: ₹{appt.consultationFee} ({appt.isPaid ? 'Paid' : 'Unpaid'})</div>
+                        <div className="mt-1 text-truncate">Notes: {appt.notes || 'None'}</div>
+                      </div>
+                      <div className="d-flex align-items-center justify-content-between mt-auto">
+                        <span className={`badge ${appt.status === 'APPROVED' ? 'bg-success' : appt.status === 'PENDING' ? 'bg-warning text-dark' : 'bg-danger'} small`} style={{ fontSize: '0.68rem' }}>
+                          {appt.status}
+                        </span>
+                        {appt.status === 'APPROVED' && appt.meetingUrl && (
+                          <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm text-dark fw-bold" style={{ background: 'linear-gradient(135deg, #00d2ff, #00fa9a)', border: 'none', borderRadius: '6px', fontSize: '0.75rem' }}>
+                            Join Consultation <i className="bi bi-camera-video-fill ms-1"></i>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

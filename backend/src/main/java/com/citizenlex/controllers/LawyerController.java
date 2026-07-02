@@ -78,10 +78,15 @@ public class LawyerController {
             @RequestParam(required = false) Double maxFee,
             @RequestParam(required = false) Double minRating,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "id_desc") String sortBy) {
+            @RequestParam(required = false, defaultValue = "id_desc") String sortBy,
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) Boolean isOnline) {
 
         List<Lawyer> list = lawyerService.getFilteredLawyers(
-                specializationId, cityId, language, minExperience, maxFee, minRating, search, sortBy);
+                specializationId, cityId, language, minExperience, maxFee, minRating, search, sortBy,
+                state, district, city, isOnline);
         return ResponseEntity.ok(list);
     }
 
@@ -206,7 +211,7 @@ public class LawyerController {
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Lawyer>> adminGetAllLawyers() {
-        return ResponseEntity.ok(lawyerService.getFilteredLawyers(null, null, null, null, null, null, null, "id_desc"));
+        return ResponseEntity.ok(lawyerService.getFilteredLawyers(null, null, null, null, null, null, null, "id_desc", null, null, null, null));
     }
 
     @PutMapping("/admin/{id}/approve")
