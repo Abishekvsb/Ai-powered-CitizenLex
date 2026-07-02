@@ -4,11 +4,11 @@ import { useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
-// Preload bald_eagle.glb to guarantee instant starts
+// Preload rigged eagle GLB asset
 useGLTF.preload('/bald_eagle.glb');
 
-// ================= JARVIS-INSPIRED AI SYNTHESIZER =================
-class JARVISAudioSynth {
+// ================= AAA CINEMATIC AUDIO SYNTHESIZER =================
+class StorytellingAudioSynth {
   constructor() {
     this.ctx = null;
     this.masterGain = null;
@@ -30,48 +30,175 @@ class JARVISAudioSynth {
       this.masterGain.gain.setValueAtTime(state ? 0 : 0.5, this.ctx.currentTime);
     }
   }
-  playBoot() {
+  playChaos() {
     if (!this.ctx || this.isMuted) return;
     try {
-      // High-tech holographic start chirp
+      // Chaotic low-frequency rumble
       const now = this.ctx.currentTime;
-      const osc1 = this.ctx.createOscillator();
-      const osc2 = this.ctx.createOscillator();
+      const osc = this.ctx.createOscillator();
+      const noise = this.ctx.createBiquadFilter();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(45, now);
+      osc.frequency.linearRampToValueAtTime(55, now + 1.5);
+
+      noise.type = 'lowpass';
+      noise.frequency.setValueAtTime(80, now);
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+
+      osc.connect(noise);
+      noise.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 1.8);
+    } catch (e) {}
+  }
+  playIntelligenceScan() {
+    if (!this.ctx || this.isMuted) return;
+    try {
+      // Futuristic AI scanning sound
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
       const filter = this.ctx.createBiquadFilter();
       const gain = this.ctx.createGain();
 
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(220, now);
-      osc1.frequency.exponentialRampToValueAtTime(1760, now + 0.3);
-
-      osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(110, now);
-      osc2.frequency.exponentialRampToValueAtTime(880, now + 0.4);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(1400, now + 0.5);
+      osc.frequency.linearRampToValueAtTime(300, now + 1.2);
 
       filter.type = 'bandpass';
-      filter.Q.setValueAtTime(8, now);
-      filter.frequency.setValueAtTime(600, now);
-      filter.frequency.exponentialRampToValueAtTime(1500, now + 0.3);
+      filter.Q.setValueAtTime(12, now);
+      filter.frequency.setValueAtTime(800, now);
 
-      gain.gain.setValueAtTime(0.01, now);
-      gain.gain.linearRampToValueAtTime(0.18, now + 0.15);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
 
-      osc1.connect(filter);
-      osc2.connect(filter);
+      osc.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
 
-      osc1.start(now);
-      osc2.start(now);
-      osc1.stop(now + 0.5);
-      osc2.stop(now + 0.5);
+      osc.start(now);
+      osc.stop(now + 1.4);
+    } catch (e) {}
+  }
+  playFlap() {
+    if (!this.ctx || this.isMuted) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.frequency.setValueAtTime(40, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(6, this.ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.35);
+    } catch (e) {}
+  }
+  playScreech() {
+    if (!this.ctx || this.isMuted) return;
+    try {
+      const carrier = this.ctx.createOscillator();
+      const modulator = this.ctx.createOscillator();
+      const modGain = this.ctx.createGain();
+      const mainGain = this.ctx.createGain();
+
+      carrier.type = 'sawtooth';
+      carrier.frequency.setValueAtTime(850, this.ctx.currentTime);
+      carrier.frequency.exponentialRampToValueAtTime(1420, this.ctx.currentTime + 0.15);
+      carrier.frequency.exponentialRampToValueAtTime(530, this.ctx.currentTime + 0.65);
+
+      modulator.type = 'sawtooth';
+      modulator.frequency.setValueAtTime(165, this.ctx.currentTime);
+      modulator.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.65);
+
+      modGain.gain.setValueAtTime(430, this.ctx.currentTime);
+
+      mainGain.gain.setValueAtTime(0, this.ctx.currentTime);
+      mainGain.gain.linearRampToValueAtTime(0.18, this.ctx.currentTime + 0.05);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.85);
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+      carrier.connect(mainGain);
+      mainGain.connect(this.masterGain);
+
+      carrier.start();
+      modulator.start();
+      carrier.stop(this.ctx.currentTime + 0.9);
+      modulator.stop(this.ctx.currentTime + 0.9);
+    } catch (e) {}
+  }
+  playLanding() {
+    if (!this.ctx || this.isMuted) return;
+    try {
+      const subOsc = this.ctx.createOscillator();
+      const subGain = this.ctx.createGain();
+      subOsc.frequency.setValueAtTime(55, this.ctx.currentTime);
+      subOsc.frequency.exponentialRampToValueAtTime(12, this.ctx.currentTime + 0.75);
+      subGain.gain.setValueAtTime(0.7, this.ctx.currentTime);
+      subGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
+      subOsc.connect(subGain);
+      subGain.connect(this.masterGain);
+      subOsc.start();
+      subOsc.stop(this.ctx.currentTime + 0.85);
+
+      // Gold shimmer bell chime arpeggio
+      const chord = [293.66, 349.23, 440.00, 587.33, 698.46, 880.00];
+      chord.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.04);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.0);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 2.2);
+      });
+    } catch (e) {}
+  }
+  playWhoosh() {
+    if (!this.ctx || this.isMuted) return;
+    try {
+      const bufferSize = this.ctx.sampleRate * 2.2;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.Q.setValueAtTime(4.0, this.ctx.currentTime);
+      filter.frequency.setValueAtTime(80, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(1000, this.ctx.currentTime + 0.9);
+      filter.frequency.exponentialRampToValueAtTime(130, this.ctx.currentTime + 2.0);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.38, this.ctx.currentTime + 0.9);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.1);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+      noise.start();
+      noise.stop(this.ctx.currentTime + 2.2);
     } catch (e) {}
   }
   playAmbience() {
     if (!this.ctx || this.isMuted) return;
     try {
-      // JARVIS system hum + atmospheric rise
       const now = this.ctx.currentTime;
       const osc1 = this.ctx.createOscillator();
       const osc2 = this.ctx.createOscillator();
@@ -99,135 +226,6 @@ class JARVISAudioSynth {
       this.ambienceNodes = { osc1, osc2, gain };
     } catch (e) {}
   }
-  playAIPulse() {
-    if (!this.ctx || this.isMuted) return;
-    try {
-      // Holographic HUD click
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1200, now);
-      osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-      osc.connect(gain);
-      gain.connect(this.masterGain);
-      osc.start(now);
-      osc.stop(now + 0.2);
-    } catch (e) {}
-  }
-  playFlap() {
-    if (!this.ctx || this.isMuted) return;
-    try {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.frequency.setValueAtTime(42, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(8, this.ctx.currentTime + 0.25);
-      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-      osc.connect(gain);
-      gain.connect(this.masterGain);
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.35);
-    } catch (e) {}
-  }
-  playScreech() {
-    if (!this.ctx || this.isMuted) return;
-    try {
-      const carrier = this.ctx.createOscillator();
-      const modulator = this.ctx.createOscillator();
-      const modGain = this.ctx.createGain();
-      const mainGain = this.ctx.createGain();
-
-      carrier.type = 'sawtooth';
-      carrier.frequency.setValueAtTime(880, this.ctx.currentTime);
-      carrier.frequency.exponentialRampToValueAtTime(1400, this.ctx.currentTime + 0.15);
-      carrier.frequency.exponentialRampToValueAtTime(520, this.ctx.currentTime + 0.6);
-
-      modulator.type = 'sawtooth';
-      modulator.frequency.setValueAtTime(170, this.ctx.currentTime);
-      modulator.frequency.linearRampToValueAtTime(55, this.ctx.currentTime + 0.6);
-
-      modGain.gain.setValueAtTime(420, this.ctx.currentTime);
-
-      mainGain.gain.setValueAtTime(0, this.ctx.currentTime);
-      mainGain.gain.linearRampToValueAtTime(0.16, this.ctx.currentTime + 0.05);
-      mainGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
-
-      modulator.connect(modGain);
-      modGain.connect(carrier.frequency);
-      carrier.connect(mainGain);
-      mainGain.connect(this.masterGain);
-
-      carrier.start();
-      modulator.start();
-      carrier.stop(this.ctx.currentTime + 0.85);
-      modulator.stop(this.ctx.currentTime + 0.85);
-    } catch (e) {}
-  }
-  playLanding() {
-    if (!this.ctx || this.isMuted) return;
-    try {
-      // Sub impact
-      const subOsc = this.ctx.createOscillator();
-      const subGain = this.ctx.createGain();
-      subOsc.frequency.setValueAtTime(60, this.ctx.currentTime);
-      subOsc.frequency.exponentialRampToValueAtTime(15, this.ctx.currentTime + 0.8);
-      subGain.gain.setValueAtTime(0.65, this.ctx.currentTime);
-      subGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.85);
-      subOsc.connect(subGain);
-      subGain.connect(this.masterGain);
-      subOsc.start();
-      subOsc.stop(this.ctx.currentTime + 0.9);
-
-      // Gold shimmer bell chime arpeggio
-      const chord = [293.66, 349.23, 440.00, 587.33, 698.46, 880.00];
-      chord.forEach((freq, i) => {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.04);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime + i * 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.0);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 2.2);
-      });
-    } catch (e) {}
-  }
-  playWhoosh() {
-    if (!this.ctx || this.isMuted) return;
-    try {
-      const bufferSize = this.ctx.sampleRate * 2.2;
-      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
-      const noise = this.ctx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.Q.setValueAtTime(3.8, this.ctx.currentTime);
-      filter.frequency.setValueAtTime(80, this.ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(950, this.ctx.currentTime + 0.9);
-      filter.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 2.0);
-
-      const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.35, this.ctx.currentTime + 0.9);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.1);
-
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.masterGain);
-      noise.start();
-      noise.stop(this.ctx.currentTime + 2.2);
-    } catch (e) {}
-  }
   stopAmbience() {
     if (this.ambienceNodes && this.ctx) {
       const { osc1, osc2, gain } = this.ambienceNodes;
@@ -244,13 +242,95 @@ class JARVISAudioSynth {
   }
 }
 
-// ================= AI CIRCUIT NETWORK BACKDROP =================
+// ================= STORYTELLING PARTICLE INTERPOLATION SYSTEM =================
+function StorytellingParticles({ scenePhase }) {
+  const pointsRef = useRef();
+  const particleCount = 200;
+
+  // Initialize particles in chaotic/disordered random positions
+  const initialPositions = useRef(
+    new Float32Array(
+      Array.from({ length: particleCount * 3 }, () => (Math.random() - 0.5) * 15)
+    )
+  );
+
+  // Targets representing the Scale of Justice structure nodes
+  const targetPositions = useRef(
+    new Float32Array(
+      Array.from({ length: particleCount * 3 }, (_, idx) => {
+        const pIdx = idx / 3;
+        // Central post nodes
+        if (pIdx < 50) {
+          const ratio = pIdx / 50;
+          return (idx % 3 === 1) ? (ratio * 1.8 - 0.9) : 0; // Y axis column
+        }
+        // Crossbar nodes
+        if (pIdx < 100) {
+          const ratio = (pIdx - 50) / 50;
+          return (idx % 3 === 0) ? (ratio * 1.4 - 0.7) : (idx % 3 === 1) ? 0.8 : 0; // X axis bar
+        }
+        // Left plate hanging nodes
+        if (pIdx < 150) {
+          const ratio = (pIdx - 100) / 50;
+          return (idx % 3 === 0) ? -0.7 : (idx % 3 === 1) ? (0.2 + Math.sin(ratio * Math.PI * 2) * 0.05) : (Math.cos(ratio * Math.PI * 2) * 0.25);
+        }
+        // Right plate hanging nodes
+        const ratio = (pIdx - 150) / 50;
+        return (idx % 3 === 0) ? 0.7 : (idx % 3 === 1) ? (0.2 + Math.sin(ratio * Math.PI * 2) * 0.05) : (Math.cos(ratio * Math.PI * 2) * 0.25);
+      })
+    )
+  );
+
+  useFrame((state) => {
+    const geo = pointsRef.current.geometry;
+    const positions = geo.attributes.position.array;
+
+    const t = state.clock.getElapsedTime();
+
+    for (let i = 0; i < particleCount * 3; i++) {
+      if (scenePhase === 'boot') {
+        // Chaos: random float drifting noise
+        positions[i] += Math.sin(t * 2 + i) * 0.012;
+      } else if (scenePhase === 'ai' || scenePhase === 'flight') {
+        // Intelligence: smooth interpolation from chaos to Target nodes
+        const target = targetPositions.current[i];
+        positions[i] = gsap.utils.interpolate(positions[i], target, 0.08);
+      } else {
+        // Justice & Logo Reveal: float and merge toward logo positions (compressing coordinate spaces)
+        const target = targetPositions.current[i] * 0.2;
+        positions[i] = gsap.utils.interpolate(positions[i], target, 0.1);
+      }
+    }
+    geo.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[initialPositions.current, 3]}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        color="#d4af37"
+        size={0.095}
+        transparent
+        opacity={0.8}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// ================= AI CIRCUIT BACKDROP =================
 function AICircuitGrid({ active }) {
   const meshRef = useRef();
 
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.z = state.clock.getElapsedTime() * 0.04;
+      meshRef.current.rotation.z = state.clock.getElapsedTime() * 0.03;
     }
   });
 
@@ -260,33 +340,21 @@ function AICircuitGrid({ active }) {
     <group ref={meshRef} position={[0, 0, -2]}>
       {[-3, -1.5, 0, 1.5, 3].map((pos, idx) => (
         <group key={idx}>
-          {/* Vertical line */}
           <mesh position={[pos, 0, 0]}>
             <boxGeometry args={[0.015, 8, 0.015]} />
-            <meshBasicMaterial color="#00d2ff" transparent opacity={0.3} />
+            <meshBasicMaterial color="#00d2ff" transparent opacity={0.22} />
           </mesh>
-          {/* Horizontal line */}
           <mesh position={[0, pos, 0]}>
             <boxGeometry args={[8, 0.015, 0.015]} />
-            <meshBasicMaterial color="#00d2ff" transparent opacity={0.3} />
+            <meshBasicMaterial color="#00d2ff" transparent opacity={0.22} />
           </mesh>
         </group>
       ))}
-
-      {/* Glow Nodes */}
-      {[-3, -1.5, 0, 1.5, 3].map((x) =>
-        [-3, -1.5, 0, 1.5, 3].map((y, idx) => (
-          <mesh key={`${x}-${y}-${idx}`} position={[x, y, 0.02]}>
-            <sphereGeometry args={[0.05, 8, 8]} />
-            <meshBasicMaterial color="#d4af37" transparent opacity={0.55} />
-          </mesh>
-        ))
-      )}
     </group>
   );
 }
 
-// ================= FLOATING DIGITAL LEGAL DOCUMENTS =================
+// ================= FLOATING LEGAL DOCUMENTS =================
 function FloatingDocuments({ active }) {
   const groupRef = useRef();
 
@@ -312,7 +380,6 @@ function FloatingDocuments({ active }) {
 
   return (
     <group ref={groupRef} position={[0, 0, -4]}>
-      {/* 3 Floating documents in 3D */}
       <mesh position={[-2.8, 1.5, 0]}>
         <planeGeometry args={[0.9, 1.25]} />
         <primitive object={goldWireframe} />
@@ -329,45 +396,36 @@ function FloatingDocuments({ active }) {
   );
 }
 
-// ================= COURT BUILDING SILHOUETTE =================
-function CourthouseSilhouette({ visible }) {
+// ================= SCALE OF JUSTICE STRUCTURE =================
+function ScaleOfJustice({ visible }) {
   const groupRef = useRef();
 
   useEffect(() => {
     if (visible) {
-      gsap.fromTo(groupRef.current.scale, { x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1, duration: 1.2, ease: 'elastic.out(1, 0.75)' });
-      gsap.fromTo(groupRef.current.position, { y: -2 }, { y: -0.6, duration: 1.0, ease: 'power2.out' });
+      gsap.fromTo(groupRef.current.scale, { x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1, duration: 1.0, ease: 'elastic.out(1, 0.75)' });
+      gsap.fromTo(groupRef.current.position, { y: -2 }, { y: 0.5, duration: 0.8, ease: 'power2.out' });
     }
   }, [visible]);
 
-  const archMat = new THREE.MeshStandardMaterial({
+  const goldMat = new THREE.MeshStandardMaterial({
     color: "#d4af37",
     roughness: 0.1,
     metalness: 0.95
   });
 
   return (
-    <group ref={groupRef} position={[0, -0.6, -3.2]} scale={[0, 0, 0]}>
-      {/* Platform Pedestal */}
-      <mesh position={[0, -0.6, 0]}>
-        <boxGeometry args={[2.5, 0.08, 0.8]} />
-        <primitive object={archMat} />
+    <group ref={groupRef} position={[0, 0.5, -3.2]} scale={[0, 0, 0]}>
+      <mesh position={[0, -0.9, 0]}>
+        <cylinderGeometry args={[0.4, 0.45, 0.1, 16]} />
+        <primitive object={goldMat} />
       </mesh>
-      {/* Pillars */}
-      {[-0.9, -0.45, -0.15, 0.15, 0.45, 0.9].map((x, i) => (
-        <mesh key={i} position={[x, -0.1, 0]}>
-          <cylinderGeometry args={[0.032, 0.032, 0.95, 12]} />
-          <primitive object={archMat} />
-        </mesh>
-      ))}
-      {/* Architrave Pediment */}
-      <mesh position={[0, 0.45, 0]}>
-        <boxGeometry args={[2.5, 0.08, 0.8]} />
-        <primitive object={archMat} />
+      <mesh position={[0, 0, 0]}>
+        <cylinderGeometry args={[0.04, 0.05, 1.8, 16]} />
+        <primitive object={goldMat} />
       </mesh>
-      <mesh position={[0, 0.7, 0]} rotation={[0, Math.PI / 4, 0]}>
-        <coneGeometry args={[1.4, 0.45, 4]} />
-        <primitive object={archMat} />
+      <mesh position={[0, 0.7, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.03, 0.03, 1.3, 16]} />
+        <primitive object={goldMat} />
       </mesh>
     </group>
   );
@@ -379,8 +437,8 @@ function ShockwaveRing({ active }) {
 
   useFrame(() => {
     if (ringRef.current && ringRef.current.scale.x < 30) {
-      ringRef.current.scale.x += 0.4;
-      ringRef.current.scale.y += 0.4;
+      ringRef.current.scale.x += 0.42;
+      ringRef.current.scale.y += 0.42;
       ringRef.current.material.opacity = Math.max(0, 1.0 - ringRef.current.scale.x / 30);
     }
   });
@@ -466,7 +524,6 @@ function LeftFlightEagle({ flightProgress, hasLanded, audioSynth }) {
         audioSynth.current.playFlap();
       }
     } else {
-      // Landed stance facing the screen
       groupRef.current.position.set(0, 1.5, 0);
       groupRef.current.rotation.set(0.1, Math.PI, 0);
     }
@@ -479,8 +536,8 @@ function LeftFlightEagle({ flightProgress, hasLanded, audioSynth }) {
   );
 }
 
-// ================= EMBERS & FOG PARTICLE SYSTEMS =================
-function CloudsFog({ count = 60 }) {
+// ================= CLOUDS & EMBERS =================
+function CloudsFog({ count = 40 }) {
   const pointsRef = useRef();
 
   const particles = useRef(
@@ -496,7 +553,7 @@ function CloudsFog({ count = 60 }) {
     const positions = geo.attributes.position.array;
 
     for (let i = 0; i < count; i++) {
-      positions[i * 3 + 2] += 0.05; // drift forward
+      positions[i * 3 + 2] += 0.05;
       if (positions[i * 3 + 2] > 15) {
         positions[i * 3 + 2] = -45;
       }
@@ -524,7 +581,7 @@ function CloudsFog({ count = 60 }) {
   );
 }
 
-function Embers({ count = 120 }) {
+function Embers({ count = 100 }) {
   const pointsRef = useRef();
 
   const particles = useRef(
@@ -540,7 +597,7 @@ function Embers({ count = 120 }) {
     const positions = geo.attributes.position.array;
 
     for (let i = 0; i < count; i++) {
-      positions[i * 3 + 1] += 0.06; // float up
+      positions[i * 3 + 1] += 0.06;
       if (positions[i * 3 + 1] > 8) {
         positions[i * 3 + 1] = -4;
       }
@@ -577,23 +634,21 @@ function CinematicCamera({ flightProgress, hasLanded }) {
     const progress = flightProgress.current;
 
     if (progress < 0.98) {
-      // Dynamic dolly tracking from left
       const zoomZ = 30 * (1 - progress) + 6.8;
-      camera.position.x = -3 * (1 - progress) + Math.sin(t * 0.5) * 0.15; // handheld wiggle
+      camera.position.x = -3 * (1 - progress) + Math.sin(t * 0.5) * 0.15; // handheld breathe
       camera.position.y = 2.0 * (1 - progress) + 1.6;
       camera.position.z = zoomZ;
       camera.lookAt(0, 1.5 * progress, 0);
     } else {
-      // Rapid landing camera shake decay
       const shakeTime = t * 45;
       const shakeDecay = Math.max(0, 1 - (progress - 0.98) * 15);
       
       const shakeX = Math.sin(shakeTime) * 0.06 * shakeDecay;
       const shakeY = Math.cos(shakeTime * 1.5) * 0.06 * shakeDecay;
 
-      camera.position.x = shakeX + Math.sin(t * 0.6) * 0.02; // subtle breathe
+      camera.position.x = shakeX + Math.sin(t * 0.6) * 0.02;
       camera.position.y = 1.5 + shakeY + Math.cos(t * 0.5) * 0.01;
-      camera.position.z = 4.8; // close up focus on logo
+      camera.position.z = 4.8;
       camera.lookAt(0, 1.5, 0);
     }
   });
@@ -610,18 +665,18 @@ export default function IntroAnimation({ onComplete }) {
   // Storyboard phases: 'boot' | 'ai' | 'flight' | 'landing' | 'reveal' | 'transition'
   const [scenePhase, setScenePhase] = useState('boot');
 
-  const audioSynth = useRef(new JARVISAudioSynth());
+  const audioSynth = useRef(new StorytellingAudioSynth());
   const flightProgress = useRef(0);
   const introContainerRef = useRef();
   const taglineRef = useRef();
   const logoTextRef = useRef();
 
-  // Skip Trigger Action
+  // Skip and transition
   const triggerSkip = () => {
     gsap.killTweensOf(flightProgress);
     audioSynth.current.stopAmbience();
 
-    // Cinematic smooth transition zoom and fade out
+    // Cinematic zoom transition into main home layout
     gsap.to(introContainerRef.current, {
       opacity: 0,
       scale: 1.05,
@@ -634,7 +689,6 @@ export default function IntroAnimation({ onComplete }) {
     });
   };
 
-  // Skip keyboard and double click triggers
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') triggerSkip();
@@ -647,13 +701,13 @@ export default function IntroAnimation({ onComplete }) {
   const startSequence = () => {
     setHasStarted(true);
     audioSynth.current.init();
-    audioSynth.current.playBoot();
     audioSynth.current.playAmbience();
+    audioSynth.current.playChaos();
 
     // Scene 1 -> 2: AI Network Awakening (1.0s mark)
     setTimeout(() => {
       setScenePhase('ai');
-      audioSynth.current.playAIPulse();
+      audioSynth.current.playIntelligenceScan();
     }, 1000);
 
     // Scene 2 -> 3: Eagle Left Entrance (3.0s mark)
@@ -765,7 +819,7 @@ export default function IntroAnimation({ onComplete }) {
               color: '#000',
               fontWeight: 800,
               border: 'none',
-              padding: '12px 38px',
+              padding: '12px 36px',
               borderRadius: '30px',
               boxShadow: '0 8px 24px rgba(212,175,55,0.4)',
               transition: 'transform 0.2s',
@@ -774,13 +828,13 @@ export default function IntroAnimation({ onComplete }) {
             onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
             onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
           >
-            INITIALIZE PLATFORM
+            INITIALIZE SYSTEM
           </button>
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem' }}>Click to begin cinematic experience</span>
         </div>
       )}
 
-      {/* Control glass layer */}
+      {/* Control overlay */}
       {hasStarted && (
         <div style={{
           position: 'absolute',
@@ -819,7 +873,6 @@ export default function IntroAnimation({ onComplete }) {
           gap: '15px',
           textAlign: 'center'
         }}>
-          {/* Glowing HUD Circle */}
           <div className="spinner-border text-info" style={{ width: '3rem', height: '3rem', borderWidth: '3px' }} role="status"></div>
           <p style={{
             color: '#00d2ff',
@@ -830,7 +883,7 @@ export default function IntroAnimation({ onComplete }) {
             margin: 0,
             animation: 'pulse 1s infinite'
           }}>
-            Initializing CitizenLex...
+            SYSTEM DE-CHAOSING RAW DATA...
           </p>
         </div>
       )}
@@ -839,7 +892,6 @@ export default function IntroAnimation({ onComplete }) {
       {hasStarted && (
         <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
           <Canvas shadows camera={{ fov: 45, near: 0.1, far: 300 }}>
-            {/* Cinematic Lighting Setup */}
             <ambientLight intensity={0.12} />
             <directionalLight
               position={[10, 20, 10]}
@@ -847,7 +899,6 @@ export default function IntroAnimation({ onComplete }) {
               color="#ffffff"
               castShadow
             />
-            {/* Spotlight revealing courthouse podium */}
             <spotLight
               position={[0, 10, -2]}
               intensity={5}
@@ -863,12 +914,15 @@ export default function IntroAnimation({ onComplete }) {
             <CloudsFog />
             <Embers />
 
+            {/* STORYTELLING INTERPOLATING PARTICLE SYSTEM */}
+            <StorytellingParticles scenePhase={scenePhase} />
+
             {/* AI HUD CIRCUIT BACKDROP */}
             <AICircuitGrid active={scenePhase !== 'boot'} />
             <FloatingDocuments active={scenePhase !== 'boot'} />
 
-            {/* Courthouse Building (Scene 4) */}
-            <CourthouseSilhouette visible={scenePhase === 'landing' || scenePhase === 'reveal'} />
+            {/* Courthouse Podium (Scene 4) */}
+            <ScaleOfJustice visible={scenePhase === 'landing' || scenePhase === 'reveal'} />
 
             {/* Shockwave circle ring */}
             <ShockwaveRing active={scenePhase === 'landing' || scenePhase === 'reveal'} />
