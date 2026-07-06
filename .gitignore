@@ -3,3 +3,10 @@ frontend/.env
 backend/target/
 frontend/node_modules/
 frontend/dist/
+
+.vercel
+.env*
+
+# Standalone Maven
+maven/
+maven_tmp/

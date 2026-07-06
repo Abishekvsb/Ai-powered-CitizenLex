@@ -106,7 +106,7 @@ public class DocumentService {
             } else if (name.endsWith(".docx") || "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(file.getContentType())) {
                 return extractTextFromDocx(is);
             } else if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || (file.getContentType() != null && file.getContentType().startsWith("image/"))) {
-                return extractTextFromImage(file.getOriginalFilename());
+                return extractTextFromImage(file);
             } else {
                 // General text fallback (try to read bytes if it's text)
                 byte[] bytes = file.getBytes();
@@ -129,17 +129,20 @@ public class DocumentService {
         }
     }
 
-    private String extractTextFromImage(String filename) {
-        // Since OCR is complex inside a container without Tesseract dependencies,
-        // we simulate OCR text based on the file content.
-        return "SCANNED IMAGE DOCUMENT: " + filename + "\n" +
+    private String extractTextFromImage(MultipartFile file) {
+        try {
+            byte[] bytes = file.getBytes();
+            String ocrText = geminiService.extractTextFromImageMultimodal(bytes, file.getContentType());
+            if (ocrText != null && !ocrText.trim().isEmpty()) {
+                return ocrText;
+            }
+        } catch (Exception e) {
+            logger.error("Image OCR extraction failed, falling back to static metadata description", e);
+        }
+
+        return "SCANNED IMAGE DOCUMENT: " + file.getOriginalFilename() + "\n" +
                 "Date: " + java.time.LocalDate.now().toString() + "\n" +
-                "Subject: General Legal Covenant & Mutual Obligations\n" +
-                "This agreement is made between the Tenant/Buyer and the Landlord/Vendor.\n" +
-                "Section 1: The parties hereby agree to perform their obligations under the laws of the local municipality.\n" +
-                "Section 2: Payment must be cleared on the 10th of every month. Late payments are subject to a 5% interest penalty.\n" +
-                "Section 3: Disagreements will be submitted to the local court jurisdiction.\n" +
-                "Section 4: The agreement can be terminated with a 30-day written notice from either side.\n" +
-                "End of Scanned Text.";
+                "Analysis Status: Text extraction was run using fallback due to API offline status.\n" +
+                "Please verify the contents manually.";
     }
 }

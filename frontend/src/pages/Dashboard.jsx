@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -32,7 +32,41 @@ function AnimatedCounter({ value, fallbackValue = '0', duration = 800 }) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [istTime, setIstTime] = useState('');
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  useEffect(() => {
+    const updateTime = () => {
+      const options = {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      };
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      const dateOptions = {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      };
+      const dateFormatter = new Intl.DateTimeFormat('en-US', dateOptions);
+      setIstTime(`${formatter.format(new Date())} (${dateFormatter.format(new Date())})`);
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [chats, setChats] = useState([]);
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,25 +231,208 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container py-5 text-start" style={{ position: 'relative' }}>
-      {/* Background ambient mesh overlays */}
-      <div className="glow-orb" style={{
-        top: '10%',
-        left: '20%',
-        width: '320px',
-        height: '320px',
-        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%)',
-      }} />
-      <div className="glow-orb" style={{
-        bottom: '30%',
-        right: '15%',
-        width: '350px',
-        height: '350px',
-        background: 'radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 70%)',
-      }} />
+    <div className="container-fluid text-start" style={{ position: 'relative', background: '#02030a', minHeight: '100vh', padding: 0 }}>
+      {/* CSS Styles */}
+      <style>{`
+        .sidebar-container {
+          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), flex-basis 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar-link {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 14px;
+          color: rgba(255,255,255,0.65);
+          text-decoration: none;
+          border-radius: 10px;
+          transition: all 0.2s ease;
+          font-weight: 600;
+          font-size: 0.88rem;
+          margin-bottom: 4px;
+        }
+        .sidebar-link:hover {
+          color: #fff;
+          background: rgba(255,255,255,0.04);
+          transform: translateX(3px);
+        }
+        .sidebar-link.active {
+          color: #d4af37;
+          background: rgba(212,175,55,0.06);
+          border-left: 3px solid #d4af37;
+        }
+        .sidebar-collapsed-width {
+          width: 80px;
+          max-width: 80px;
+          flex: 0 0 80px;
+        }
+        .sidebar-expanded-width {
+          width: 290px;
+          max-width: 290px;
+          flex: 0 0 290px;
+        }
+        .main-expanded-width {
+          flex-grow: 1;
+        }
+      `}</style>
 
-      {/* Command Center Hero Banner */}
-      <div className="row mb-5 fade-in-el">
+      <div className="d-flex" style={{ minHeight: '100vh' }}>
+        {/* Responsive, Collapsible Left Sidebar */}
+        <div className={`sidebar-container border-end border-light-subtle d-flex flex-column py-4 px-3 ${sidebarCollapsed ? 'sidebar-collapsed-width' : 'sidebar-expanded-width'}`} style={{
+          background: '#04050f',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          zIndex: 1000,
+          overflowY: 'auto'
+        }}>
+          {/* Logo & Collapse button */}
+          <div className="d-flex align-items-center justify-content-between mb-4 px-2">
+            {!sidebarCollapsed && (
+              <Link className="d-flex align-items-center fw-bold text-decoration-none" to="/" style={{ fontSize: '1.25rem' }}>
+                <i className="bi bi-balance2 me-2" style={{ color: '#d4af37' }}></i>
+                <span style={{
+                  background: 'linear-gradient(135deg, #ffffff 0%, #d4af37 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  fontWeight: 800
+                }}>CitizenLex</span>
+              </Link>
+            )}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="btn btn-sm btn-glass text-white border-0 p-1"
+              style={{ fontSize: '1.2rem' }}
+              title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              <i className={`bi ${sidebarCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'}`}></i>
+            </button>
+          </div>
+
+          {/* User Profile summary */}
+          <div className={`p-3 rounded-4 mb-4 d-flex align-items-center gap-3 ${sidebarCollapsed ? 'justify-content-center' : ''}`} style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)'
+          }}>
+            {user?.profileImageUrl ? (
+              <img
+                src={user.profileImageUrl}
+                alt="Profile"
+                style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(212,175,55,0.4)' }}
+              />
+            ) : (
+              <div style={{
+                width: 34, height: 34, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #00d2ff, #d4af37)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.75rem', fontWeight: 700, color: 'black', flexShrink: 0
+              }}>
+                {initials}
+              </div>
+            )}
+            {!sidebarCollapsed && (
+              <div className="text-start min-w-0">
+                <div className="fw-bold text-white small text-truncate">{user?.firstName} {user?.lastName}</div>
+                <div className="text-secondary" style={{ fontSize: '0.68rem' }}>Client Console</div>
+              </div>
+            )}
+          </div>
+
+          {/* IST Time Zone Live Clock */}
+          <div className={`p-3 rounded-4 mb-4 ${sidebarCollapsed ? 'd-none' : ''}`} style={{
+            background: 'linear-gradient(135deg, rgba(8, 10, 24, 0.8), rgba(212, 175, 55, 0.05))',
+            border: '1px solid rgba(212, 175, 55, 0.15)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.15)'
+          }}>
+            <div className="text-secondary small fw-bold text-uppercase mb-1" style={{ fontSize: '0.62rem', letterSpacing: '0.5px' }}>
+              🇮🇳 Indian Standard Time (IST)
+            </div>
+            <div className="text-white fw-bold" style={{ fontSize: '0.85rem' }}>
+              <i className="bi bi-clock text-warning me-1.5 animate-pulse"></i>
+              {istTime || 'Loading time...'}
+            </div>
+          </div>
+
+          {/* Sidebar Links */}
+          <div className="d-flex flex-column gap-1">
+            <Link to="/dashboard" className="sidebar-link active">
+              <i className="bi bi-speedometer2 text-warning"></i>
+              {!sidebarCollapsed && <span>Dashboard</span>}
+            </Link>
+            <Link to="/chat" className="sidebar-link">
+              <i className="bi bi-chat-left-text-fill text-info"></i>
+              {!sidebarCollapsed && <span>AI Assistant</span>}
+            </Link>
+            <Link to="/copilot" className="sidebar-link">
+              <i className="bi bi-robot" style={{ color: '#00d2ff' }}></i>
+              {!sidebarCollapsed && (
+                <div className="d-flex align-items-center gap-1.5 flex-grow-1">
+                  <span>Legal Copilot</span>
+                  <span className="badge" style={{ background: '#00d2ff', color: '#02030a', fontSize: '0.55rem', borderRadius: 4, padding: '2px 4px' }}>NEW</span>
+                </div>
+              )}
+            </Link>
+            <Link to="/analyzer" className="sidebar-link">
+              <i className="bi bi-file-earmark-pdf-fill text-info"></i>
+              {!sidebarCollapsed && <span>Doc Analyzer</span>}
+            </Link>
+            <Link to="/drafts" className="sidebar-link">
+              <i className="bi bi-file-earmark-diff-fill text-danger"></i>
+              {!sidebarCollapsed && <span>AI Drafts</span>}
+            </Link>
+            <Link to="/ocr" className="sidebar-link">
+              <i className="bi bi-upc-scan" style={{ color: '#a855f7' }}></i>
+              {!sidebarCollapsed && <span>OCR Scanner</span>}
+            </Link>
+            <Link to="/consultations" className="sidebar-link">
+              <i className="bi bi-camera-video-fill text-success"></i>
+              {!sidebarCollapsed && <span>Consultations</span>}
+            </Link>
+            <Link to="/rights" className="sidebar-link">
+              <i className="bi bi-book-fill text-primary"></i>
+              {!sidebarCollapsed && <span>Rights Explorer</span>}
+            </Link>
+            <Link to="/schemes" className="sidebar-link">
+              <i className="bi bi-search-heart-fill text-danger"></i>
+              {!sidebarCollapsed && <span>Scheme Finder</span>}
+            </Link>
+            <Link to="/lawyers" className="sidebar-link">
+              <i className="bi bi-people-fill text-warning"></i>
+              {!sidebarCollapsed && <span>Find Lawyers</span>}
+            </Link>
+            <Link to="/profile" className="sidebar-link">
+              <i className="bi bi-person-fill text-white-50"></i>
+              {!sidebarCollapsed && <span>Profile Settings</span>}
+            </Link>
+          </div>
+
+          {/* Logout Button */}
+          <button onClick={handleLogout} className="btn sidebar-link text-danger border-0 mt-auto text-start shadow-none" style={{ background: 'transparent' }}>
+            <i className="bi bi-box-arrow-right text-danger"></i>
+            {!sidebarCollapsed && <span>Logout Account</span>}
+          </button>
+        </div>
+
+        {/* Main Workspace Frame */}
+        <div className="main-expanded-width py-4 px-4 px-md-5 overflow-auto" style={{ height: '100vh', position: 'relative' }}>
+          {/* Background ambient mesh overlays */}
+          <div className="glow-orb" style={{
+            top: '10%',
+            left: '20%',
+            width: '320px',
+            height: '320px',
+            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%)',
+          }} />
+          <div className="glow-orb" style={{
+            bottom: '30%',
+            right: '15%',
+            width: '350px',
+            height: '350px',
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 70%)',
+          }} />
+
+          {/* Command Center Hero Banner */}
+          <div className="row mb-5 fade-in-el">
         <div className="col-12">
           <div className="glass-panel p-4 p-md-5 position-relative overflow-hidden" style={{
             borderRadius: '24px',
@@ -863,6 +1080,9 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
         </div>
       </div>
 

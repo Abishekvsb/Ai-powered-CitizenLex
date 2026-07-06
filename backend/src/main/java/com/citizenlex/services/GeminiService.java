@@ -228,6 +228,60 @@ public class GeminiService {
             "\"suggestions\":[\"Try uploading again in a few minutes when AI service is available\",\"Review the extracted raw text for important clauses\"]}";
     }
 
+    public String extractTextFromImageMultimodal(byte[] imageBytes, String contentType) {
+        if (apiKey == null || apiKey.trim().isEmpty() || "mock".equalsIgnoreCase(apiKey.trim())) {
+            logger.warn("Gemini API key is missing or set to mock. Returning null for image OCR.");
+            return null;
+        }
+
+        try {
+            String url = apiUrl + "?key=" + apiKey;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> requestBody = new HashMap<>();
+
+            // text part
+            Map<String, Object> textPart = new HashMap<>();
+            textPart.put("text", "Please extract and transcribe all visible text from this image exactly as it is. Do not summarize, do not comment, just return the raw text.");
+
+            // inlineData part
+            Map<String, Object> inlineData = new HashMap<>();
+            inlineData.put("mimeType", contentType != null ? contentType : "image/jpeg");
+            inlineData.put("data", Base64.getEncoder().encodeToString(imageBytes));
+
+            Map<String, Object> imagePart = new HashMap<>();
+            imagePart.put("inlineData", inlineData);
+
+            Map<String, Object> content = new HashMap<>();
+            content.put("parts", List.of(textPart, imagePart));
+
+            requestBody.put("contents", List.of(content));
+
+            // config
+            Map<String, Object> config = new HashMap<>();
+            config.put("temperature", 0.1);
+            requestBody.put("generationConfig", config);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            logger.info("Calling Gemini Multimodal OCR API...");
+            ResponseEntity<Map> response =
+                    restTemplate.postForEntity(url, entity, Map.class);
+
+            if (response.getBody() != null) {
+                String result = parseGeminiResponse(response.getBody());
+                if (result != null && !result.trim().isEmpty()) {
+                    return result;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Gemini Multimodal OCR failed: {}", e.getMessage());
+        }
+        return null;
+    }
+
     // ================= RIGHTS API =================
     public String getAIRightsResponse(String query) {
         String systemInstruction = "You are an Indian constitutional and legal rights expert. Return relevant Indian legal rights as a JSON array. Each object must have: title (string), description (string), applicable_law (string). Return ONLY valid JSON array, no extra text.";

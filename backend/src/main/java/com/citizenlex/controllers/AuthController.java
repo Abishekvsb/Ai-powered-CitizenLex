@@ -100,7 +100,7 @@ public class AuthController {
     public ResponseEntity<?> getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
-            return ResponseEntity.status(410).body("User not authenticated");
+            return ResponseEntity.status(401).body("User not authenticated");
         }
 
         UserPrincipal principal = (UserPrincipal) auth.getPrincipal();

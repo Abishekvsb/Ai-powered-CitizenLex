@@ -41,6 +41,21 @@ public class DatabaseSeeder implements CommandLineRunner {
     private LawyerRepository lawyerRepository;
 
     @Autowired
+    private AppointmentRepository appointmentRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private ChatRoomRepository chatRoomRepository;
+
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
+
+    @Autowired
+    private ChatHistoryRepository chatHistoryRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -87,6 +102,14 @@ public class DatabaseSeeder implements CommandLineRunner {
         // 8. Seed Notifications
         if (notificationRepository.countByUserIsNull() == 0) {
             seedNotifications();
+        }
+
+        // 9. Seed Demo Client User
+        User clientUser = seedClientUser(userRole);
+
+        // 10. Seed Demo Appointments, Reviews, and Chat History if empty
+        if (appointmentRepository.count() == 0) {
+            seedAppointmentsAndReviewsAndChats(clientUser);
         }
     }
 
@@ -522,5 +545,116 @@ public class DatabaseSeeder implements CommandLineRunner {
         lawyer.setLatitude(latitude);
         lawyer.setLongitude(longitude);
         lawyerRepository.save(lawyer);
+    }
+
+    private User seedClientUser(Role userRole) {
+        String clientEmail = "user@citizenlex.com";
+        Optional<User> userOpt = userRepository.findByEmail(clientEmail);
+        if (userOpt.isPresent()) {
+            return userOpt.get();
+        }
+        User client = new User(clientEmail, passwordEncoder.encode("User@123"), "Demo", "User");
+        client.setEnabled(true);
+        client.setMobile("9876543210");
+        client.getRoles().add(userRole);
+        return userRepository.save(client);
+    }
+
+    private void seedAppointmentsAndReviewsAndChats(User clientUser) {
+        List<Lawyer> lawyers = lawyerRepository.findAll();
+        if (lawyers.isEmpty()) return;
+
+        Lawyer lawyer1 = lawyers.get(0);
+        Lawyer lawyer2 = lawyers.size() > 1 ? lawyers.get(1) : lawyer1;
+        Lawyer lawyer3 = lawyers.size() > 2 ? lawyers.get(2) : lawyer1;
+
+        // Appointment 1: APPROVED
+        Appointment app1 = new Appointment();
+        app1.setUser(clientUser);
+        app1.setLawyer(lawyer1);
+        app1.setAppointmentDate(java.time.LocalDate.now().plusDays(1));
+        app1.setTimeSlot("10:00 AM - 10:30 AM");
+        app1.setStatus("APPROVED");
+        app1.setNotes("I need help with my rental agreement terms and security deposit refund.");
+        app1.setConsultationFee(lawyer1.getConsultationFee());
+        app1.setIsPaid(true);
+        app1.setRazorpayOrderId("order_mock_001");
+        app1.setRazorpayPaymentId("pay_mock_001");
+        app1.setMeetingUrl("https://meet.jit.si/CitizenLex-Consultation-demo123");
+        appointmentRepository.save(app1);
+
+        // Appointment 2: PENDING
+        Appointment app2 = new Appointment();
+        app2.setUser(clientUser);
+        app2.setLawyer(lawyer2);
+        app2.setAppointmentDate(java.time.LocalDate.now().plusDays(3));
+        app2.setTimeSlot("02:00 PM - 02:30 PM");
+        app2.setStatus("PENDING");
+        app2.setNotes("Need consultation for an online job fraud issue.");
+        app2.setConsultationFee(lawyer2.getConsultationFee());
+        app2.setIsPaid(false);
+        appointmentRepository.save(app2);
+
+        // Appointment 3: COMPLETED
+        Appointment app3 = new Appointment();
+        app3.setUser(clientUser);
+        app3.setLawyer(lawyer3);
+        app3.setAppointmentDate(java.time.LocalDate.now().minusDays(5));
+        app3.setTimeSlot("11:00 AM - 11:30 AM");
+        app3.setStatus("COMPLETED");
+        app3.setNotes("General legal query about fundamental rights violations.");
+        app3.setConsultationFee(lawyer3.getConsultationFee());
+        app3.setIsPaid(true);
+        app3.setRazorpayOrderId("order_mock_003");
+        app3.setRazorpayPaymentId("pay_mock_003");
+        appointmentRepository.save(app3);
+
+        // Seed Reviews
+        Review rev1 = new Review();
+        rev1.setUser(clientUser);
+        rev1.setLawyer(lawyer1);
+        rev1.setRating(5);
+        rev1.setComment("Advocate was extremely professional, detailed, and clear. Highly recommended!");
+        rev1.setHelpfulVotes(5);
+        reviewRepository.save(rev1);
+
+        Review rev2 = new Review();
+        rev2.setUser(clientUser);
+        rev2.setLawyer(lawyer3);
+        rev2.setRating(4);
+        rev2.setComment("Good advice, clarified all my constitutional rights queries.");
+        rev2.setHelpfulVotes(2);
+        reviewRepository.save(rev2);
+
+        // Update lawyer ratings and total reviews
+        lawyer1.setRating(5.0);
+        lawyer1.setTotalReviews(1);
+        lawyerRepository.save(lawyer1);
+
+        lawyer3.setRating(4.0);
+        lawyer3.setTotalReviews(1);
+        lawyerRepository.save(lawyer3);
+
+        // Seed AI Chat History
+        chatHistoryRepository.save(new ChatHistory(clientUser, "What is Article 14 of the Constitution?", 
+                "Article 14 of the Constitution of India guarantees equality before the law and equal protection of the laws to all persons within the territory of India. It prohibits discrimination based on religion, race, caste, sex, or place of birth.", "en"));
+        chatHistoryRepository.save(new ChatHistory(clientUser, "How do I file an RTI?", 
+                "To file an RTI, write your questions clearly on a plain paper, address it to the Public Information Officer (PIO) of the concerned department, pay the fee of Rs. 10 (court fee stamp or draft), and submit it.", "en"));
+
+        // Seed Lawyer Consultation Chats
+        ChatRoom room = new ChatRoom(clientUser, lawyer1);
+        ChatRoom savedRoom = chatRoomRepository.save(room);
+
+        ChatMessage msg1 = new ChatMessage();
+        msg1.setChatRoom(savedRoom);
+        msg1.setSender(clientUser);
+        msg1.setMessage("Hello Advocate, I have uploaded my rental agreement summary. Can you please review it?");
+        chatMessageRepository.save(msg1);
+
+        ChatMessage msg2 = new ChatMessage();
+        msg2.setChatRoom(savedRoom);
+        msg2.setSender(lawyer1.getUser());
+        msg2.setMessage("Hello! Yes, I am reviewing it now. Let's discuss the security deposit refund clause during our scheduled consultation.");
+        chatMessageRepository.save(msg2);
     }
 }

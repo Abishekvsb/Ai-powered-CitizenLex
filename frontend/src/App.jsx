@@ -44,7 +44,7 @@ export default function App() {
 
   return (
     <div className="d-flex flex-column min-vh-100" style={{ position: 'relative', zIndex: 1 }}>
-      {!isAuthPage && <Navbar />}
+      {!isAuthPage && location.pathname !== '/dashboard' && <Navbar />}
       <main className={isAuthPage ? '' : 'flex-grow-1'}>
         <Routes>
           <Route path="/" element={<Landing />} />
