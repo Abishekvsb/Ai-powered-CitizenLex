@@ -679,6 +679,7 @@ export default function IntroAnimation({ onComplete }) {
   const [logoAssembled, setLogoAssembled] = useState(false);
   const [statusLines, setStatusLines] = useState([]);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
+  const [webglSupported, setWebglSupported] = useState(true);
 
   // Storyboard phases: 'boot' | 'ai' | 'flight' | 'landing' | 'reveal' | 'transition'
   const [scenePhase, setScenePhase] = useState('boot');
@@ -706,6 +707,21 @@ export default function IntroAnimation({ onComplete }) {
       }
     });
   };
+
+  useEffect(() => {
+    const checkWebGL = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+      } catch (e) {
+        return false;
+      }
+    };
+    if (!checkWebGL()) {
+      setWebglSupported(false);
+      console.warn("WebGL not supported in this browser environment. Bypassing 3D canvas assets.");
+    }
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -931,7 +947,7 @@ export default function IntroAnimation({ onComplete }) {
       )}
 
       {/* 3D WebGL Canvas Layer */}
-      {hasStarted && (
+      {hasStarted && webglSupported && (
         <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
           <Canvas shadows camera={{ fov: 45, near: 0.1, far: 300 }}>
             <ambientLight intensity={0.12} />
