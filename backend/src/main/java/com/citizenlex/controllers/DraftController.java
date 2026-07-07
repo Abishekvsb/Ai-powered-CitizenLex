@@ -6,8 +6,11 @@ import com.citizenlex.repositories.UserRepository;
 import com.citizenlex.security.UserPrincipal;
 import com.citizenlex.services.GeminiService;
 import com.citizenlex.services.LogService;
+import com.citizenlex.utils.DocumentGeneratorUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -56,6 +59,38 @@ public class DraftController {
         response.put("draft", draftText);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/download/docx")
+    public ResponseEntity<byte[]> downloadDocx(@RequestBody Map<String, String> request) {
+        String type = request.getOrDefault("type", "Legal Draft");
+        String content = request.getOrDefault("content", "");
+        try {
+            byte[] bytes = DocumentGeneratorUtil.generateDocx(type, content);
+            String cleanFileName = type.replaceAll("[^a-zA-Z0-9.-]", "_") + "_draft.docx";
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + cleanFileName + "\"")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                    .body(bytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/download/pdf")
+    public ResponseEntity<byte[]> downloadPdf(@RequestBody Map<String, String> request) {
+        String type = request.getOrDefault("type", "Legal Draft");
+        String content = request.getOrDefault("content", "");
+        try {
+            byte[] bytes = DocumentGeneratorUtil.generatePdf(type, content);
+            String cleanFileName = type.replaceAll("[^a-zA-Z0-9.-]", "_") + "_draft.pdf";
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + cleanFileName + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(bytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
 

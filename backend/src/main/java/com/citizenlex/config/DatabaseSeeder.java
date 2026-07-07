@@ -2,6 +2,7 @@ package com.citizenlex.config;
 
 import com.citizenlex.entities.*;
 import com.citizenlex.repositories.*;
+import com.citizenlex.services.LawyerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -111,6 +112,9 @@ public class DatabaseSeeder implements CommandLineRunner {
         if (appointmentRepository.count() == 0) {
             seedAppointmentsAndReviewsAndChats(clientUser);
         }
+
+        // 11. Verify all lawyers have coordinates
+        geocodeMissingLawyerCoordinates();
     }
 
     private void seedNotifications() {
@@ -285,41 +289,69 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     private void seedGovernmentSchemes() {
-        schemeRepository.save(new GovernmentScheme(
+        GovernmentScheme s1 = new GovernmentScheme(
                 "PM Kisan Samman Nidhi",
                 "Farmers",
                 "Small and marginal farmers holding cultivable land up to 2 hectares.",
                 "Aadhaar card, Land ownership papers, Bank account details.",
                 "Apply online via PM Kisan portal or visit the nearest Common Service Centre (CSC).",
                 "https://pmkisan.gov.in/"
-        ));
+        );
+        s1.setBenefits("Financial benefit of Rs. 6,000 per year in three equal installments of Rs. 2,000 each directly into the bank accounts of the farmers.");
+        s1.setDepartmentName("Ministry of Agriculture and Farmers Welfare");
+        s1.setHelplineNumber("155261 / 1800-115-526");
+        s1.setOfficeAddress("Krishi Bhawan, Dr. Rajendra Prasad Road, New Delhi - 110001");
+        s1.setOfflineInstructions("Visit the local Revenue Officer (Patwari) or Agriculture Extension Officer to submit the physical application form along with land deeds.");
+        s1.setLastUpdated("June 2026");
+        schemeRepository.save(s1);
 
-        schemeRepository.save(new GovernmentScheme(
+        GovernmentScheme s2 = new GovernmentScheme(
                 "Beti Bachao Beti Padhao",
                 "Women & Education",
                 "Parents of girl children aged below 10 years, seeking savings and educational support.",
                 "Birth certificate of girl child, Aadhaar cards of parents, Address proof.",
                 "Open a Sukanya Samriddhi account at any post office or commercial bank branch.",
                 "https://www.wcd.nic.in/schemes/beti-bachao-beti-padhao"
-        ));
+        );
+        s2.setBenefits("High interest rate on savings account, tax exemptions under Section 80C, and guaranteed maturity amount for higher education or marriage of the girl child.");
+        s2.setDepartmentName("Ministry of Women and Child Development");
+        s2.setHelplineNumber("1098 (Childline Helpline)");
+        s2.setOfficeAddress("Shastri Bhawan, Dr. Rajendra Prasad Road, New Delhi - 110001");
+        s2.setOfflineInstructions("Visit your nearest Post Office or public/private commercial bank to fill out the Sukanya Samriddhi account opening form.");
+        s2.setLastUpdated("April 2026");
+        schemeRepository.save(s2);
 
-        schemeRepository.save(new GovernmentScheme(
+        GovernmentScheme s3 = new GovernmentScheme(
                 "Ayushman Bharat Yojana (PM-JAY)",
                 "Healthcare",
                 "Families classified as poor, informal, or low-income as per Social Economic Caste Census.",
                 "Aadhaar card, Ration card (NFSA), Proof of income.",
                 "Verify eligibility on the PMJAY portal and visit any empanelled hospital to obtain the Golden Card.",
                 "https://pmjay.gov.in/"
-        ));
+        );
+        s3.setBenefits("Health cover of Rs. 5 Lakhs per family per year for secondary and tertiary care hospitalization across public and private empanelled hospitals.");
+        s3.setDepartmentName("National Health Authority (NHA)");
+        s3.setHelplineNumber("14555 / 1800-111-455");
+        s3.setOfficeAddress("3rd, 7th & 9th Floor, Tower-l, Jeevan Bharati Building, Connaught Place, New Delhi - 110001");
+        s3.setOfflineInstructions("Visit an empanelled hospital or Ayushman Kiosk at a government hospital. Meet the Ayushman Mitra to verify documents and generate the Golden Card.");
+        s3.setLastUpdated("May 2026");
+        schemeRepository.save(s3);
 
-        schemeRepository.save(new GovernmentScheme(
+        GovernmentScheme s4 = new GovernmentScheme(
                 "Atal Pension Yojana (APY)",
                 "Social Security",
                 "All citizens of India aged between 18 and 40 years holding a savings bank account.",
                 "Aadhaar card, Savings Bank account number, Mobile number registration.",
                 "Visit your savings bank branch, fill out the APY application, and set up auto-debit for contributions.",
                 "https://www.npscra.nsdl.co.in/scheme-details.php"
-        ));
+        );
+        s4.setBenefits("Guaranteed minimum pension of Rs. 1,000 to Rs. 5,000 per month after attaining 60 years of age, depending on the contributions made.");
+        s4.setDepartmentName("Pension Fund Regulatory and Development Authority (PFRDA)");
+        s4.setHelplineNumber("1800-110-069");
+        s4.setOfficeAddress("Chatrapati Shivaji Bhawan, B-14/A, Qutab Institutional Area, New Delhi - 110016");
+        s4.setOfflineInstructions("Visit the bank branch where you hold your savings account. Request the APY registration form, choose your pension tier, and enable auto-debit.");
+        s4.setLastUpdated("May 2026");
+        schemeRepository.save(s4);
     }
 
     private void seedSpecializations() {
@@ -341,7 +373,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
             "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai",
             "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai",
-            "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi",
+            "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi",
             "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
             "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur",
             "Vellore", "Viluppuram", "Virudhunagar", "Bangalore", "Mumbai", "Delhi"
@@ -375,7 +407,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
             "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai",
             "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai",
-            "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi",
+            "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi",
             "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
             "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur",
             "Vellore", "Viluppuram", "Virudhunagar"
@@ -544,6 +576,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         lawyer.setOfficeAddress(officeAddress);
         lawyer.setLatitude(latitude);
         lawyer.setLongitude(longitude);
+        lawyer.setIsDemo(true);
+        int districtHash = Math.abs(district != null ? district.hashCode() : 0);
+        int lastThree = 100 + (districtHash % 899);
+        lawyer.setPincode("600" + lastThree);
         lawyerRepository.save(lawyer);
     }
 
@@ -656,5 +692,24 @@ public class DatabaseSeeder implements CommandLineRunner {
         msg2.setSender(lawyer1.getUser());
         msg2.setMessage("Hello! Yes, I am reviewing it now. Let's discuss the security deposit refund clause during our scheduled consultation.");
         chatMessageRepository.save(msg2);
+    }
+
+    @Autowired
+    private LawyerService lawyerService;
+
+    private void geocodeMissingLawyerCoordinates() {
+        try {
+            for (Lawyer l : lawyerRepository.findAll()) {
+                if (l.getLatitude() == null || l.getLongitude() == null) {
+                    double[] coords = lawyerService.geocodeAddress(l.getOfficeAddress(), l.getDistrict(), l.getState());
+                    l.setLatitude(coords[0]);
+                    l.setLongitude(coords[1]);
+                    lawyerRepository.save(l);
+                    System.out.println("Automatically geocoded missing coordinates for Lawyer ID " + l.getId() + " to (" + coords[0] + ", " + coords[1] + ")");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to automatically geocode missing lawyer coordinates: " + e.getMessage());
+        }
     }
 }

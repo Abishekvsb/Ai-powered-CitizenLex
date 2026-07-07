@@ -1,0 +1,97 @@
+name: bug_report
+description: Report a reproducible bug or unexpected behaviour
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees:
+  - Abishekvsb
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking time to file a bug report. Please fill out all fields carefully.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Bug Summary
+      description: A clear, one-line description of the problem.
+      placeholder: "e.g. Lawyer search returns empty results when filtering by district"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of CitizenLex is affected?
+      options:
+        - AI Legal Copilot (Chat)
+        - Lawyer Marketplace & Map
+        - Appointment Booking
+        - Document Upload / Analysis
+        - Authentication (Login / Register)
+        - Admin Dashboard
+        - Rights & Schemes Module
+        - Notification System
+        - Profile & Settings
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the bug.
+      placeholder: |
+        1. Go to Lawyer Marketplace
+        2. Select district 'Madurai'
+        3. Click Search
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+      description: What actually happens?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - "🔴 Critical — System unusable"
+        - "🟠 High — Core feature broken"
+        - "🟡 Medium — Feature degraded"
+        - "🟢 Low — Minor issue / cosmetic"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, OS, and API URL
+      placeholder: "Chrome 126, Windows 11, citizenlex.vercel.app"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console / Server Logs
+      description: Any relevant error messages (browser console or Spring Boot logs)
+      render: shell

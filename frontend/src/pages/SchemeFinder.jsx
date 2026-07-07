@@ -835,28 +835,74 @@ export default function SchemeFinder() {
               </div>
 
               <div className="modal-body p-4">
-                <div className="mb-4">
-                  <h6 className="fw-bold text-success"><i className="bi bi-person-check-fill me-2"></i>Eligibility Criteria</h6>
-                  <p className="ps-4 text-secondary" style={{ whiteSpace: 'pre-wrap' }}>{activeScheme.eligibility}</p>
-                </div>
-                <div className="mb-4">
-                  <h6 className="fw-bold text-success"><i className="bi bi-file-earmark-medical-fill me-2"></i>Required Documents</h6>
-                  <p className="ps-4 text-secondary" style={{ whiteSpace: 'pre-wrap' }}>{activeScheme.requiredDocuments}</p>
-                </div>
-                <div className="mb-4">
-                  <h6 className="fw-bold text-success"><i className="bi bi-send-check-fill me-2"></i>Application Process</h6>
-                  <p className="ps-4 text-secondary" style={{ whiteSpace: 'pre-wrap' }}>{activeScheme.applicationProcess}</p>
-                </div>
-                {activeScheme.officialLink && (
-                  <div className="p-3 bg-light rounded border d-flex justify-content-between align-items-center mt-4">
+                {/* Benefits Section */}
+                {activeScheme.benefits && (
+                  <div className="mb-4">
+                    <h6 className="fw-bold text-success"><i className="bi bi-gift-fill me-2"></i>Key Benefits</h6>
+                    <p className="ps-4 text-secondary" style={{ whiteSpace: 'pre-wrap' }}>{activeScheme.benefits}</p>
+                  </div>
+                )}
+
+                {/* Online Application OR Offline Fallback */}
+                {activeScheme.officialLink ? (
+                  <div className="p-3 rounded border d-flex justify-content-between align-items-center mt-4"
+                    style={{ background: 'rgba(21,128,61,0.05)', borderColor: 'rgba(21,128,61,0.2)' }}>
                     <div>
-                      <h6 className="fw-bold mb-1">Official Website Link</h6>
-                      <span className="text-secondary small">Apply directly on the secure governmental portal</span>
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        <i className="bi bi-shield-check-fill text-success"></i>
+                        <h6 className="fw-bold mb-0">Official Government Portal</h6>
+                      </div>
+                      <span className="text-secondary small">Verified official government website (gov.in / nic.in)</span>
                     </div>
-                    <a href={activeScheme.officialLink} target="_blank" rel="noopener noreferrer" className="btn btn-success text-white d-flex align-items-center gap-2">
-                      <span>Visit Portal</span>
+                    <a href={activeScheme.officialLink} target="_blank" rel="noopener noreferrer"
+                      className="btn btn-success text-white d-flex align-items-center gap-2">
+                      <span>Apply Online</span>
                       <i className="bi bi-box-arrow-up-right"></i>
                     </a>
+                  </div>
+                ) : (
+                  <div className="mt-4 p-3 rounded border" style={{ background: 'rgba(245,158,11,0.05)', borderColor: 'rgba(245,158,11,0.2)' }}>
+                    <div className="d-flex align-items-center gap-2 mb-3">
+                      <i className="bi bi-info-circle-fill text-warning"></i>
+                      <h6 className="fw-bold mb-0 text-warning-emphasis">Online application is not available.</h6>
+                    </div>
+                    <p className="text-secondary small mb-3">
+                      Please contact the concerned government office directly to apply for this scheme.
+                    </p>
+                    <div className="row g-2">
+                      {activeScheme.departmentName && (
+                        <div className="col-sm-6">
+                          <div className="p-2 rounded border" style={{ background: 'var(--bg-secondary)' }}>
+                            <strong className="text-secondary small d-block mb-1"><i className="bi bi-building me-1"></i>Department</strong>
+                            <p className="small mb-0 text-secondary">{activeScheme.departmentName}</p>
+                          </div>
+                        </div>
+                      )}
+                      {activeScheme.helplineNumber && (
+                        <div className="col-sm-6">
+                          <div className="p-2 rounded border" style={{ background: 'var(--bg-secondary)' }}>
+                            <strong className="text-secondary small d-block mb-1"><i className="bi bi-telephone-fill me-1"></i>Helpline</strong>
+                            <a href={`tel:${activeScheme.helplineNumber}`} className="small text-success fw-bold text-decoration-none">{activeScheme.helplineNumber}</a>
+                          </div>
+                        </div>
+                      )}
+                      {activeScheme.officeAddress && (
+                        <div className="col-12">
+                          <div className="p-2 rounded border" style={{ background: 'var(--bg-secondary)' }}>
+                            <strong className="text-secondary small d-block mb-1"><i className="bi bi-geo-alt-fill me-1"></i>Office Address</strong>
+                            <p className="small mb-0 text-secondary">{activeScheme.officeAddress}</p>
+                          </div>
+                        </div>
+                      )}
+                      {activeScheme.offlineInstructions && (
+                        <div className="col-12">
+                          <div className="p-2 rounded border" style={{ background: 'var(--bg-secondary)' }}>
+                            <strong className="text-secondary small d-block mb-1"><i className="bi bi-journal-text me-1"></i>How to Apply Offline</strong>
+                            <p className="small mb-0 text-secondary">{activeScheme.offlineInstructions}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

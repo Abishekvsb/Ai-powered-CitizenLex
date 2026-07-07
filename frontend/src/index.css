@@ -1242,4 +1242,331 @@ footer {
   100% { transform: translateY(-15px) rotate(2deg); }
 }
 
+/* =========================================
+   PREMIUM UI POLISH - Phase 13
+   Ripples, Skeletons, OCR, Transitions
+   ========================================= */
 
+/* ---- Ripple Click Effect ---- */
+.btn, .glass-panel-hover, .ripple-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after, .glass-panel-hover::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease, opacity 0.5s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn:active::after, .glass-panel-hover:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 1;
+  transition: 0s;
+}
+
+/* ---- Skeleton Loader ---- */
+.premium-skeleton {
+  background: linear-gradient(90deg, var(--skeleton-from) 25%, var(--skeleton-to) 50%, var(--skeleton-from) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-line {
+  height: 14px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 80%; }
+.skeleton-line.full { width: 100%; }
+.skeleton-avatar { width: 48px; height: 48px; border-radius: 50%; }
+.skeleton-card { height: 120px; border-radius: var(--radius); }
+
+/* ---- OCR Drop Zone ---- */
+.ocr-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ocr-drop-zone:hover, .ocr-drop-zone.drag-over {
+  border-color: var(--primary);
+  background: rgba(79, 70, 229, 0.04);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+  transform: scale(1.01);
+}
+
+.ocr-drop-zone.drag-over {
+  border-style: solid;
+  background: rgba(79, 70, 229, 0.07);
+}
+
+/* ---- Page Fade Transition ---- */
+.fade-in-el {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.fade-in-el-delay-1 {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+
+.fade-in-el-delay-2 {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Glass Panel Hover Enhancement ---- */
+.glass-panel-hover {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s ease;
+  cursor: pointer;
+}
+
+.glass-panel-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  border-color: rgba(79, 70, 229, 0.2);
+}
+
+/* ---- Card Click Press Animation ---- */
+.glass-panel-hover:active {
+  transform: translateY(-1px) scale(0.99);
+  transition-duration: 0.1s;
+}
+
+/* ---- Toast Notification ---- */
+.custom-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  animation: slideInRight 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(80px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.custom-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  backdrop-filter: var(--blur);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.toast-success {
+  background: rgba(240, 253, 244, 0.95);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #166534;
+}
+
+.toast-warning {
+  background: rgba(255, 251, 235, 0.95);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #92400e;
+}
+
+[data-theme='dark'] .toast-success {
+  background: rgba(20, 83, 45, 0.9);
+  color: #86efac;
+}
+
+[data-theme='dark'] .toast-warning {
+  background: rgba(78, 52, 10, 0.9);
+  color: #fcd34d;
+}
+
+/* ---- Premium Buttons ---- */
+.btn-glass {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  color: var(--text);
+  backdrop-filter: var(--blur);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.88rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass:hover {
+  background: rgba(79, 70, 229, 0.1);
+  border-color: rgba(79, 70, 229, 0.3);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+}
+
+.btn-glass-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.88rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass-secondary:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+/* ---- Professional Error Boundary ---- */
+.error-boundary-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 20px;
+  text-align: center;
+  padding: 40px;
+}
+
+.error-boundary-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: rgba(239, 68, 68, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #ef4444;
+}
+
+/* ---- Smooth Nav Tab Links ---- */
+.nav-link-custom {
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-link-custom.active {
+  border-bottom-color: var(--primary);
+  color: var(--primary) !important;
+}
+
+/* ---- Success Checkmark Animation ---- */
+.success-checkmark {
+  width: 80px;
+  height: 80px;
+}
+
+.check-icon {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  border-radius: 50%;
+  box-sizing: content-box;
+  border: 4px solid #4CAF50;
+  animation: checkmark-appear 0.5s ease;
+}
+
+@keyframes checkmark-appear {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.icon-line {
+  height: 5px;
+  background-color: #4CAF50;
+  display: block;
+  border-radius: 2px;
+  position: absolute;
+}
+
+.icon-line.line-tip {
+  top: 46px;
+  left: 14px;
+  width: 25px;
+  transform: rotate(45deg);
+  animation: icon-line-tip 0.4s 0.2s both;
+}
+
+.icon-line.line-long {
+  top: 38px;
+  right: 8px;
+  width: 47px;
+  transform: rotate(-45deg);
+  animation: icon-line-long 0.4s 0.3s both;
+}
+
+@keyframes icon-line-tip {
+  0% { width: 0; left: 1px; top: 19px; }
+  54% { width: 0; left: 1px; top: 19px; }
+  70% { width: 50px; left: -8px; top: 37px; }
+  84% { width: 17px; left: 21px; top: 48px; }
+  100% { width: 25px; left: 14px; top: 46px; }
+}
+
+@keyframes icon-line-long {
+  0% { width: 0; right: 46px; top: 54px; }
+  65% { width: 0; right: 46px; top: 54px; }
+  84% { width: 55px; right: 0px; top: 35px; }
+  100% { width: 47px; right: 8px; top: 38px; }
+}
+
+/* ---- Legal Paper Preview ---- */
+.legal-paper-preview {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.88rem;
+  line-height: 1.8;
+  border-radius: 12px;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.legal-paper-preview:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15), 0 4px 24px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary);
+}

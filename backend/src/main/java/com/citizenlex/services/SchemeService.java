@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
 import java.util.List;
 
 @Service
@@ -20,10 +21,44 @@ public class SchemeService {
     @Autowired
     private GeminiService geminiService;
 
+    // ================= URL VALIDATION =================
+
+    /**
+     * Validates that a URL belongs to an official Indian government domain.
+     * Only .gov.in, .nic.in, and myscheme.gov.in are allowed.
+     * Returns null if the URL is invalid, AI-fabricated, or not from a trusted domain.
+     */
+    public static String sanitizeOfficialLink(String url) {
+        if (url == null || url.trim().isEmpty()) return null;
+        try {
+            URI uri = new URI(url.trim());
+            String host = uri.getHost();
+            if (host == null) return null;
+            host = host.toLowerCase();
+            if (host.endsWith(".gov.in") || host.endsWith(".nic.in")
+                    || host.equals("myscheme.gov.in")
+                    || host.endsWith(".myscheme.gov.in")) {
+                return url.trim();
+            }
+        } catch (Exception e) {
+            // Malformed URL
+        }
+        return null;
+    }
+
+    private GovernmentScheme sanitizeScheme(GovernmentScheme scheme) {
+        if (scheme != null) {
+            scheme.setOfficialLink(sanitizeOfficialLink(scheme.getOfficialLink()));
+        }
+        return scheme;
+    }
+
     // ================= DATABASE METHODS =================
 
     public List<GovernmentScheme> getAllSchemes() {
-        return schemeRepository.findAll();
+        List<GovernmentScheme> schemes = schemeRepository.findAll();
+        schemes.forEach(this::sanitizeScheme);
+        return schemes;
     }
 
     public GovernmentScheme getSchemeById(Long id) {
@@ -88,14 +123,16 @@ public class SchemeService {
     // ================= DATABASE SEARCH =================
 
     public List<GovernmentScheme> searchSchemes(String query) {
-
+        List<GovernmentScheme> results;
         if (query == null || query.trim().isEmpty()) {
-            return schemeRepository.findAll();
+            results = schemeRepository.findAll();
+        } else {
+            results = schemeRepository.findByTitleContainingIgnoreCaseOrCategoryContainingIgnoreCaseOrEligibilityContainingIgnoreCase(
+                    query, query, query
+            );
         }
-
-        return schemeRepository.findByTitleContainingIgnoreCaseOrCategoryContainingIgnoreCaseOrEligibilityContainingIgnoreCase(
-                query, query, query
-        );
+        results.forEach(this::sanitizeScheme);
+        return results;
     }
 
     // ================= AI SEARCH (FIXED + SAFE) =================
@@ -105,16 +142,21 @@ public class SchemeService {
         try {
             String prompt =
                     "You are an Indian Government AI Assistant.\n" +
-                    "Return 5 to 10 government schemes for ANY query.\n" +
-                    "If no exact match, suggest related schemes.\n" +
+                    "Return 5 to 10 real Indian government schemes matching the query.\n" +
+                    "If no exact match, suggest related real government schemes.\n" +
                     "Never return empty response.\n\n" +
 
                     "Each result must include:\n" +
-                    "- name\n" +
-                    "- description\n" +
-                    "- eligibility\n" +
-                    "- how_to_apply\n\n" +
+                    "- name (string)\n" +
+                    "- description (string)\n" +
+                    "- eligibility (string)\n" +
+                    "- how_to_apply (string, offline instructions only, DO NOT fabricate links)\n" +
+                    "- department (string, the ministry or department name)\n" +
+                    "- benefits (string, key benefits of the scheme)\n" +
+                    "- helpline (string, official helpline number if known, otherwise empty string)\n\n" +
 
+                    "CRITICAL: Do NOT include any URLs or website links in your response.\n" +
+                    "CRITICAL: Only include information you are certain about from real government data.\n" +
                     "Return ONLY valid JSON array.\n" +
                     "No extra text, no explanation.\n\n" +
 

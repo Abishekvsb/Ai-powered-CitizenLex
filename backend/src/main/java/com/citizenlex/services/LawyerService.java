@@ -52,7 +52,9 @@ public class LawyerService {
     public Lawyer registerLawyer(User user, String advocateId, Long specializationId, Integer experienceYears,
                                  Double fee, String courtName, Long cityId, String bio, String languages,
                                  String qualifications, String achievements, String barCouncilIdUrl,
-                                 String licenseCertificateUrl, String govIdUrl) {
+                                 String licenseCertificateUrl, String govIdUrl, String officeAddress,
+                                 String district, String state, String pincode, String workingHours,
+                                 Double latitude, Double longitude) {
 
         Optional<Lawyer> existing = lawyerRepository.findByUser(user);
         if (existing.isPresent()) {
@@ -80,6 +82,21 @@ public class LawyerService {
         lawyer.setBarCouncilIdUrl(barCouncilIdUrl);
         lawyer.setLicenseCertificateUrl(licenseCertificateUrl);
         lawyer.setGovIdUrl(govIdUrl);
+        lawyer.setOfficeAddress(officeAddress);
+        lawyer.setDistrict(district);
+        lawyer.setState(state);
+        lawyer.setPincode(pincode);
+        lawyer.setWorkingHours(workingHours != null && !workingHours.isEmpty() ? workingHours : "09:00 - 18:00");
+        lawyer.setIsDemo(false);
+
+        if (latitude == null || longitude == null) {
+            double[] coords = geocodeAddress(officeAddress, district, state);
+            lawyer.setLatitude(coords[0]);
+            lawyer.setLongitude(coords[1]);
+        } else {
+            lawyer.setLatitude(latitude);
+            lawyer.setLongitude(longitude);
+        }
 
         // Assign ROLE_LAWYER to user
         Optional<Role> lawyerRole = roleRepository.findByName("ROLE_LAWYER");
@@ -89,6 +106,113 @@ public class LawyerService {
         }
 
         return lawyerRepository.save(lawyer);
+    }
+
+    public double[] geocodeAddress(String officeAddress, String district, String state) {
+        String apiKey = System.getenv("GOOGLE_MAPS_API_KEY");
+        if (apiKey == null || apiKey.isEmpty()) {
+            apiKey = System.getenv("VITE_GOOGLE_MAPS_API_KEY");
+        }
+        
+        if (apiKey != null && !apiKey.isEmpty() && !"mock".equalsIgnoreCase(apiKey)) {
+            try {
+                String addressQuery = (officeAddress != null ? officeAddress : "") + ", " + 
+                                       (district != null ? district : "") + ", " + 
+                                       (state != null ? state : "");
+                String encodedAddress = java.net.URLEncoder.encode(addressQuery, "UTF-8");
+                String urlString = "https://maps.googleapis.com/maps/api/geocode/json?address=" + encodedAddress + "&key=" + apiKey;
+                
+                java.net.URL url = new java.net.URL(urlString);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    
+                    String json = response.toString();
+                    if (json.contains("\"location\"")) {
+                        int locationIndex = json.indexOf("\"location\"");
+                        int latIndex = json.indexOf("\"lat\"", locationIndex);
+                        int lngIndex = json.indexOf("\"lng\"", locationIndex);
+                        
+                        if (latIndex != -1 && lngIndex != -1) {
+                            int latStart = json.indexOf(":", latIndex) + 1;
+                            int latEnd = json.indexOf(",", latStart);
+                            double lat = Double.parseDouble(json.substring(latStart, latEnd).trim());
+                            
+                            int lngStart = json.indexOf(":", lngIndex) + 1;
+                            int lngEnd = json.indexOf("}", lngStart);
+                            int commaIndex = json.indexOf(",", lngStart);
+                            if (commaIndex != -1 && commaIndex < lngEnd) {
+                                lngEnd = commaIndex;
+                            }
+                            double lng = Double.parseDouble(json.substring(lngStart, lngEnd).trim());
+                            
+                            return new double[]{lat, lng};
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Google Geocoding API failed: " + e.getMessage());
+            }
+        }
+        
+        double[] center = getDistrictCenter(district);
+        double noiseLat = (Math.random() - 0.5) * 0.015;
+        double noiseLng = (Math.random() - 0.5) * 0.015;
+        return new double[]{center[0] + noiseLat, center[1] + noiseLng};
+    }
+
+    private double[] getDistrictCenter(String district) {
+        if (district == null) return new double[]{13.0827, 80.2707};
+        
+        String d = district.trim().toLowerCase();
+        switch (d) {
+            case "ariyalur": return new double[]{11.1401, 79.0747};
+            case "chengalpattu": return new double[]{12.6917, 79.9750};
+            case "chennai": return new double[]{13.0827, 80.2707};
+            case "coimbatore": return new double[]{11.0168, 76.9558};
+            case "cuddalore": return new double[]{11.7480, 79.7714};
+            case "dharmapuri": return new double[]{12.1353, 78.1560};
+            case "dindigul": return new double[]{10.3673, 77.9803};
+            case "erode": return new double[]{11.3410, 77.7172};
+            case "kallakurichi": return new double[]{11.7384, 78.9639};
+            case "kanchipuram": return new double[]{12.8387, 79.7016};
+            case "kanyakumari": return new double[]{8.0883, 77.5385};
+            case "karur": return new double[]{10.9601, 78.0766};
+            case "krishnagiri": return new double[]{12.5186, 78.2137};
+            case "madurai": return new double[]{9.9252, 78.1198};
+            case "mayiladuthurai": return new double[]{11.1018, 79.6522};
+            case "nagapattinam": return new double[]{10.7656, 79.8433};
+            case "namakkal": return new double[]{11.2189, 78.1673};
+            case "nilgiris": return new double[]{11.4102, 76.6950};
+            case "perambalur": return new double[]{11.2342, 78.8797};
+            case "pudukkottai": return new double[]{10.3797, 78.8202};
+            case "ramanathapuram": return new double[]{9.3639, 78.8394};
+            case "ranipet": return new double[]{12.9274, 79.3327};
+            case "salem": return new double[]{11.6643, 78.1460};
+            case "sivaganga":
+            case "sivagangai": return new double[]{9.8433, 78.4833};
+            case "tenkasi": return new double[]{8.9593, 77.3142};
+            case "thanjavur": return new double[]{10.7870, 79.1378};
+            case "theni": return new double[]{10.0104, 77.4777};
+            case "thoothukudi": return new double[]{8.7642, 78.1348};
+            case "tiruchirappalli": return new double[]{10.7905, 78.7047};
+            case "tirunelveli": return new double[]{8.7139, 77.7567};
+            case "tirupathur": return new double[]{12.4929, 78.5678};
+            case "tiruppur": return new double[]{11.1085, 77.3411};
+            case "tiruvallur": return new double[]{13.1438, 79.9077};
+            case "tiruvannamalai": return new double[]{12.2280, 79.0665};
+            case "tiruvarur": return new double[]{10.7722, 79.6361};
+            case "vellore": return new double[]{12.9165, 79.1325};
+            case "viluppuram": return new double[]{11.9401, 79.4861};
+            case "virudhunagar": return new double[]{9.5680, 77.9624};
+            default: return new double[]{13.0827, 80.2707};
+        }
     }
 
     public List<Lawyer> getFilteredLawyers(Long specializationId, Long cityId, String language,

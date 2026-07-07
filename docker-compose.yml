@@ -1,56 +1,74 @@
+version: '3.8'
 
 services:
-  db:
+  # ─── MySQL 8 Database ──────────────────────────────────────────────
+  mysql:
     image: mysql:8.0
-    container_name: citizenlex-db
-    restart: always
+    container_name: citizenlex-mysql
+    restart: unless-stopped
     environment:
-      MYSQL_DATABASE: CitizenLexDB
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-CitizenLexDB}
+      MYSQL_USER: ${DB_USER:-citizenlex}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-rootpassword}
     ports:
       - "3306:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
+  # ─── Spring Boot Backend ───────────────────────────────────────────
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     container_name: citizenlex-backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "8080:8080"
-
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
-
-    env_file:
-      - .env
-
-    environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=rootpassword
-      - app.gemini.key=${GEMINI_API_KEY}
     depends_on:
-      db:
+      mysql:
         condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-CitizenLexDB}
+      DB_USER: ${DB_USER:-citizenlex}
+      DB_PASSWORD: ${DB_PASSWORD:-rootpassword}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-mock}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-mock}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-mock}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-mock}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-mock}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-mock}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
 
+  # ─── React Frontend (Nginx) ────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
     container_name: citizenlex-frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - backend
 
 volumes:
-  mysql-data:
+  mysql_data:
+    driver: local

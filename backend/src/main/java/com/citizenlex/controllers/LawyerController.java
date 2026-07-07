@@ -140,10 +140,18 @@ public class LawyerController {
             String barId = (String) req.get("barCouncilIdUrl");
             String cert = (String) req.get("licenseCertificateUrl");
             String govId = (String) req.get("govIdUrl");
+            String officeAddress = (String) req.get("officeAddress");
+            String district = (String) req.get("district");
+            String state = (String) req.get("state");
+            String pincode = (String) req.get("pincode");
+            String workingHours = (String) req.get("workingHours");
+            Double latitude = req.get("latitude") != null ? Double.valueOf(req.get("latitude").toString()) : null;
+            Double longitude = req.get("longitude") != null ? Double.valueOf(req.get("longitude").toString()) : null;
 
             Lawyer lawyer = lawyerService.registerLawyer(
                     user, advocateId, specializationId, experienceYears, fee, courtName, cityId,
-                    bio, languages, qualifications, achievements, barId, cert, govId
+                    bio, languages, qualifications, achievements, barId, cert, govId,
+                    officeAddress, district, state, pincode, workingHours, latitude, longitude
             );
             return ResponseEntity.ok(lawyer);
         } catch (Exception e) {

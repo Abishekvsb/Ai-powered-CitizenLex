@@ -89,12 +89,19 @@ public class Lawyer {
     @Column(name = "district", length = 100)
     private String district;
 
+    @Column(name = "is_demo")
+    private Boolean isDemo = false;
+
+    @Column(name = "pincode", length = 20)
+    private String pincode;
+
     public Lawyer() {
         this.isVerified = false;
         this.verificationStatus = "PENDING";
         this.isOnline = false;
         this.rating = 5.0;
         this.totalReviews = 0;
+        this.isDemo = false;
     }
 
     public Long getId() { return id; }
@@ -174,4 +181,10 @@ public class Lawyer {
 
     public String getDistrict() { return district; }
     public void setDistrict(String district) { this.district = district; }
+
+    public Boolean getIsDemo() { return isDemo != null && isDemo; }
+    public void setIsDemo(Boolean isDemo) { this.isDemo = isDemo; }
+
+    public String getPincode() { return pincode; }
+    public void setPincode(String pincode) { this.pincode = pincode; }
 }

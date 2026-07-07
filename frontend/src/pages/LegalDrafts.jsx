@@ -6,8 +6,13 @@ const DRAFT_TYPES = [
   { id: 'Consumer Complaint', label: 'Consumer Complaint / நுகர்வோர் புகார் மனு' },
   { id: 'RTI Application', label: 'RTI Application / தகவல் அறியும் உரிமை விண்ணப்பம்' },
   { id: 'Grievance Petition', label: 'Grievance Petition / பொது மக்கள் குறைதீர் மனு' },
-  { id: 'Legal Notice', label: 'Legal Notice / வழக்கறிஞர் சட்ட அறிவிப்பு' },
-  { id: 'Police Complaint Draft', label: 'Police Complaint Draft / காவல் நிலைய புகார் மனு' }
+  { id: 'Legal Notice', label: 'Legal Notice / சட்ட அறிவிப்பு கடிதம்' },
+  { id: 'Police Complaint Draft', label: 'Police Complaint / காவல் நிலைய புகார் மனு' },
+  { id: 'FIR Draft', label: 'FIR Draft / முதல் தகவல் அறிக்கை வரைவு' },
+  { id: 'Affidavit', label: 'Affidavit / பிரமாண பத்திரம்' },
+  { id: 'Rental Agreement', label: 'Rental Agreement / வாடகை ஒப்பந்தம்' },
+  { id: 'Court Petition', label: 'Court Petition / நீதிமன்ற மனு' },
+  { id: 'Employment Complaint', label: 'Employment Complaint / வேலை குறை கோரிக்கை மனு' }
 ];
 
 const PREFILL_TEMPLATES = {
@@ -42,6 +47,8 @@ export default function LegalDrafts() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [placeholderWarning, setPlaceholderWarning] = useState(false);
+  const [pendingDownload, setPendingDownload] = useState(null); // 'docx' | 'pdf' | 'txt'
 
   const paperRef = useRef(null);
 
@@ -130,18 +137,83 @@ export default function LegalDrafts() {
     window.print();
   };
 
-  const handleDownload = () => {
-    if (!draft) return;
-    const element = document.createElement("a");
-    const file = new Blob([draft], { type: 'text/plain;charset=utf-8' });
-    element.href = URL.createObjectURL(file);
-    const fileNameSafe = draftType.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    element.download = `${fileNameSafe}_draft_${language}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    showToast('Downloaded text file successfully!', 'success');
+  const validatePlaceholders = (text) => {
+    const matches = text.match(/\[[^\]]+\]/g);
+    return matches ? matches.filter(m => m.length > 2) : [];
   };
+
+  const handleDownload = (format = 'txt') => {
+    if (!draft) return;
+    const placeholders = validatePlaceholders(draft);
+    if (placeholders.length > 0) {
+      setPlaceholderWarning(true);
+      setPendingDownload(format);
+      return;
+    }
+    executeDownload(format);
+  };
+
+  const executeDownload = async (format) => {
+    if (format === 'txt') {
+      const element = document.createElement('a');
+      const file = new Blob([draft], { type: 'text/plain;charset=utf-8' });
+      element.href = URL.createObjectURL(file);
+      const fileNameSafe = draftType.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      element.download = `${fileNameSafe}_draft_${language}.txt`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      showToast('Downloaded text file!', 'success');
+    } else if (format === 'docx') {
+      try {
+        showToast('Preparing DOCX file...', 'success');
+        const res = await axios.post('/api/drafts/download/docx',
+          { type: draftType, content: draft },
+          { responseType: 'blob' }
+        );
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${draftType.replace(/[^a-z0-9]/gi, '_')}_draft.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showToast('DOCX downloaded successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('DOCX download failed. Try again.', 'warning');
+      }
+    } else if (format === 'pdf') {
+      try {
+        showToast('Preparing PDF file...', 'success');
+        const res = await axios.post('/api/drafts/download/pdf',
+          { type: draftType, content: draft },
+          { responseType: 'blob' }
+        );
+        const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${draftType.replace(/[^a-z0-9]/gi, '_')}_draft.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showToast('PDF downloaded successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('PDF download failed. Try again.', 'warning');
+      }
+    }
+  };
+
+  const handleCopyDraft = () => {
+    if (!draft) return;
+    navigator.clipboard.writeText(draft)
+      .then(() => showToast('Draft copied to clipboard!', 'success'))
+      .catch(() => showToast('Copy failed', 'warning'));
+  };
+
 
   return (
     <div className="container py-5 text-start print-container-wrapper">
@@ -260,29 +332,52 @@ export default function LegalDrafts() {
         <div className="col-lg-7 fade-in-el-delay-1">
           {draft ? (
             <div className="d-flex flex-column gap-3">
-              {/* Actions Header */}
               <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 no-print p-3 glass-panel">
                 <span className="fw-semibold small text-secondary">
                   <i className="bi bi-check-circle-fill text-success me-1"></i>
-                  Draft Ready (Click inside box to edit)
+                  Draft Ready <span className="text-muted">(Click to edit)</span>
                 </span>
                 
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-2 flex-wrap">
+                  <button
+                    className="btn btn-sm btn-glass d-flex align-items-center gap-1"
+                    onClick={() => handleDownload('pdf')}
+                    title="Download as PDF"
+                  >
+                    <i className="bi bi-file-pdf-fill text-danger"></i>
+                    <span>PDF</span>
+                  </button>
+                  <button
+                    className="btn btn-sm btn-glass d-flex align-items-center gap-1"
+                    onClick={() => handleDownload('docx')}
+                    title="Download as Word Document"
+                  >
+                    <i className="bi bi-file-word-fill text-primary"></i>
+                    <span>DOCX</span>
+                  </button>
+                  <button
+                    className="btn btn-sm btn-glass-secondary d-flex align-items-center gap-1"
+                    onClick={() => handleDownload('txt')}
+                    title="Download plain text"
+                  >
+                    <i className="bi bi-download"></i>
+                    <span>TXT</span>
+                  </button>
+                  <button
+                    className="btn btn-sm btn-glass-secondary d-flex align-items-center gap-1"
+                    onClick={handleCopyDraft}
+                    title="Copy to Clipboard"
+                  >
+                    <i className="bi bi-clipboard"></i>
+                    <span>Copy</span>
+                  </button>
                   <button
                     className="btn btn-sm btn-glass d-flex align-items-center gap-1"
                     onClick={handlePrint}
                     title="Print / Save to PDF"
                   >
                     <i className="bi bi-printer-fill"></i>
-                    <span>Print / PDF</span>
-                  </button>
-                  <button
-                    className="btn btn-sm btn-glass-secondary d-flex align-items-center gap-1"
-                    onClick={handleDownload}
-                    title="Download Text Document"
-                  >
-                    <i className="bi bi-download"></i>
-                    <span>Download</span>
+                    <span>Print</span>
                   </button>
                   <button
                     className="btn btn-sm btn-glass d-flex align-items-center gap-1"
@@ -291,7 +386,7 @@ export default function LegalDrafts() {
                     style={{ border: '1px solid rgba(196,157,63,0.3)', color: '#c49d3f' }}
                   >
                     <i className="bi bi-bookmark-star-fill"></i>
-                    <span>Save Draft</span>
+                    <span>Save</span>
                   </button>
                   <button
                     className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
@@ -332,6 +427,50 @@ export default function LegalDrafts() {
           )}
         </div>
       </div>
+
+      {/* Placeholder Warning Modal */}
+      {placeholderWarning && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 9998 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content glass-panel border-0">
+              <div className="modal-header border-bottom border-light-subtle p-4">
+                <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
+                  <i className="bi bi-exclamation-triangle-fill text-warning"></i>
+                  Unfilled Placeholders Detected
+                </h5>
+              </div>
+              <div className="modal-body p-4">
+                <p className="text-secondary mb-3">
+                  Your draft contains unfilled placeholders like <code>[Name]</code>, <code>[Date]</code>, or <code>[Address]</code>. 
+                  Downloading without filling these will produce an incomplete document.
+                </p>
+                <p className="text-secondary small">
+                  <strong>Recommendation:</strong> Click inside the draft editor and replace all <code>[brackets]</code> with real information before downloading.
+                </p>
+              </div>
+              <div className="modal-footer border-top border-light-subtle p-3 d-flex gap-2">
+                <button
+                  className="btn btn-glass-secondary flex-fill"
+                  onClick={() => { setPlaceholderWarning(false); setPendingDownload(null); }}
+                >
+                  <i className="bi bi-pencil me-2"></i>Go Back & Edit
+                </button>
+                <button
+                  className="btn btn-glass flex-fill"
+                  onClick={() => {
+                    const fmt = pendingDownload;
+                    setPlaceholderWarning(false);
+                    setPendingDownload(null);
+                    executeDownload(fmt);
+                  }}
+                >
+                  <i className="bi bi-download me-2"></i>Download Anyway
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast.show && (

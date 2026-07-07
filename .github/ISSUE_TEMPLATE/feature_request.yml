@@ -1,0 +1,80 @@
+name: feature_request
+description: Suggest a new feature or improvement
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees:
+  - Abishekvsb
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing an idea to CitizenLex! We read every suggestion.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A concise title for the feature.
+      placeholder: "e.g. Add SMS notification for appointment reminders"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature Area
+      options:
+        - AI Legal Copilot
+        - Lawyer Marketplace
+        - Appointment & Video Consultation
+        - Document Intelligence
+        - Rights & Government Schemes
+        - Admin Dashboard
+        - Authentication & Security
+        - Notifications
+        - DevOps / Infrastructure
+        - Mobile App
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem This Solves
+      description: What problem or pain point does this feature address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature in detail, including any UI/UX or API changes.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (your estimate)
+      options:
+        - "🔴 High — Significantly impacts users"
+        - "🟡 Medium — Nice to have"
+        - "🟢 Low — Minor enhancement"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you thought of?
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to submit a Pull Request for this feature

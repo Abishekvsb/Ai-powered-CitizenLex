@@ -67,6 +67,54 @@ export default function LawyerMarketplace() {
   const markersRef = useRef([]);
   const lawyerMarkersRef = useRef({});
   const autocompleteInputRef = useRef(null);
+  const activeInfoWindowRef = useRef(null);
+  const lawyerInfoWindowsRef = useRef({});
+
+  const districtCenters = {
+    "Ariyalur": { lat: 11.1401, lng: 79.0747 },
+    "Chengalpattu": { lat: 12.6917, lng: 79.9750 },
+    "Chennai": { lat: 13.0827, lng: 80.2707 },
+    "Coimbatore": { lat: 11.0168, lng: 76.9558 },
+    "Cuddalore": { lat: 11.7480, lng: 79.7714 },
+    "Dharmapuri": { lat: 12.1353, lng: 78.1560 },
+    "Dindigul": { lat: 10.3673, lng: 77.9803 },
+    "Erode": { lat: 11.3410, lng: 77.7172 },
+    "Kallakurichi": { lat: 11.7384, lng: 78.9639 },
+    "Kanchipuram": { lat: 12.8387, lng: 79.7016 },
+    "Kanyakumari": { lat: 8.0883, lng: 77.5385 },
+    "Karur": { lat: 10.9601, lng: 78.0766 },
+    "Krishnagiri": { lat: 12.5186, lng: 78.2137 },
+    "Madurai": { lat: 9.9252, lng: 78.1198 },
+    "Mayiladuthurai": { lat: 11.1018, lng: 79.6522 },
+    "Nagapattinam": { lat: 10.7656, lng: 79.8433 },
+    "Namakkal": { lat: 11.2189, lng: 78.1673 },
+    "Nilgiris": { lat: 11.4102, lng: 76.6950 },
+    "Perambalur": { lat: 11.2342, lng: 78.8797 },
+    "Pudukkottai": { lat: 10.3797, lng: 78.8202 },
+    "Ramanathapuram": { lat: 9.3639, lng: 78.8394 },
+    "Ranipet": { lat: 12.9274, lng: 79.3327 },
+    "Salem": { lat: 11.6643, lng: 78.1460 },
+    "Sivagangai": { lat: 9.8433, lng: 78.4833 },
+    "Tenkasi": { lat: 8.9593, lng: 77.3142 },
+    "Thanjavur": { lat: 10.7870, lng: 79.1378 },
+    "Theni": { lat: 10.0104, lng: 77.4777 },
+    "Thoothukudi": { lat: 8.7642, lng: 78.1348 },
+    "Tiruchirappalli": { lat: 10.7905, lng: 78.7047 },
+    "Tirunelveli": { lat: 8.7139, lng: 77.7567 },
+    "Tirupathur": { lat: 12.4929, lng: 78.5678 },
+    "Tiruppur": { lat: 11.1085, lng: 77.3411 },
+    "Tiruvallur": { lat: 13.1438, lng: 79.9077 },
+    "Tiruvannamalai": { lat: 12.2280, lng: 79.0665 },
+    "Tiruvarur": { lat: 10.7722, lng: 79.6361 },
+    "Vellore": { lat: 12.9165, lng: 79.1325 },
+    "Viluppuram": { lat: 11.9401, lng: 79.4861 },
+    "Virudhunagar": { lat: 9.5680, lng: 77.9624 }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text || '');
+    alert("Office address copied to clipboard!");
+  };
 
   const timeSlots = [
     '09:00 AM - 09:30 AM',
@@ -78,10 +126,14 @@ export default function LawyerMarketplace() {
   ];
 
   const districtsList = [
-    "Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli",
-    "Tirunelveli", "Erode", "Vellore", "Thoothukudi", "Dindigul",
-    "Thanjavur", "Tiruppur", "Kanchipuram", "Tiruvallur", "Cuddalore",
-    "Kanyakumari", "Karur", "Namakkal", "Theni", "Virudhunagar"
+    "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore",
+    "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
+    "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai",
+    "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai",
+    "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi",
+    "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
+    "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur",
+    "Vellore", "Viluppuram", "Virudhunagar"
   ];
 
   const casePresets = [
@@ -149,6 +201,12 @@ export default function LawyerMarketplace() {
   useEffect(() => {
     fetchLawyers();
   }, [specializationId, cityId, language, minExperience, maxFee, minRating, sortBy, selectedState, selectedDistrict, onlineConsultation, availableToday]);
+
+  useEffect(() => {
+    if (map && lawyers.length > 0) {
+      plotLawyerMarkers(lawyers);
+    }
+  }, [map, lawyers]);
 
   useEffect(() => {
     if (bookingLawyer && user) {
@@ -328,6 +386,7 @@ export default function LawyerMarketplace() {
 
     Object.values(lawyerMarkersRef.current).forEach(m => m.setMap(null));
     lawyerMarkersRef.current = {};
+    lawyerInfoWindowsRef.current = {};
 
     if (lawyerList.length === 0) return;
 
@@ -352,16 +411,18 @@ export default function LawyerMarketplace() {
       });
 
       const contentString = `
-        <div style="color: #030712; padding: 12px; font-family: sans-serif; text-align: left; min-width: 230px;">
-          <div style="margin-bottom: 6px; overflow: hidden;">
-            <img src="${lawyer.user?.profileImageUrl || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=50'}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; float: left; margin-right: 8px; border: 1.5px solid #d4af37;" />
-            <div style="float: left; width: 150px;">
-              <h6 style="margin: 0; font-weight: bold; color: #1f2937; font-size: 13px;">Advocate ${lawyer.user?.firstName || ''} ${lawyer.user?.lastName || ''}</h6>
-              <p style="margin: 2px 0; font-size: 11px; color: #4b5563;">${lawyer.specialization?.name || 'Practice Area'}</p>
+        <div style="color: #030712; padding: 12px; font-family: sans-serif; text-align: left; min-width: 250px;">
+          <div style="margin-bottom: 8px; overflow: hidden; display: flex; align-items: center; gap: 8px;">
+            <img src="${lawyer.user?.profileImageUrl || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=50'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1.5px solid #d4af37;" />
+            <div>
+              <h6 style="margin: 0; font-weight: bold; color: #1f2937; font-size: 14px;">Advocate ${lawyer.user?.firstName || ''} ${lawyer.user?.lastName || ''}</h6>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: #4b5563; font-weight: 600;">${lawyer.specialization?.name || 'Practice Area'}</p>
             </div>
           </div>
-          <div style="font-size: 11px; margin-bottom: 8px; clear: both; color: #374151;">
-            <strong>Office:</strong> ${lawyer.officeAddress || 'Court Chambers'}<br/>
+          <div style="font-size: 11px; color: #374151; line-height: 1.4;">
+            <strong>Office:</strong> ${lawyer.officeAddress || 'N/A'}<br/>
+            <strong>Mobile:</strong> ${lawyer.user?.mobile || 'N/A'}<br/>
+            <strong>Hours:</strong> ${lawyer.workingHours || '09:00 - 18:00'}<br/>
             <strong>Rating:</strong> ⭐ ${lawyer.rating || 5.0} | <strong>Fee:</strong> ₹${lawyer.consultationFee}
           </div>
         </div>
@@ -371,9 +432,15 @@ export default function LawyerMarketplace() {
         content: contentString,
       });
 
+      lawyerInfoWindowsRef.current[lawyer.id] = infowindow;
+
       marker.addListener("click", () => {
         setSelectedLawyerId(lawyer.id);
+        if (activeInfoWindowRef.current) {
+          activeInfoWindowRef.current.close();
+        }
         infowindow.open({ anchor: marker, map });
+        activeInfoWindowRef.current = infowindow;
         calculateDirections(lawyer);
       });
 
@@ -401,19 +468,36 @@ export default function LawyerMarketplace() {
         marker.setAnimation(window.google.maps.Animation.BOUNCE);
         setTimeout(() => marker.setAnimation(null), 1200);
       }
+
+      if (activeInfoWindowRef.current) {
+        activeInfoWindowRef.current.close();
+      }
+      const infowindow = lawyerInfoWindowsRef.current[lawyer.id];
+      if (infowindow && marker) {
+        infowindow.open({ anchor: marker, map });
+        activeInfoWindowRef.current = infowindow;
+      }
     }
     calculateDirections(lawyer);
   };
 
-  const calculateDirections = (lawyer) => {
-    if (!window.google || !map || !userLocation) return;
+  const getDirectionsOrigin = () => {
+    if (selectedDistrict && districtCenters[selectedDistrict]) {
+      return districtCenters[selectedDistrict];
+    }
+    return userLocation || { lat: 13.0827, lng: 80.2707 };
+  };
 
+  const calculateDirections = (lawyer) => {
+    if (!window.google || !map) return;
+
+    const origin = getDirectionsOrigin();
     const destination = getLawyerLatLng(lawyer);
     const directionsService = new window.google.maps.DirectionsService();
 
     directionsService.route(
       {
-        origin: userLocation,
+        origin: origin,
         destination: destination,
         travelMode: window.google.maps.TravelMode.DRIVING
       },
@@ -840,9 +924,19 @@ Thank you for booking through CitizenLex.`;
                   <input type="number" className="form-control form-glass-control" placeholder="Years" value={minExperience} onChange={e => setMinExperience(e.target.value)} />
                 </div>
 
-                <div className="col-md-4 text-start">
+                <div className="col-md-2 text-start">
                   <label className="form-label small fw-semibold text-secondary mb-1">Languages Spoken</label>
                   <input type="text" className="form-control form-glass-control" placeholder="e.g. Tamil" value={language} onChange={e => setLanguage(e.target.value)} />
+                </div>
+
+                <div className="col-md-2 text-start">
+                  <label className="form-label small fw-semibold text-secondary mb-1">Min Rating</label>
+                  <select className="form-select form-glass-control" value={minRating} onChange={e => setMinRating(e.target.value)} style={{ background: '#07061d', color: '#fff' }}>
+                    <option value="">All Ratings</option>
+                    <option value="4.5">⭐⭐⭐⭐⭐ 4.5+</option>
+                    <option value="4.0">⭐⭐⭐⭐ 4.0+</option>
+                    <option value="3.5">⭐⭐⭐ 3.5+</option>
+                  </select>
                 </div>
 
                 <div className="col-md-12 d-flex gap-4 mt-2">
@@ -979,11 +1073,45 @@ Thank you for booking through CitizenLex.`;
                                 <i className="bi bi-patch-check-fill"></i> Verified
                               </span>
                             )}
+                            {lawyer.isDemo && (
+                              <span className="badge bg-warning bg-opacity-10 text-warning d-flex align-items-center gap-1" style={{ fontSize: '0.65rem', border: '1px solid rgba(245,158,11,0.2)' }}>
+                                <i className="bi bi-info-circle-fill"></i> Demo Profile
+                              </span>
+                            )}
                           </div>
 
                           <p className="text-secondary small mb-2 fw-semibold" style={{ fontSize: '0.78rem' }}>
                             {lawyer.specialization?.name} | Bar Reg: {lawyer.advocateId}
                           </p>
+
+                          <div className="mb-2 text-start" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lawyer.officeAddress || '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-secondary text-decoration-none hover-underline small"
+                              style={{ fontSize: '0.75rem' }}
+                            >
+                              <i className="bi bi-geo-alt-fill text-danger me-1"></i> {lawyer.officeAddress || 'N/A'} {lawyer.pincode ? ` - ${lawyer.pincode}` : ''}
+                            </a>
+                            <a
+                              href={`tel:${lawyer.user?.mobile ? (lawyer.user.mobile.startsWith('+91') ? lawyer.user.mobile : `+91${lawyer.user.mobile}`) : ''}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-secondary text-decoration-none hover-underline small"
+                              style={{ fontSize: '0.75rem' }}
+                            >
+                              <i className="bi bi-telephone-fill text-primary me-1"></i> {lawyer.user?.mobile || 'N/A'}
+                            </a>
+                            {lawyer.user?.email && (
+                              <div className="text-secondary small" style={{ fontSize: '0.75rem' }}>
+                                <i className="bi bi-envelope-fill text-info me-1"></i> {lawyer.user.email}
+                              </div>
+                            )}
+                            <div className="text-secondary small" style={{ fontSize: '0.75rem' }}>
+                                <i className="bi bi-clock-fill text-warning me-1"></i> Hours: {lawyer.workingHours || '09:00 - 18:00'}
+                            </div>
+                          </div>
 
                           {/* 4. Real-Time Availability Slot */}
                           <div className="text-info mb-1.5" style={{ fontSize: '0.78rem', fontWeight: 600 }}>
@@ -1008,22 +1136,50 @@ Thank you for booking through CitizenLex.`;
                           <h4 className="fw-extrabold text-white mb-0" style={{ letterSpacing: '-0.5px' }}>₹{lawyer.consultationFee}</h4>
                         </div>
                         <div className="d-flex flex-column gap-2">
-                          <div className="d-flex gap-2">
+                          <div className="d-flex flex-wrap gap-1">
                             <button
                               onClick={(e) => { e.stopPropagation(); focusLawyer(lawyer); }}
-                              className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1.5 flex-grow-1 justify-content-center"
-                              style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.78rem' }}
+                              className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1 justify-content-center flex-grow-1"
+                              style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', fontSize: '0.72rem', padding: '6px 8px' }}
+                              title="View on Map"
                             >
-                              <i className="bi bi-geo-alt-fill text-danger"></i> Locate
+                              <i className="bi bi-geo-alt-fill text-danger"></i> View on Map
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); calculateDirections(lawyer); }}
+                              className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1 justify-content-center flex-grow-1"
+                              style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', fontSize: '0.72rem', padding: '6px 8px' }}
+                              title="Get Directions"
+                            >
+                              <i className="bi bi-arrow-up-right-circle-fill text-success"></i> Get Directions
+                            </button>
+                            <a
+                              href={`tel:${lawyer.user?.mobile ? (lawyer.user.mobile.startsWith('+91') ? lawyer.user.mobile : `+91${lawyer.user.mobile}`) : ''}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1 justify-content-center flex-grow-1"
+                              style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', fontSize: '0.72rem', padding: '6px 8px' }}
+                              title="Call Lawyer"
+                            >
+                              <i className="bi bi-telephone-fill text-primary"></i> Call
+                            </a>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); copyToClipboard(lawyer.officeAddress); }}
+                              className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1 justify-content-center flex-grow-1"
+                              style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', fontSize: '0.72rem', padding: '6px 8px' }}
+                              title="Copy Address"
+                            >
+                              <i className="bi bi-clipboard-fill text-warning"></i> Copy Address
                             </button>
                             <a
                               href={`https://www.google.com/maps/dir/?api=1&destination=${getLawyerLatLng(lawyer).lat},${getLawyerLatLng(lawyer).lng}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1.5 flex-grow-1 justify-content-center"
-                              style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.78rem' }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="btn btn-sm btn-glass text-white d-flex align-items-center gap-1 justify-content-center flex-grow-1"
+                              style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', fontSize: '0.72rem', padding: '6px 8px' }}
+                              title="Open in Google Maps"
                             >
-                              <i className="bi bi-compass-fill text-info"></i> Maps
+                              <i className="bi bi-box-arrow-up-right text-info"></i> Open in Maps
                             </a>
                           </div>
 

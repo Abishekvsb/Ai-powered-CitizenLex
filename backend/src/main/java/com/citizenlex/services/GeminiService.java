@@ -203,11 +203,21 @@ public class GeminiService {
 
     // ================= DOCUMENT SUMMARY API =================
     public String getDocumentSummary(String fileName, String extractedText) {
-        String truncated = extractedText != null && extractedText.length() > 3000
-                ? extractedText.substring(0, 3000) + "... [truncated]"
+        String truncated = extractedText != null && extractedText.length() > 4000
+                ? extractedText.substring(0, 4000) + "... [truncated]"
                 : extractedText;
 
-        String systemInstruction = "You are a legal document analyzer. Analyze the provided document and return a JSON object with these exact fields: document_type (string), summary (string, 2-3 sentences), key_points (array of strings, max 5 items), risks (array of strings, max 3 items), suggestions (array of strings, max 3 items). Return ONLY valid JSON, no markdown.";
+        String systemInstruction = "You are an expert Indian legal document analyzer. Analyze the provided document and return a JSON object with these exact fields:\n" +
+                "{\n" +
+                "  \"document_type\": \"string (e.g. Agreement, Notice, Affidavit, RTI, Unknown)\",\n" +
+                "  \"summary\": \"string (2-3 sentences clear summary)\",\n" +
+                "  \"legal_points\": [\"array of key legal points, rights, or obligations, max 5\"],\n" +
+                "  \"key_names\": [\"array of key names of people, entities, or parties mentioned, max 5\"],\n" +
+                "  \"dates\": [\"array of key dates mentioned, max 5\"],\n" +
+                "  \"numbers\": [\"array of key numbers, monetary amounts, or codes, max 5\"],\n" +
+                "  \"suggested_actions\": [\"array of suggested next steps or legal actions, max 5\"]\n" +
+                "}\n" +
+                "Return ONLY valid JSON, no markdown. Do not include ```json in your response, just the raw JSON. If some field is not found, return empty array for arrays, or empty string/unknown.";
 
         String response = getGeminiResponse(fileName + "\n" + truncated, systemInstruction, 0.2);
 
@@ -216,21 +226,19 @@ public class GeminiService {
         }
 
         // Fallback: construct a basic summary from extracted text
-        String snippet = (extractedText != null && extractedText.length() > 200)
-                ? extractedText.substring(0, 200).replace("\"", "'") + "..."
-                : (extractedText != null ? extractedText.replace("\"", "'") : "No text extracted.");
-
         return "{" +
             "\"document_type\":\"Legal Document\"," +
-            "\"summary\":\"AI analysis is temporarily unavailable. The document '" + fileName.replace("\"", "'") + "' has been successfully uploaded and the text has been extracted. Please review the raw extracted text tab for details.\"," +
-            "\"key_points\":[\"Document uploaded successfully\",\"Text extraction complete\",\"AI summarization is currently unavailable - please retry later\"]," +
-            "\"risks\":[\"Manual review recommended as AI analysis is unavailable\"]," +
-            "\"suggestions\":[\"Try uploading again in a few minutes when AI service is available\",\"Review the extracted raw text for important clauses\"]}";
+            "\"summary\":\"AI analysis is temporarily offline. The document has been uploaded and text has been extracted successfully.\"," +
+            "\"legal_points\":[\"Document uploaded successfully\",\"Text extraction completed\"]," +
+            "\"key_names\":[]," +
+            "\"dates\":[]," +
+            "\"numbers\":[]," +
+            "\"suggested_actions\":[\"Review the raw extracted text manually\",\"Try analyzing again in a few minutes\"]}";
     }
 
-    public String extractTextFromImageMultimodal(byte[] imageBytes, String contentType) {
+    public String extractTextFromFileMultimodal(byte[] fileBytes, String contentType) {
         if (apiKey == null || apiKey.trim().isEmpty() || "mock".equalsIgnoreCase(apiKey.trim())) {
-            logger.warn("Gemini API key is missing or set to mock. Returning null for image OCR.");
+            logger.warn("Gemini API key is missing or set to mock. Returning null for multimodal OCR.");
             return null;
         }
 
@@ -244,18 +252,18 @@ public class GeminiService {
 
             // text part
             Map<String, Object> textPart = new HashMap<>();
-            textPart.put("text", "Please extract and transcribe all visible text from this image exactly as it is. Do not summarize, do not comment, just return the raw text.");
+            textPart.put("text", "Please extract and transcribe all visible text from this document exactly as it is. Do not summarize, do not comment, just return the raw text. Support both English and Tamil text.");
 
             // inlineData part
             Map<String, Object> inlineData = new HashMap<>();
-            inlineData.put("mimeType", contentType != null ? contentType : "image/jpeg");
-            inlineData.put("data", Base64.getEncoder().encodeToString(imageBytes));
+            inlineData.put("mimeType", contentType != null ? contentType : "application/pdf");
+            inlineData.put("data", Base64.getEncoder().encodeToString(fileBytes));
 
-            Map<String, Object> imagePart = new HashMap<>();
-            imagePart.put("inlineData", inlineData);
+            Map<String, Object> filePart = new HashMap<>();
+            filePart.put("inlineData", inlineData);
 
             Map<String, Object> content = new HashMap<>();
-            content.put("parts", List.of(textPart, imagePart));
+            content.put("parts", List.of(textPart, filePart));
 
             requestBody.put("contents", List.of(content));
 
@@ -266,7 +274,7 @@ public class GeminiService {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            logger.info("Calling Gemini Multimodal OCR API...");
+            logger.info("Calling Gemini Multimodal OCR API for type: {}...", contentType);
             ResponseEntity<Map> response =
                     restTemplate.postForEntity(url, entity, Map.class);
 
@@ -282,9 +290,27 @@ public class GeminiService {
         return null;
     }
 
+    public String extractTextFromImageMultimodal(byte[] imageBytes, String contentType) {
+        return extractTextFromFileMultimodal(imageBytes, contentType);
+    }
+
     // ================= RIGHTS API =================
     public String getAIRightsResponse(String query) {
-        String systemInstruction = "You are an Indian constitutional and legal rights expert. Return relevant Indian legal rights as a JSON array. Each object must have: title (string), description (string), applicable_law (string). Return ONLY valid JSON array, no extra text.";
+        String systemInstruction = "You are an expert Indian constitutional, civil, and criminal rights analyst. " +
+                "Given the user's query, return exactly 3 relevant legal rights as a JSON array. " +
+                "Each object must have these exact fields:\n" +
+                "{\n" +
+                "  \"title\": \"string (name of the right/law)\",\n" +
+                "  \"explanation\": \"string (detailed explanation of the right)\",\n" +
+                "  \"applicable_acts\": \"string (list of applicable acts or constitutional articles)\",\n" +
+                "  \"ipc_bns_sections\": \"string (relevant IPC or BNS section numbers and titles)\",\n" +
+                "  \"required_documents\": \"string (documents needed to claim/enforce this right, comma-separated)\",\n" +
+                "  \"next_steps\": \"string (step-by-step action plan to enforce this right)\",\n" +
+                "  \"nearby_authority\": \"string (the department or official to contact, e.g. Local Police, Tahsildar, Consumer Court)\",\n" +
+                "  \"helpline\": \"string (official helpline number if available)\",\n" +
+                "  \"government_portal\": \"string (official government website URL to file complaints or read more)\"\n" +
+                "}\n" +
+                "Return ONLY a valid JSON array, no extra text or markdown code blocks.";
 
         String response = getGeminiResponse(query, systemInstruction, 0.4);
 
@@ -294,11 +320,24 @@ public class GeminiService {
 
         // Fallback: return fundamental rights
         return "[" +
-            "{\"title\":\"Right to Equality\",\"description\":\"Article 14-18 of the Indian Constitution guarantees equality before law, prohibits discrimination on grounds of religion, race, caste, sex or place of birth, and ensures equal opportunity in public employment.\",\"applicable_law\":\"Articles 14-18, Constitution of India\"}," +
-            "{\"title\":\"Right to Freedom\",\"description\":\"Article 19-22 guarantees freedom of speech and expression, assembly, association, movement, residence, and profession. It also protects against arbitrary arrest and detention.\",\"applicable_law\":\"Articles 19-22, Constitution of India\"}," +
-            "{\"title\":\"Right against Exploitation\",\"description\":\"Articles 23-24 prohibit human trafficking, forced labour (begar), and child labour in hazardous industries.\",\"applicable_law\":\"Articles 23-24, Constitution of India\"}," +
-            "{\"title\":\"Right to Constitutional Remedies\",\"description\":\"Article 32 gives citizens the right to move the Supreme Court for enforcement of fundamental rights. This is considered the heart and soul of the Constitution.\",\"applicable_law\":\"Article 32, Constitution of India\"}," +
-            "{\"title\":\"Right to Education\",\"description\":\"Article 21A makes free and compulsory education for children aged 6-14 years a fundamental right. The Right to Education Act 2009 operationalises this right.\",\"applicable_law\":\"Article 21A, RTE Act 2009\"}" +
+            "{\"title\":\"Right to Equality\"," +
+            "\"explanation\":\"Article 14-18 of the Indian Constitution guarantees equality before law and equal protection of laws. It prohibits discrimination on grounds of religion, race, caste, sex or place of birth.\"," +
+            "\"applicable_acts\":\"Articles 14-18, Constitution of India\"," +
+            "\"ipc_bns_sections\":\"N/A\"," +
+            "\"required_documents\":\"Aadhaar Card, Community Certificate (if claiming reservation)\"," +
+            "\"next_steps\":\"1. File a writ petition under Article 226 in High Court or Article 32 in Supreme Court if discrimination occurs. 2. Approach State Human Rights Commission.\"," +
+            "\"nearby_authority\":\"District Collector Office, High Court of Madras\"," +
+            "\"helpline\":\"1800-11-4555 (Legal Aid Helpline)\"," +
+            "\"government_portal\":\"https://nalsa.gov.in\"}," +
+            "{\"title\":\"Consumer Protection Rights\"," +
+            "\"explanation\":\"The Consumer Protection Act 2019 guarantees protection against marketing of goods hazardous to life, and ensures the right to be informed about quality, quantity, purity, and standard of goods.\"," +
+            "\"applicable_acts\":\"Consumer Protection Act, 2019\"," +
+            "\"ipc_bns_sections\":\"Section 318 of BNS / Section 420 of IPC (Cheating)\"," +
+            "\"required_documents\":\"Purchase Invoice, Warranty Card, Communication emails/letters\"," +
+            "\"next_steps\":\"1. Send legal notice to opposite party. 2. If unresolved, file a consumer complaint on the e-daakhil portal within 2 years.\"," +
+            "\"nearby_authority\":\"District Consumer Disputes Redressal Commission\"," +
+            "\"helpline\":\"1800-11-4000 (National Consumer Helpline)\"," +
+            "\"government_portal\":\"https://consumerhelpline.gov.in\"}" +
         "]";
     }
 
