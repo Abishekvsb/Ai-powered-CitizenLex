@@ -61,33 +61,7 @@ public class AuthController {
         User registered = userService.registerUser(user, "ROLE_USER");
         logService.logActivity(registered, "REGISTER", "New user registration: " + registered.getEmail());
 
-        // Auto-login after registration: authenticate immediately and return JWT
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            registerRequest.getEmail(),
-                            registerRequest.getPassword()  // plain password before encoding (pre-registration)
-                    )
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            User loggedInUser = userService.findById(userPrincipal.getId());
-
-            String sessionId = UUID.randomUUID().toString();
-            UserSession session = new UserSession(loggedInUser, sessionId, "register", "Register Flow", "Register");
-            userSessionRepository.save(session);
-
-            loggedInUser.setLastLogin(LocalDateTime.now());
-            userService.save(loggedInUser);
-
-            String jwt = tokenProvider.generateToken(authentication, sessionId);
-            UserDto userDto = ProfileController.toFullDto(loggedInUser);
-            return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, userDto));
-        } catch (Exception e) {
-            // If auto-login fails for any reason, still return the user DTO (200 without JWT)
-            // Frontend will detect absence of token and redirect to login
-            return ResponseEntity.ok(ProfileController.toFullDto(registered));
-        }
+        return ResponseEntity.ok(ProfileController.toFullDto(registered));
     }
 
     @PostMapping("/login")

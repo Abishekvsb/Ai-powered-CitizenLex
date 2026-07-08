@@ -107,23 +107,18 @@ export default function Register() {
       });
       
       setRegSuccess(true);
+      const registeredEmail = regEmail;
       
-      // Auto login: if the response has accessToken, use it to login and navigate to dashboard!
-      if (res.data && res.data.accessToken) {
-        login(res.data.accessToken, res.data.user);
-        // Clear states
-        setRegName('');
-        setRegEmail('');
-        setRegMobile('');
-        setRegPassword('');
-        setRegConfirmPassword('');
-        setAgreeTerms(false);
-        navigate('/dashboard');
-      } else {
-        // Fallback
-        alert("Account registered successfully! Please log in.");
-        navigate('/login');
-      }
+      // Clear registration states
+      setRegName('');
+      setRegEmail('');
+      setRegMobile('');
+      setRegPassword('');
+      setRegConfirmPassword('');
+      setAgreeTerms(false);
+      
+      alert("Account registered successfully! You can now log in using the left panel.");
+      setLoginEmail(registeredEmail); // Pre-fill email for convenience
     } catch (err) {
       console.error(err);
       if (err.response && err.response.data) {
