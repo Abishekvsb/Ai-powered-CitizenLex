@@ -53,6 +53,35 @@ export default function Register() {
     e.preventDefault();
     setRegError('');
 
+    // Client-side validations
+    if (!regName.trim()) {
+      setRegError('Full Name is required.');
+      return;
+    }
+    if (!regEmail.trim()) {
+      setRegError('Email is required.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())) {
+      setRegError('Please enter a valid email address.');
+      return;
+    }
+    if (!regMobile.trim()) {
+      setRegError('Mobile number is required.');
+      return;
+    }
+    if (!/^[5-9]\d{9}$/.test(regMobile.trim())) {
+      setRegError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (!regPassword) {
+      setRegError('Password is required.');
+      return;
+    }
+    if (regPassword.length < 6) {
+      setRegError('Password must be at least 6 characters.');
+      return;
+    }
     if (regPassword !== regConfirmPassword) {
       setRegError('Passwords do not match.');
       return;
@@ -68,7 +97,7 @@ export default function Register() {
     const lastName = nameParts.slice(1).join(' ') || '';
 
     try {
-      await axios.post('/api/auth/register', {
+      const res = await axios.post('/api/auth/register', {
         email: regEmail,
         password: regPassword,
         firstName,
@@ -76,17 +105,25 @@ export default function Register() {
         mobile: regMobile,
         smsNotificationsEnabled: true
       });
+      
       setRegSuccess(true);
-      setTimeout(() => {
-        setRegSuccess(false);
+      
+      // Auto login: if the response has accessToken, use it to login and navigate to dashboard!
+      if (res.data && res.data.accessToken) {
+        login(res.data.accessToken, res.data.user);
+        // Clear states
         setRegName('');
         setRegEmail('');
         setRegMobile('');
         setRegPassword('');
         setRegConfirmPassword('');
         setAgreeTerms(false);
-        alert("Account registered successfully! You can now log in using the left panel.");
-      }, 2000);
+        navigate('/dashboard');
+      } else {
+        // Fallback
+        alert("Account registered successfully! Please log in.");
+        navigate('/login');
+      }
     } catch (err) {
       console.error(err);
       if (err.response && err.response.data) {

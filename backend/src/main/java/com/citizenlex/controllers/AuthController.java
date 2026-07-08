@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,48 +53,91 @@ public class AuthController {
                 registerRequest.getLastName()
         );
 
+        // Set optional mobile number if provided
+        if (registerRequest.getMobile() != null && !registerRequest.getMobile().isBlank()) {
+            user.setMobile(registerRequest.getMobile());
+        }
+
         User registered = userService.registerUser(user, "ROLE_USER");
         logService.logActivity(registered, "REGISTER", "New user registration: " + registered.getEmail());
-        return ResponseEntity.ok(ProfileController.toFullDto(registered));
+
+        // Auto-login after registration: authenticate immediately and return JWT
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            registerRequest.getEmail(),
+                            registerRequest.getPassword()  // plain password before encoding (pre-registration)
+                    )
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            User loggedInUser = userService.findById(userPrincipal.getId());
+
+            String sessionId = UUID.randomUUID().toString();
+            UserSession session = new UserSession(loggedInUser, sessionId, "register", "Register Flow", "Register");
+            userSessionRepository.save(session);
+
+            loggedInUser.setLastLogin(LocalDateTime.now());
+            userService.save(loggedInUser);
+
+            String jwt = tokenProvider.generateToken(authentication, sessionId);
+            UserDto userDto = ProfileController.toFullDto(loggedInUser);
+            return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, userDto));
+        } catch (Exception e) {
+            // If auto-login fails for any reason, still return the user DTO (200 without JWT)
+            // Frontend will detect absence of token and redirect to login
+            return ResponseEntity.ok(ProfileController.toFullDto(registered));
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest,
                                               HttpServletRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(),
-                        loginRequest.getPassword()
-                )
-        );
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail(),
+                            loginRequest.getPassword()
+                    )
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        User user = userService.findById(userPrincipal.getId());
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            User user = userService.findById(userPrincipal.getId());
 
-        // Create session record
-        String sessionId = UUID.randomUUID().toString();
-        String ip = getClientIp(request);
-        String ua = request.getHeader("User-Agent");
-        String device = parseUserAgent(ua);
+            // Create session record
+            String sessionId = UUID.randomUUID().toString();
+            String ip = getClientIp(request);
+            String ua = request.getHeader("User-Agent");
+            String device = parseUserAgent(ua);
 
-        UserSession session = new UserSession(user, sessionId, ip, ua, device);
-        userSessionRepository.save(session);
+            UserSession session = new UserSession(user, sessionId, ip, ua, device);
+            userSessionRepository.save(session);
 
-        // Update last login info on user
-        user.setLastLogin(LocalDateTime.now());
-        user.setLastLoginDevice(device);
-        user.setLastLoginIp(ip);
-        userService.save(user);
+            // Update last login info on user
+            user.setLastLogin(LocalDateTime.now());
+            user.setLastLoginDevice(device);
+            user.setLastLoginIp(ip);
+            userService.save(user);
 
-        // Log login activity
-        logService.logActivity(user, "LOGIN", "Login from " + device + " (" + ip + ")");
+            // Log login activity
+            logService.logActivity(user, "LOGIN", "Login from " + device + " (" + ip + ")");
 
-        String jwt = tokenProvider.generateToken(authentication, sessionId);
-        UserDto userDto = ProfileController.toFullDto(user);
+            String jwt = tokenProvider.generateToken(authentication, sessionId);
+            UserDto userDto = ProfileController.toFullDto(user);
 
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, userDto));
+            return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, userDto));
+
+        } catch (BadCredentialsException e) {
+            java.util.Map<String, String> body = new java.util.HashMap<>();
+            body.put("error", "Incorrect email or password. Please check your credentials and try again.");
+            return ResponseEntity.status(401).body(body);
+        } catch (Exception e) {
+            java.util.Map<String, String> body = new java.util.HashMap<>();
+            body.put("error", "Login failed: " + e.getMessage());
+            return ResponseEntity.status(500).body(body);
+        }
     }
 
     @GetMapping("/me")
