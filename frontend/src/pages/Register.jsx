@@ -120,11 +120,17 @@ export default function Register() {
       alert("Account registered successfully! You can now log in using the left panel.");
       setLoginEmail(registeredEmail); // Pre-fill email for convenience
     } catch (err) {
-      console.error(err);
-      if (err.response && err.response.data) {
-        setRegError(err.response.data.error || 'Registration failed. Check fields or email availability.');
+      console.error("Detailed registration error:", err);
+      if (err.response) {
+        console.error("Response data:", err.response.data);
+        console.error("Response status:", err.response.status);
+        setRegError(err.response.data?.error || `Error ${err.response.status}: Registration failed.`);
+      } else if (err.request) {
+        console.error("Request made but no response received:", err.request);
+        setRegError(`Connection to backend failed: No response received. (${err.message})`);
       } else {
-        setRegError('Connection to backend failed. Please try again.');
+        console.error("Error setting up request:", err.message);
+        setRegError(`Connection to backend failed: ${err.message}`);
       }
     } finally {
       setRegLoading(false);

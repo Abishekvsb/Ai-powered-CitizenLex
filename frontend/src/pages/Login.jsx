@@ -38,11 +38,17 @@ export default function Login() {
       login(res.data.accessToken, res.data.user);
       navigate('/dashboard');
     } catch (err) {
-      console.error(err);
-      if (err.response && err.response.data) {
-        setLoginError(err.response.data.error || 'Invalid credentials or login failure.');
+      console.error("Detailed login error:", err);
+      if (err.response) {
+        console.error("Response data:", err.response.data);
+        console.error("Response status:", err.response.status);
+        setLoginError(err.response.data?.error || `Error ${err.response.status}: Login failure.`);
+      } else if (err.request) {
+        console.error("Request made but no response received:", err.request);
+        setLoginError(`Connection to backend failed: No response received. (${err.message})`);
       } else {
-        setLoginError('Connection to backend failed. Please try again.');
+        console.error("Error setting up request:", err.message);
+        setLoginError(`Connection to backend failed: ${err.message}`);
       }
     } finally {
       setLoginLoading(false);
