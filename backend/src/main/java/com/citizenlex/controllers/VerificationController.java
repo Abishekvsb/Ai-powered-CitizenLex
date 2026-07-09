@@ -28,7 +28,7 @@ public class VerificationController {
     @Autowired private EmailService emailService;
     @Autowired private OtpService otpService;
 
-    @Value("${FRONTEND_URL:https://ai-student-psi.vercel.app}")
+    @Value("${FRONTEND_URL:https://ai-powered-citizen-lex.vercel.app}")
     private String frontendUrl;
 
     // ─── Email Verification ────────────────────────────────────────────────
