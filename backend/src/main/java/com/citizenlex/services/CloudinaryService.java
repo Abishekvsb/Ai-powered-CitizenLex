@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
     private final boolean isMockMode;
+    private final boolean isProduction;
 
     public CloudinaryService(
             @Value("${cloudinary.cloud-name}") String cloudName,
@@ -35,18 +38,24 @@ public class CloudinaryService {
                           apiKey == null || apiKey.isBlank() ||
                           apiSecret == null || apiSecret.isBlank();
         
+        this.isProduction = "production".equalsIgnoreCase(System.getenv("RAILWAY_ENVIRONMENT")) ||
+                            "production".equalsIgnoreCase(System.getenv("SPRING_PROFILES_ACTIVE"));
+
         this.cloudinary = new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", isMockMode ? "mock" : cloudName,
                 "api_key", isMockMode ? "mock" : apiKey,
                 "api_secret", isMockMode ? "mock" : apiSecret,
                 "secure", true
         ));
-        logger.info("CloudinaryService initialized. Mock mode: {}", isMockMode);
+        logger.info("CloudinaryService initialized. Mock mode: {}, Production mode: {}", isMockMode, isProduction);
     }
 
     public Map<String, String> uploadDocument(MultipartFile file, Long userId, String docType) throws IOException {
         if (isMockMode) {
-            throw new IllegalStateException("Cloudinary document upload service is not configured. Please set CLOUDINARY credentials.");
+            if (isProduction) {
+                throw new IllegalStateException("Cloudinary document upload service is not configured in production. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Railway variables.");
+            }
+            return uploadLocalFallback(file, userId, docType);
         }
 
         if (file.getSize() > MAX_FILE_SIZE) {
@@ -83,7 +92,10 @@ public class CloudinaryService {
      */
     public Map<String, String> uploadProfileImage(MultipartFile file, Long userId) throws IOException {
         if (isMockMode) {
-            throw new IllegalStateException("Cloudinary photo upload service is not configured on the server. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
+            if (isProduction) {
+                throw new IllegalStateException("Cloudinary photo upload service is not configured in production. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Railway variables.");
+            }
+            return uploadLocalFallback(file, userId, "profile_photo");
         }
 
         // Validate file size
@@ -128,15 +140,58 @@ public class CloudinaryService {
      */
     public void deleteProfileImage(String publicId) {
         if (publicId == null || publicId.isBlank()) {
-            logger.warn("Attempted to delete Cloudinary image with null/blank publicId — skipping.");
+            logger.warn("Attempted to delete image with null/blank publicId — skipping.");
             return;
         }
+
+        if (publicId.startsWith("local_")) {
+            String fileName = publicId.substring(6);
+            File file = new File(System.getProperty("user.dir") + "/uploads/" + fileName);
+            if (file.exists()) {
+                file.delete();
+                logger.info("Successfully deleted local fallback file: {}", fileName);
+            } else {
+                logger.warn("Local fallback file not found for deletion: {}", fileName);
+            }
+            return;
+        }
+
         try {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
             logger.info("Successfully deleted Cloudinary image with publicId: {}", publicId);
         } catch (Exception e) {
             logger.error("Failed to delete Cloudinary image with publicId: {}", publicId, e);
-            // Don't throw — image deletion failure shouldn't block profile operations
         }
+    }
+
+    /**
+     * Local storage upload fallback for non-production environments.
+     */
+    private Map<String, String> uploadLocalFallback(MultipartFile file, Long userId, String type) throws IOException {
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds 5 MB limit.");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_TYPES.contains(contentType.toLowerCase())) {
+            throw new IllegalArgumentException("Invalid file type.");
+        }
+
+        File uploadDir = new File(System.getProperty("user.dir") + "/uploads");
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        String ext = "jpg";
+        if (contentType.contains("png")) ext = "png";
+        else if (contentType.contains("webp")) ext = "webp";
+        else if (contentType.contains("pdf")) ext = "pdf";
+
+        String fileName = "user_" + userId + "_" + type + "_" + UUID.randomUUID().toString().substring(0, 8) + "." + ext;
+        File destFile = new File(uploadDir, fileName);
+        Files.write(destFile.toPath(), file.getBytes());
+
+        logger.info("Local fallback upload success for user {}: {}", userId, fileName);
+        return Map.of("url", "/api/uploads/" + fileName, "publicId", "local_" + fileName);
     }
 }

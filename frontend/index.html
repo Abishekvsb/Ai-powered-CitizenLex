@@ -22,6 +22,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Capture PWA beforeinstallprompt early to prevent race condition -->
+    <script>
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        console.log('Global beforeinstallprompt event captured early');
+        if (typeof window.onBeforeInstallPrompt === 'function') {
+          window.onBeforeInstallPrompt(e);
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
