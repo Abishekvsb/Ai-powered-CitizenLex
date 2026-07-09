@@ -133,7 +133,7 @@ export default function AiAssistant() {
     if (!msg) return;
 
     try {
-      const existing = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+      const existing = (() => { try { const v = JSON.parse(localStorage.getItem('recent_searches') || '[]'); return Array.isArray(v) ? v : []; } catch(e) { return []; } })();
       const updated = [msg, ...existing.filter(q => q !== msg)].slice(0, 10);
       localStorage.setItem('recent_searches', JSON.stringify(updated));
     } catch (e) {

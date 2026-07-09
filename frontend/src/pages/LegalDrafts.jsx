@@ -72,7 +72,8 @@ export default function LegalDrafts() {
   const handleSaveDraft = () => {
     if (!draft) return;
     try {
-      const existing = JSON.parse(localStorage.getItem('saved_drafts') || '[]');
+      const rawDrafts = JSON.parse(localStorage.getItem('saved_drafts') || '[]');
+      const existing = Array.isArray(rawDrafts) ? rawDrafts : [];
       const newDraft = {
         id: Date.now(),
         type: draftType,

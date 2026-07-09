@@ -95,21 +95,24 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         const chatsRes = await axios.get('/api/chat/history');
-        setChats(chatsRes.data || []);
+        const chatsData = chatsRes.data;
+        setChats(Array.isArray(chatsData) ? chatsData : []);
       } catch (err) {
         console.error('Failed to load chats history', err);
       }
 
       try {
         const docsRes = await axios.get('/api/documents');
-        setDocs(docsRes.data || []);
+        const docsData = docsRes.data;
+        setDocs(Array.isArray(docsData) ? docsData : []);
       } catch (err) {
         console.error('Failed to load documents list', err);
       }
 
       try {
         const apptsRes = await axios.get('/api/appointments/user');
-        setAppointments(apptsRes.data || []);
+        const apptsData = apptsRes.data;
+        setAppointments(Array.isArray(apptsData) ? apptsData : []);
       } catch (err) {
         console.error('Failed to load appointments history', err);
       }
@@ -119,13 +122,21 @@ export default function Dashboard() {
     fetchData();
 
     try {
-      setBookmarkedRights(JSON.parse(localStorage.getItem('bookmarks_rights') || '[]'));
-      setBookmarkedSchemes(JSON.parse(localStorage.getItem('bookmarks_schemes') || '[]'));
-      setSavedDrafts(JSON.parse(localStorage.getItem('saved_drafts') || '[]'));
-      setRecentSearches(JSON.parse(localStorage.getItem('recent_searches') || '[]'));
+      const parsedRights = JSON.parse(localStorage.getItem('bookmarks_rights') || '[]');
+      setBookmarkedRights(Array.isArray(parsedRights) ? parsedRights : []);
+      const parsedSchemes = JSON.parse(localStorage.getItem('bookmarks_schemes') || '[]');
+      setBookmarkedSchemes(Array.isArray(parsedSchemes) ? parsedSchemes : []);
+      const parsedDrafts = JSON.parse(localStorage.getItem('saved_drafts') || '[]');
+      setSavedDrafts(Array.isArray(parsedDrafts) ? parsedDrafts : []);
+      const parsedSearches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+      setRecentSearches(Array.isArray(parsedSearches) ? parsedSearches : []);
       setEligibilityProfile(JSON.parse(localStorage.getItem('eligibility_profile') || 'null'));
     } catch (e) {
       console.error('Failed to load from localStorage', e);
+      setBookmarkedRights([]);
+      setBookmarkedSchemes([]);
+      setSavedDrafts([]);
+      setRecentSearches([]);
     }
 
     axios.get('/api/notifications/count').then(res => {
@@ -576,7 +587,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="d-flex flex-column gap-2" style={{ maxHeight: 310, overflowY: 'auto' }}>
-                {chats.slice(0, 5).map((chat) => (
+                {(Array.isArray(chats) ? chats : []).slice(0, 5).map((chat) => (
                   <Link
                     key={chat.id}
                     to="/chat"
@@ -742,7 +753,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="d-flex flex-column gap-2" style={{ maxHeight: 180, overflowY: 'auto' }}>
-                  {savedDrafts.slice(0, 3).map((draft) => (
+                  {(Array.isArray(savedDrafts) ? savedDrafts : []).slice(0, 3).map((draft) => (
                     <div key={draft.id} className="p-3 rounded-3 d-flex align-items-center justify-content-between gap-3 text-start animate-hover" 
                          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                       <div className="min-w-0 flex-grow-1">
@@ -787,7 +798,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="d-flex flex-wrap gap-2 align-items-center">
-                  {recentSearches.slice(0, 5).map((q, i) => (
+                  {(Array.isArray(recentSearches) ? recentSearches : []).slice(0, 5).map((q, i) => (
                     <Link key={i} to="/chat" state={{ prefillText: q }} className="btn btn-sm btn-glass-secondary rounded-pill px-3 py-1.5 text-truncate" 
                           style={{ fontSize: '0.75rem', maxWidth: 170, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
                       <i className="bi bi-arrow-right-short text-primary me-1"></i>
@@ -831,7 +842,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="row g-3 text-start">
-                {docs.slice(0, 4).map((doc) => (
+                {(Array.isArray(docs) ? docs : []).slice(0, 4).map((doc) => (
                   <div key={doc.id} className="col-md-4 col-lg-3">
                     <div
                       className="p-3 rounded-3 h-100 d-flex flex-column animate-hover"

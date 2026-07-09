@@ -269,7 +269,7 @@ export default function Profile() {
     setSessionsLoading(true);
     try {
       const res = await axios.get(`${API}/api/security/sessions`);
-      setSessions(res.data);
+      setSessions(Array.isArray(res.data) ? res.data : []);
     } catch (e) {}
     finally { setSessionsLoading(false); }
   };
