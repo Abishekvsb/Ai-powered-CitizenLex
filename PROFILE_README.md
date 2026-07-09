@@ -179,7 +179,7 @@ mindmap
 | 💼 **LinkedIn** | [linkedin.com/in/abishekvsb](https://linkedin.com/in/abishekvsb) |
 | 📧 **Email** | [abishekvsb@gmail.com](mailto:abishekvsb@gmail.com) |
 | 🐙 **GitHub** | [github.com/Abishekvsb](https://github.com/Abishekvsb) |
-| 🌐 **Portfolio** | [citizenlex.vercel.app](https://citizenlex.vercel.app) |
+| 🌐 **Portfolio** | [ai-powered-citizen-lex.vercel.app](https://ai-powered-citizen-lex.vercel.app) |
 
 *Open to full-time Software Engineer roles, internships, and exciting open-source collaborations.*
 
