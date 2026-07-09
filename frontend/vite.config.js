@@ -60,7 +60,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             // Network-first for API calls — always try network, fallback to cache
-            urlPattern: /^https:\/\/just-happiness-production\.up\.railway\.app\/api\/.*/i,
+            urlPattern: /^https:\/\/ai-powered-citizenlex-production\.up\.railway\.app\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
