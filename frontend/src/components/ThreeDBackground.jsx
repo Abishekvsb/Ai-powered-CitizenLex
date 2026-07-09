@@ -410,6 +410,7 @@ export default function ThreeDBackground() {
       // Draw particle nodes & connecting lines
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const lineColor = isDark ? 'rgba(168, 85, 247, ' : 'rgba(99, 102, 241, ';
+      const connectionDist = 80;
 
       for (let i = 0; i < particles.length; i++) {
         const p1 = particles[i];
