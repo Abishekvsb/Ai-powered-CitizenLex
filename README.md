@@ -13,6 +13,17 @@
   <img src="https://komarev.com/ghpvc/?username=Abishekvsb&label=Profile+Views&color=6366f1&style=for-the-badge"/>
 </p>
 
+<p align="center">
+  <a href="https://github.com/Abishekvsb/Ai-powered-CitizenLex/actions/workflows/java-ci.yml">
+    <img src="https://github.com/Abishekvsb/Ai-powered-CitizenLex/actions/workflows/java-ci.yml/badge.svg" alt="Java CI/CD Build Status"/>
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/>
+  </a>
+  <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen.svg" alt="PRs Welcome"/>
+  <img src="https://img.shields.io/badge/Made%20with-Java%20%26%20React-blue.svg" alt="Made with Java and React"/>
+</p>
+
 </div>
 
 ---
@@ -113,18 +124,51 @@ Internet → Vercel Edge → React SPA → Railway API → Railway MySQL
 
 ---
 
+## 🎬 Project Demo
+
+> 📹 **[Watch Full Demo on YouTube →](https://youtube.com)** *(Upload your demo video and replace this link)*
+
+The demo covers: Home → Registration → Login → Dashboard → Rights Explorer → Scheme Finder → AI Assistant → AI Legal Copilot → Lawyer Marketplace → OCR Scanner → AI Draft Generator → Profile → Logout
+
+---
+
 ## 📸 Application Screenshots
 
-| Screen | Preview |
-|---|---|
-| 🏠 **Home Page** | *Screenshot coming soon* |
-| 🔐 **Login** | *Screenshot coming soon* |
-| 📊 **Dashboard** | *Screenshot coming soon* |
-| 📚 **Rights Explorer** | *Screenshot coming soon* |
-| 🤖 **AI Assistant** | *Screenshot coming soon* |
-| 👨‍⚖️ **Lawyer Marketplace** | *Screenshot coming soon* |
-| 👤 **Profile** | *Screenshot coming soon* |
-| 🔍 **OCR Scanner** | *Screenshot coming soon* |
+### 🏠 Home Page
+<img src="docs/screenshots/home.png" width="800" alt="CitizenLex Home Page — Justice Powered by Artificial Intelligence"/>
+
+### 🔐 Login & Register
+<img src="docs/screenshots/login.png" width="800" alt="CitizenLex Login and Registration — Side-by-side dual panel"/>
+
+### 📊 Dashboard
+<img src="docs/screenshots/dashboard.png" width="800" alt="CitizenLex Dashboard — AI Command Centre with sidebar navigation"/>
+
+### 🤖 AI Legal Assistant
+<img src="docs/screenshots/assistant.png" width="800" alt="CitizenLex AI Legal Assistant — Bilingual Gemini AI chat interface"/>
+
+### ⚖️ AI Legal Copilot
+<img src="docs/screenshots/copilot.png" width="800" alt="CitizenLex AI Legal Copilot — Step-by-step legal reasoning"/>
+
+### 📚 Rights Explorer
+<img src="docs/screenshots/rights.png" width="800" alt="CitizenLex Rights Explorer — Browse fundamental rights by category"/>
+
+### 🏛️ Government Scheme Finder
+<img src="docs/screenshots/schemes.png" width="800" alt="CitizenLex Government Scheme Finder — Discover welfare schemes"/>
+
+### 👨‍⚖️ Lawyer Marketplace
+<img src="docs/screenshots/lawyer.png" width="800" alt="CitizenLex Lawyer Marketplace — AI-matched verified advocates"/>
+
+### 👤 Profile
+<img src="docs/screenshots/profile.png" width="800" alt="CitizenLex Profile — User profile management with Cloudinary photo upload"/>
+
+### 🔍 OCR Document Scanner
+<img src="docs/screenshots/ocr.png" width="800" alt="CitizenLex OCR Scanner — Upload and extract text from legal documents"/>
+
+### 📝 AI Legal Draft Generator
+<img src="docs/screenshots/draft-generator.png" width="800" alt="CitizenLex AI Draft Generator — Auto-generate FIRs, RTIs, contracts"/>
+
+### 🔔 Notifications
+<img src="docs/screenshots/notifications.png" width="800" alt="CitizenLex Notification Center — Real-time in-app alerts"/>
 
 ---
 
@@ -155,6 +199,7 @@ AI-Powered-CitizenLex/
 │   └── vite.config.js                # Vite + PWA Configuration
 │
 ├── docs/
+│   ├── screenshots/                  # Application Screenshots (13 pages)
 │   └── DEPLOYMENT.md                 # Production Deployment Guide
 │
 ├── .github/workflows/
@@ -229,31 +274,11 @@ git push origin main
 
 ## 📄 License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the **[MIT License](LICENSE)** — see the [LICENSE](LICENSE) file for details.
 
-```
-MIT License
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Copyright (c) 2024 Abishek K
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+> Copyright © 2026 Abishek K (Abishek V S B). All rights reserved.
 
 ---
 
