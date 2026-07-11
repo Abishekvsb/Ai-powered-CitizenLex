@@ -39,7 +39,17 @@ export default function OcrScanner() {
     setProcessing(true);
     setSelectedFile(file);
 
-    if (!SUPPORTED_TYPES.includes(file.type) && !file.name.endsWith('.docx') && !file.name.endsWith('.pdf') && !file.name.endsWith('.txt')) {
+    // Validate size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size exceeds the 10MB limit.');
+      setProcessing(false);
+      return;
+    }
+
+    // Validate type using extension fallback
+    const ext = file.name.split('.').pop().toLowerCase();
+    const allowedExts = ['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png'];
+    if (!SUPPORTED_TYPES.includes(file.type) && !allowedExts.includes(ext)) {
       setError('Unsupported file type. Please upload a PDF, DOCX, TXT file, or a JPEG/PNG image.');
       setProcessing(false);
       return;
@@ -131,7 +141,8 @@ export default function OcrScanner() {
 
     } catch (err) {
       console.error(err);
-      setError('OCR & Analysis processing failed. Ensure the file is valid and not password-protected.');
+      const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'OCR & Analysis processing failed. Ensure the file is valid.';
+      setError(errMsg);
       setProcessing(false);
       setCurrentStep(0);
       setProgress(0);

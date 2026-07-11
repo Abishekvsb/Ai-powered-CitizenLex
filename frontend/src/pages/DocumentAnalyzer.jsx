@@ -138,6 +138,15 @@ export default function DocumentAnalyzer() {
         setSelectedFile(null);
         return;
       }
+      
+      const ext = file.name.split('.').pop().toLowerCase();
+      const allowedExts = ['pdf', 'docx', 'jpg', 'jpeg', 'png'];
+      if (!allowedExts.includes(ext)) {
+        setError('Unsupported file type. Please upload a PDF, DOCX, JPG, JPEG or PNG file.');
+        setSelectedFile(null);
+        return;
+      }
+
       setError('');
       setSelectedFile(file);
     }
@@ -160,7 +169,8 @@ export default function DocumentAnalyzer() {
       fetchDocuments();
     } catch (err) {
       console.error(err);
-      setError('Failed to analyze document. Ensure the file is not corrupted and is an approved type (PDF, DOCX, JPG, PNG).');
+      const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to analyze document. Ensure the file is valid.';
+      setError(errMsg);
     } finally {
       setUploading(false);
     }

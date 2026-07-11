@@ -51,12 +51,14 @@ public class DocumentService {
 
         logger.info("Uploading and analyzing file: {}, type: {} for user: {}", fileName, fileType, userId);
 
-        String extractedText = "";
+        String extractedText;
         try {
             extractedText = extractText(file);
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to extract text from file: {}", fileName, e);
-            extractedText = "Error during text extraction: " + e.getMessage();
+            throw new IllegalArgumentException("Failed to extract text from document: " + e.getMessage());
         }
 
         // Generate summary using GeminiService
@@ -101,33 +103,58 @@ public class DocumentService {
         name = name.toLowerCase();
         byte[] bytes = file.getBytes();
 
+        if (bytes == null || bytes.length == 0) {
+            throw new IllegalArgumentException("Uploaded file is empty.");
+        }
+
         if (name.endsWith(".pdf") || "application/pdf".equals(file.getContentType())) {
             String text = "";
+            String nativeError = null;
             try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes)) {
                 text = extractTextFromPdf(bais);
             } catch (Exception e) {
                 logger.warn("Native PDF text extraction failed: {}", e.getMessage());
+                nativeError = e.getMessage();
             }
 
             if (text == null || text.trim().length() < 100) {
                 logger.info("PDF text empty or too short. Falling back to Gemini Multimodal OCR...");
                 String ocrText = geminiService.extractTextFromFileMultimodal(bytes, "application/pdf");
                 if (ocrText != null && !ocrText.trim().isEmpty()) {
-                    return ocrText;
+                    return ocrText.trim();
                 }
             }
+
+            if (nativeError != null && (text == null || text.trim().isEmpty())) {
+                throw new IllegalArgumentException("The PDF file is invalid or corrupted: " + nativeError);
+            }
+
             return text != null ? text.trim() : "";
         } else if (name.endsWith(".docx") || "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(file.getContentType())) {
             try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes)) {
                 return extractTextFromDocx(bais).trim();
+            } catch (Exception e) {
+                logger.error("DOCX extraction failed", e);
+                throw new IllegalArgumentException("The DOCX file is invalid or corrupted: " + e.getMessage());
             }
         } else if (name.endsWith(".txt") || "text/plain".equals(file.getContentType())) {
             return new String(bytes, java.nio.charset.StandardCharsets.UTF_8).trim();
         } else if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || (file.getContentType() != null && file.getContentType().startsWith("image/"))) {
-            return extractTextFromImage(bytes, file.getContentType());
+            String contentType = file.getContentType();
+            if (contentType == null) {
+                if (name.endsWith(".png")) contentType = "image/png";
+                else contentType = "image/jpeg";
+            } else if ("image/jpg".equalsIgnoreCase(contentType)) {
+                contentType = "image/jpeg";
+            }
+            return extractTextFromImage(bytes, contentType);
         } else {
             // General text fallback (try to read bytes if it's text)
-            return new String(bytes, java.nio.charset.StandardCharsets.UTF_8).trim();
+            try {
+                return new String(bytes, java.nio.charset.StandardCharsets.UTF_8).trim();
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Unsupported or binary file type: " + name);
+            }
         }
     }
 
@@ -149,15 +176,13 @@ public class DocumentService {
         try {
             String ocrText = geminiService.extractTextFromFileMultimodal(bytes, contentType);
             if (ocrText != null && !ocrText.trim().isEmpty()) {
-                return ocrText;
+                return ocrText.trim();
             }
         } catch (Exception e) {
-            logger.error("Image OCR extraction failed, falling back to static metadata description", e);
+            logger.error("Image OCR extraction failed", e);
+            throw new IllegalArgumentException("OCR failed on the image: " + e.getMessage());
         }
 
-        return "SCANNED IMAGE DOCUMENT\n" +
-                "Date: " + java.time.LocalDate.now().toString() + "\n" +
-                "Analysis Status: Text extraction was run using fallback due to API offline status.\n" +
-                "Please verify the contents manually.";
+        throw new IllegalArgumentException("No text could be extracted from the image. Please make sure the image contains clear, readable text.");
     }
 }

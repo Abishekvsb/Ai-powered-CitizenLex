@@ -211,11 +211,14 @@ public class GeminiService {
                 "{\n" +
                 "  \"document_type\": \"string (e.g. Agreement, Notice, Affidavit, RTI, Unknown)\",\n" +
                 "  \"summary\": \"string (2-3 sentences clear summary)\",\n" +
+                "  \"key_points\": [\"array of key points or findings from the document, max 5\"],\n" +
                 "  \"legal_points\": [\"array of key legal points, rights, or obligations, max 5\"],\n" +
+                "  \"risks\": [\"array of identified risks, pitfalls, or warnings, max 5\"],\n" +
+                "  \"suggestions\": [\"array of general suggestions, recommendations, or advice, max 5\"],\n" +
+                "  \"suggested_actions\": [\"array of suggested next steps or legal actions, max 5\"],\n" +
                 "  \"key_names\": [\"array of key names of people, entities, or parties mentioned, max 5\"],\n" +
                 "  \"dates\": [\"array of key dates mentioned, max 5\"],\n" +
-                "  \"numbers\": [\"array of key numbers, monetary amounts, or codes, max 5\"],\n" +
-                "  \"suggested_actions\": [\"array of suggested next steps or legal actions, max 5\"]\n" +
+                "  \"numbers\": [\"array of key numbers, monetary amounts, or codes, max 5\"]\n" +
                 "}\n" +
                 "Return ONLY valid JSON, no markdown. Do not include ```json in your response, just the raw JSON. If some field is not found, return empty array for arrays, or empty string/unknown.";
 
@@ -229,11 +232,14 @@ public class GeminiService {
         return "{" +
             "\"document_type\":\"Legal Document\"," +
             "\"summary\":\"AI analysis is temporarily offline. The document has been uploaded and text has been extracted successfully.\"," +
+            "\"key_points\":[\"Document uploaded successfully\",\"Text extraction completed\"]," +
             "\"legal_points\":[\"Document uploaded successfully\",\"Text extraction completed\"]," +
+            "\"risks\":[]," +
+            "\"suggestions\":[\"Review the raw extracted text manually\"]," +
+            "\"suggested_actions\":[\"Review the raw extracted text manually\",\"Try analyzing again in a few minutes\"]," +
             "\"key_names\":[]," +
             "\"dates\":[]," +
-            "\"numbers\":[]," +
-            "\"suggested_actions\":[\"Review the raw extracted text manually\",\"Try analyzing again in a few minutes\"]}";
+            "\"numbers\":[]}";
     }
 
     public String extractTextFromFileMultimodal(byte[] fileBytes, String contentType) {
