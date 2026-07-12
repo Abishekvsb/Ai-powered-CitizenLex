@@ -24,6 +24,12 @@
   <img src="https://img.shields.io/badge/Made%20with-Java%20%26%20React-blue.svg" alt="Made with Java and React"/>
 </p>
 
+<p align="center">
+  <a href="https://go.screenpal.com/watch/cOilXXnUxQb" target="_blank">
+    <img src="https://img.shields.io/badge/▶_Watch-Demo-red?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Project Demo Video"/>
+  </a>
+</p>
+
 </div>
 
 ---
@@ -58,6 +64,7 @@ interests:
 | | |
 |---|---|
 | 🌐 **Production Website** | https://ai-powered-citizen-lex.vercel.app |
+| 🎬 **Project Demo Video** | https://go.screenpal.com/watch/cOilXXnUxQb |
 | ⚙️ **Backend API** | https://ai-powered-citizenlex-production.up.railway.app |
 | 📦 **GitHub Repository** | https://github.com/Abishekvsb/Ai-powered-CitizenLex |
 
@@ -126,9 +133,27 @@ Internet → Vercel Edge → React SPA → Railway API → Railway MySQL
 
 ## 🎬 Project Demo
 
-> 📹 **[Watch Full Demo on YouTube →](https://youtube.com)** *(Upload your demo video and replace this link)*
+> 📹 **Watch the Complete CitizenLex Demonstration**
+>
+> https://go.screenpal.com/watch/cOilXXnUxQb
 
-The demo covers: Home → Registration → Login → Dashboard → Rights Explorer → Scheme Finder → AI Assistant → AI Legal Copilot → Lawyer Marketplace → OCR Scanner → AI Draft Generator → Profile → Logout
+This video demonstrates:
+
+- Home Page
+- User Registration & Login
+- Dashboard
+- AI Legal Assistant
+- AI Legal Copilot
+- Rights Explorer
+- Government Scheme Finder
+- Lawyer Marketplace
+- OCR Document Scanner
+- Document Analyzer
+- AI Legal Draft Generator
+- Profile Management
+- Cloudinary Profile Upload
+- Responsive Dashboard
+- PWA Features
 
 ---
 
