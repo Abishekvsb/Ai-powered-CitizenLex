@@ -696,6 +696,11 @@ export default function IntroAnimation({ onComplete }) {
     audioSynth.current.stopAmbience();
 
     // Cinematic zoom transition into main home layout
+    if (!introContainerRef.current) {
+      sessionStorage.setItem('citizenlex_intro_played', 'true');
+      onComplete();
+      return;
+    }
     gsap.to(introContainerRef.current, {
       opacity: 0,
       scale: 1.05,
@@ -770,27 +775,31 @@ export default function IntroAnimation({ onComplete }) {
             setScenePhase('reveal');
 
             // Logo letter assembly staggers
-            gsap.fromTo(logoTextRef.current.children, {
-              opacity: 0,
-              scale: 0.65,
-              filter: 'blur(10px)'
-            }, {
-              opacity: 1,
-              scale: 1,
-              filter: 'blur(0px)',
-              stagger: 0.06,
-              duration: 0.7,
-              ease: 'back.out(1.8)'
-            });
+            if (logoTextRef.current && logoTextRef.current.children.length > 0) {
+              gsap.fromTo(logoTextRef.current.children, {
+                opacity: 0,
+                scale: 0.65,
+                filter: 'blur(10px)'
+              }, {
+                opacity: 1,
+                scale: 1,
+                filter: 'blur(0px)',
+                stagger: 0.06,
+                duration: 0.7,
+                ease: 'back.out(1.8)'
+              });
+            }
 
             // Tagline reveal
-            gsap.to(taglineRef.current, {
-              opacity: 1,
-              y: 0,
-              duration: 0.8,
-              delay: 0.4,
-              ease: 'power3.out'
-            });
+            if (taglineRef.current) {
+              gsap.to(taglineRef.current, {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                delay: 0.4,
+                ease: 'power3.out'
+              });
+            }
           }, 400);
 
           // Scene 6: Status Panel & Zoom Transition

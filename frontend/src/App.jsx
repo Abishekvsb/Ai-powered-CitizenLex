@@ -13,22 +13,43 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
+// Cache-busting lazy loader: on chunk load failure (stale PWA cache after new deploy),
+// force a one-time hard reload to get the new hashed assets from the server.
+function lazyWithRetry(importFn) {
+  return lazy(() =>
+    importFn().catch((err) => {
+      const reloadKey = 'citizenlex_chunk_reload';
+      const hasReloaded = sessionStorage.getItem(reloadKey);
+      if (!hasReloaded) {
+        sessionStorage.setItem(reloadKey, 'true');
+        window.location.reload();
+        // Return a never-resolving promise to prevent ErrorBoundary while reloading
+        return new Promise(() => {});
+      }
+      // If we already reloaded once and still failing, throw to ErrorBoundary
+      sessionStorage.removeItem(reloadKey);
+      throw err;
+    })
+  );
+}
+
 // Lazy-loaded heavy pages (code splitting)
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const AiAssistant = lazy(() => import('./pages/AiAssistant'));
-const RightsExplorer = lazy(() => import('./pages/RightsExplorer'));
-const SchemeFinder = lazy(() => import('./pages/SchemeFinder'));
-const DocumentAnalyzer = lazy(() => import('./pages/DocumentAnalyzer'));
-const Profile = lazy(() => import('./pages/Profile'));
-const LegalDrafts = lazy(() => import('./pages/LegalDrafts'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const OcrScanner = lazy(() => import('./pages/OcrScanner'));
-const LegalCopilot = lazy(() => import('./pages/LegalCopilot'));
-const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
-const LawyerMarketplace = lazy(() => import('./pages/LawyerMarketplace'));
-const LawyerProfileDetail = lazy(() => import('./pages/LawyerProfileDetail'));
-const LawyerDashboard = lazy(() => import('./pages/LawyerDashboard'));
-const UserConsultations = lazy(() => import('./pages/UserConsultations'));
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'));
+const AiAssistant = lazyWithRetry(() => import('./pages/AiAssistant'));
+const RightsExplorer = lazyWithRetry(() => import('./pages/RightsExplorer'));
+const SchemeFinder = lazyWithRetry(() => import('./pages/SchemeFinder'));
+const DocumentAnalyzer = lazyWithRetry(() => import('./pages/DocumentAnalyzer'));
+const Profile = lazyWithRetry(() => import('./pages/Profile'));
+const LegalDrafts = lazyWithRetry(() => import('./pages/LegalDrafts'));
+const AdminDashboard = lazyWithRetry(() => import('./pages/AdminDashboard'));
+const OcrScanner = lazyWithRetry(() => import('./pages/OcrScanner'));
+const LegalCopilot = lazyWithRetry(() => import('./pages/LegalCopilot'));
+const NotificationCenter = lazyWithRetry(() => import('./pages/NotificationCenter'));
+const LawyerMarketplace = lazyWithRetry(() => import('./pages/LawyerMarketplace'));
+const LawyerProfileDetail = lazyWithRetry(() => import('./pages/LawyerProfileDetail'));
+const LawyerDashboard = lazyWithRetry(() => import('./pages/LawyerDashboard'));
+const UserConsultations = lazyWithRetry(() => import('./pages/UserConsultations'));
+
 
 import { usePWA } from './context/PWAContext';
 

@@ -7,6 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'offline.html'],
       manifest: {
         name: 'CitizenLex – AI Legal Rights Assistant',
@@ -63,12 +64,26 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff}'],
-        // CRITICAL FIX: Use index.html (the SPA shell) as navigation fallback, NOT offline.html.
-        // offline.html as navigateFallback caused it to be served for ALL navigations even when online.
-        // index.html is the correct SPA fallback so React Router can handle client-side routes.
+        // Skip waiting and claim clients immediately so new SW activates right away
+        skipWaiting: true,
+        clientsClaim: true,
+        // Remove caches from old service worker versions to prevent stale JS chunk errors
+        cleanupOutdatedCaches: true,
+        // Use index.html as SPA fallback for navigation only (not for assets)
         navigateFallback: '/index.html',
-        // Only apply the SPA fallback to non-API, non-asset routes
-        navigateFallbackDenylist: [/^\/api/, /^\/assets/, /^\/__/],
+        // CRITICAL: Deny SW interception for assets, api, and SW-related paths
+        // This prevents old SW from serving stale/wrong MIME type for JS chunks
+        navigateFallbackDenylist: [
+          /^\/api/,
+          /^\/assets\//,
+          /^\/icons\//,
+          /^\/registerSW\.js/,
+          /^\/manifest\.webmanifest/,
+          /\.js$/,
+          /\.css$/,
+          /\.woff2?$/,
+          /^\/__/,
+        ],
         runtimeCaching: [
           {
             // Network-first for API calls — always try network, fallback to cache
@@ -111,6 +126,34 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+      }
+    }
+  },
+  build: {
+    // Ensure assets are in predictable paths
+    assetsDir: 'assets',
+    // Increase chunk size warning threshold to 1MB
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // Manual chunking to keep chunks stable and avoid circular dependencies
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // React ecosystem — must be isolated to avoid circular refs
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router') || id.includes('/react-router-dom/')) {
+              return 'vendor-react';
+            }
+            // Three.js and its React bindings in a separate chunk (heaviest dependency ~845KB)
+            if (id.includes('/three/') || id.includes('@react-three') || id.includes('/gsap/')) {
+              return 'vendor-three';
+            }
+            // HTTP, socket, and utility libraries
+            if (id.includes('/axios/') || id.includes('/stomp') || id.includes('/sockjs')) {
+              return 'vendor-http';
+            }
+            // Let Rollup handle the rest automatically — avoids circular dependency warnings
+          }
+        }
       }
     }
   }
