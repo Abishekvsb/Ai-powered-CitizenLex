@@ -34,6 +34,182 @@ function AnimatedCounter({ value, fallbackValue = '0', duration = 800 }) {
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Time-based greeting
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? 'Good Morning ☀️' :
+    hour < 17 ? 'Good Afternoon 🌤️' :
+                'Good Evening 🌙';
+
+  // State variables for dashboard statistics and history
+  const [chats, setChats] = useState([]);
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [savedDrafts, setSavedDrafts] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [eligibilityProfile, setEligibilityProfile] = useState(null);
+
+  // Bookmarks & Toast state
+  const [bookmarkedRights, setBookmarkedRights] = useState([]);
+  const [bookmarkedSchemes, setBookmarkedSchemes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeRight, setActiveRight] = useState(null);
+  const [activeScheme, setActiveScheme] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [appointments, setAppointments] = useState([]);
+
+  const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'U';
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const chatsRes = await axios.get('/api/chat/history');
+        const chatsData = chatsRes.data;
+        setChats(Array.isArray(chatsData) ? chatsData : []);
+      } catch (err) {
+        console.error('Failed to load chats history', err);
+      }
+
+      try {
+        const docsRes = await axios.get('/api/documents');
+        const docsData = docsRes.data;
+        setDocs(Array.isArray(docsData) ? docsData : []);
+      } catch (err) {
+        console.error('Failed to load documents list', err);
+      }
+
+      try {
+        const apptsRes = await axios.get('/api/appointments/user');
+        const apptsData = apptsRes.data;
+        setAppointments(Array.isArray(apptsData) ? apptsData : []);
+      } catch (err) {
+        console.error('Failed to load appointments history', err);
+      }
+
+      setLoading(false);
+    };
+    fetchData();
+
+    try {
+      const parsedRights = JSON.parse(localStorage.getItem('bookmarks_rights') || '[]');
+      setBookmarkedRights(Array.isArray(parsedRights) ? parsedRights : []);
+      const parsedSchemes = JSON.parse(localStorage.getItem('bookmarks_schemes') || '[]');
+      setBookmarkedSchemes(Array.isArray(parsedSchemes) ? parsedSchemes : []);
+      const parsedDrafts = JSON.parse(localStorage.getItem('saved_drafts') || '[]');
+      setSavedDrafts(Array.isArray(parsedDrafts) ? parsedDrafts : []);
+      const parsedSearches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+      setRecentSearches(Array.isArray(parsedSearches) ? parsedSearches : []);
+      setEligibilityProfile(JSON.parse(localStorage.getItem('eligibility_profile') || 'null'));
+    } catch (e) {
+      console.error('Failed to load from localStorage', e);
+      setBookmarkedRights([]);
+      setBookmarkedSchemes([]);
+      setSavedDrafts([]);
+      setRecentSearches([]);
+    }
+
+    axios.get('/api/notifications/count').then(res => {
+      setUnreadNotifCount(res.data.unreadCount || 0);
+    }).catch(() => {});
+  }, []);
+
+  const removeRightBookmark = (id) => {
+    const updated = bookmarkedRights.filter(r => r.id !== id);
+    setBookmarkedRights(updated);
+    localStorage.setItem('bookmarks_rights', JSON.stringify(updated));
+    showToast('Removed from Saved Library', 'warning');
+  };
+
+  const removeSchemeBookmark = (id) => {
+    const updated = bookmarkedSchemes.filter(s => s.id !== id);
+    setBookmarkedSchemes(updated);
+    localStorage.setItem('bookmarks_schemes', JSON.stringify(updated));
+    showToast('Removed from Saved Library', 'warning');
+  };
+
+  const filteredRights = bookmarkedRights.filter(r => 
+    r.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    r.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredSchemes = bookmarkedSchemes.filter(s => 
+    s.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    s.eligibility?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const quickActions = [
+    { to: '/chat', icon: 'bi-chat-square-text-fill', label: 'AI Assistant', color: '#6366f1', bg: 'rgba(99,102,241,0.06)' },
+    { to: '/copilot', icon: 'bi-robot', label: 'Legal Copilot', color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', isNew: true },
+    { to: '/analyzer', icon: 'bi-file-earmark-pdf-fill', label: 'Doc Analyzer', color: '#06b6d4', bg: 'rgba(6,182,212,0.06)' },
+    { to: '/ocr', icon: 'bi-upc-scan', label: 'OCR Scanner', color: '#8b5cf6', bg: 'rgba(139,92,246,0.06)' },
+    { to: '/rights', icon: 'bi-book-fill', label: 'Rights Explorer', color: '#10b981', bg: 'rgba(16,185,129,0.06)' },
+    { to: '/schemes', icon: 'bi-search-heart-fill', label: 'Scheme Finder', color: '#ec4899', bg: 'rgba(236,72,153,0.06)' },
+    { to: '/drafts', icon: 'bi-file-earmark-diff-fill', label: 'AI Drafts', color: '#ef4444', bg: 'rgba(239,68,68,0.06)' },
+    { to: '/notifications', icon: 'bi-bell-fill', label: `Alerts${unreadNotifCount > 0 ? ` (${unreadNotifCount})` : ''}`, color: '#dc2626', bg: 'rgba(220,38,38,0.05)' },
+  ];
+
+  const stats = [
+    {
+      label: 'AI Conversations',
+      value: chats.length,
+      icon: 'bi-chat-dots-fill',
+      color: '#6366f1',
+      bg: 'rgba(99,102,241,0.08)',
+      sub: chats.length === 0 ? 'Start first chat' : `Latest: ${new Date(chats[0]?.createdAt).toLocaleDateString()}`,
+    },
+    {
+      label: 'Documents Analyzed',
+      value: docs.length,
+      icon: 'bi-file-earmark-bar-graph-fill',
+      color: '#06b6d4',
+      bg: 'rgba(6,182,212,0.08)',
+      sub: docs.length === 0 ? 'Upload first doc' : `Latest: ${docs[0]?.fileName?.slice(0, 16)}...`,
+    },
+    {
+      label: 'System Notifications',
+      value: unreadNotifCount,
+      icon: 'bi-bell-fill',
+      color: unreadNotifCount > 0 ? '#ef4444' : '#10b981',
+      bg: unreadNotifCount > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)',
+      sub: unreadNotifCount > 0 ? `${unreadNotifCount} unread alerts` : 'All caught up!',
+    },
+    {
+      label: 'Account Status',
+      value: 'Active',
+      icon: 'bi-patch-check-fill',
+      color: '#10b981',
+      bg: 'rgba(16,185,129,0.08)',
+      sub: `Joined ${user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`,
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="container py-5">
+        <div className="row g-4 mb-5">
+          {[1, 2, 3, 4].map(i => (
+            <div className="col-md-3" key={i}>
+              <div className="glass-panel p-4" style={{ height: 130, background: 'rgba(8, 10, 24, 0.4)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div className="skeleton-loader mb-2" style={{ height: 16, width: '60%', background: 'rgba(255,255,255,0.05)' }}></div>
+                <div className="skeleton-loader mb-2" style={{ height: 32, width: '40%', background: 'rgba(255,255,255,0.05)' }}></div>
+                <div className="skeleton-loader" style={{ height: 12, width: '80%', background: 'rgba(255,255,255,0.05)' }}></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ position: 'relative' }}>
           {/* Background ambient mesh overlays */}
@@ -81,7 +257,7 @@ export default function Dashboard() {
                 }}>
                   ⚖️ AI COMMAND CENTRE CONSOLE
                 </span>
-                <p className="text-secondary mb-1 small fw-semibold text-uppercase tracking-wide">{greeting()}</p>
+                <p className="text-secondary mb-1 small fw-semibold text-uppercase tracking-wide">{greeting}</p>
                 <h1 className="fw-extrabold text-white mb-2" style={{ letterSpacing: '-1px', fontSize: '2.4rem' }}>
                   Hello, {user?.firstName} {user?.lastName} 👋
                 </h1>
