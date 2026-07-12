@@ -40,6 +40,14 @@ public class DocumentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Uploaded file is empty.");
+        }
+
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds the 10MB limit.");
+        }
+
         String fileName = file.getOriginalFilename();
         if (fileName == null) {
             fileName = "unknown_document";
@@ -49,7 +57,7 @@ public class DocumentService {
             fileType = "application/octet-stream";
         }
 
-        logger.info("Uploading and analyzing file: {}, type: {} for user: {}", fileName, fileType, userId);
+        logger.info("Uploading and analyzing file: {}, type: {} (size: {} bytes) for user: {}", fileName, fileType, file.getSize(), userId);
 
         String extractedText;
         try {
@@ -59,6 +67,10 @@ public class DocumentService {
         } catch (Exception e) {
             logger.error("Failed to extract text from file: {}", fileName, e);
             throw new IllegalArgumentException("Failed to extract text from document: " + e.getMessage());
+        }
+
+        if (extractedText == null || extractedText.trim().isEmpty()) {
+            throw new IllegalArgumentException("No text could be extracted from the document. Please ensure it is not empty, blank, or heavily corrupted.");
         }
 
         // Generate summary using GeminiService
@@ -107,11 +119,39 @@ public class DocumentService {
             throw new IllegalArgumentException("Uploaded file is empty.");
         }
 
-        if (name.endsWith(".pdf") || "application/pdf".equals(file.getContentType())) {
+        String contentType = file.getContentType();
+        boolean isPdf = name.endsWith(".pdf") || "application/pdf".equals(contentType);
+        boolean isDocx = name.endsWith(".docx") || "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType);
+        boolean isTxt = name.endsWith(".txt") || "text/plain".equals(contentType);
+        boolean isImage = name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || (contentType != null && contentType.startsWith("image/"));
+
+        if (!isPdf && !isDocx && !isTxt && !isImage) {
+            throw new IllegalArgumentException("Unsupported file type. Please upload a PDF, DOCX, TXT file, or a JPEG/PNG image.");
+        }
+
+        if (isImage) {
+            try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes)) {
+                java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(bais);
+                if (img == null) {
+                    throw new IllegalArgumentException("The image file is corrupted, unreadable, or invalid.");
+                }
+                if (img.getWidth() < 120 || img.getHeight() < 120) {
+                    throw new IllegalArgumentException("The image resolution is too low (less than 120x120px) to perform reliable text extraction.");
+                }
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IllegalArgumentException("The image is corrupted or invalid: " + e.getMessage());
+            }
+        }
+
+        if (isPdf) {
             String text = "";
             String nativeError = null;
             try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes)) {
                 text = extractTextFromPdf(bais);
+            } catch (IllegalArgumentException e) {
+                throw e; // propagate encryption / password error
             } catch (Exception e) {
                 logger.warn("Native PDF text extraction failed: {}", e.getMessage());
                 nativeError = e.getMessage();
@@ -119,9 +159,15 @@ public class DocumentService {
 
             if (text == null || text.trim().length() < 100) {
                 logger.info("PDF text empty or too short. Falling back to Gemini Multimodal OCR...");
-                String ocrText = geminiService.extractTextFromFileMultimodal(bytes, "application/pdf");
-                if (ocrText != null && !ocrText.trim().isEmpty()) {
-                    return ocrText.trim();
+                try {
+                    String ocrText = geminiService.extractTextFromFileMultimodal(bytes, "application/pdf");
+                    if (ocrText != null && !ocrText.trim().isEmpty()) {
+                        return ocrText.trim();
+                    }
+                } catch (IllegalArgumentException e) {
+                    if (text == null || text.trim().isEmpty()) {
+                        throw e; // if completely blank and Gemini OCR fails, throw details
+                    }
                 }
             }
 
@@ -130,36 +176,33 @@ public class DocumentService {
             }
 
             return text != null ? text.trim() : "";
-        } else if (name.endsWith(".docx") || "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(file.getContentType())) {
+        } else if (isDocx) {
             try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes)) {
                 return extractTextFromDocx(bais).trim();
             } catch (Exception e) {
                 logger.error("DOCX extraction failed", e);
                 throw new IllegalArgumentException("The DOCX file is invalid or corrupted: " + e.getMessage());
             }
-        } else if (name.endsWith(".txt") || "text/plain".equals(file.getContentType())) {
+        } else if (isTxt) {
             return new String(bytes, java.nio.charset.StandardCharsets.UTF_8).trim();
-        } else if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || (file.getContentType() != null && file.getContentType().startsWith("image/"))) {
-            String contentType = file.getContentType();
-            if (contentType == null) {
-                if (name.endsWith(".png")) contentType = "image/png";
-                else contentType = "image/jpeg";
-            } else if ("image/jpg".equalsIgnoreCase(contentType)) {
-                contentType = "image/jpeg";
-            }
-            return extractTextFromImage(bytes, contentType);
         } else {
-            // General text fallback (try to read bytes if it's text)
-            try {
-                return new String(bytes, java.nio.charset.StandardCharsets.UTF_8).trim();
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Unsupported or binary file type: " + name);
+            // Must be isImage
+            String cType = file.getContentType();
+            if (cType == null) {
+                if (name.endsWith(".png")) cType = "image/png";
+                else cType = "image/jpeg";
+            } else if ("image/jpg".equalsIgnoreCase(cType)) {
+                cType = "image/jpeg";
             }
+            return extractTextFromImage(bytes, cType);
         }
     }
 
     private String extractTextFromPdf(InputStream is) throws Exception {
         try (PDDocument document = PDDocument.load(is)) {
+            if (document.isEncrypted()) {
+                throw new IllegalArgumentException("The PDF file is password-protected or encrypted. Please remove password protection and try again.");
+            }
             PDFTextStripper stripper = new PDFTextStripper();
             return stripper.getText(document);
         }
@@ -178,6 +221,8 @@ public class DocumentService {
             if (ocrText != null && !ocrText.trim().isEmpty()) {
                 return ocrText.trim();
             }
+        } catch (IllegalArgumentException e) {
+            throw e; // propagate descriptive API exception directly
         } catch (Exception e) {
             logger.error("Image OCR extraction failed", e);
             throw new IllegalArgumentException("OCR failed on the image: " + e.getMessage());

@@ -61,3 +61,7 @@ cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:mock}
   api-key: ${CLOUDINARY_API_KEY:mock}
   api-secret: ${CLOUDINARY_API_SECRET:mock}
+
+logging:
+  level:
+    org.springframework.web.socket.config.WebSocketMessageBrokerStats: WARN

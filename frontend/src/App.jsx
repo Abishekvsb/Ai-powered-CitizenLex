@@ -1,10 +1,12 @@
 import React, { useState, lazy, Suspense } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import IntroAnimation from './components/IntroAnimation';
 import ErrorBoundary from './components/ErrorBoundary';
+import DashboardLayout from './components/DashboardLayout';
+import { useAuth } from './context/AuthContext';
 
 // Eager-loaded critical pages
 import Landing from './pages/Landing';
@@ -29,6 +31,42 @@ const LawyerDashboard = lazy(() => import('./pages/LawyerDashboard'));
 const UserConsultations = lazy(() => import('./pages/UserConsultations'));
 
 import { usePWA } from './context/PWAContext';
+
+// Layout for core app routes
+function AppLayout() {
+  const { user } = useAuth();
+  if (user) {
+    return (
+      <DashboardLayout>
+        <Outlet />
+      </DashboardLayout>
+    );
+  } else {
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        <Navbar />
+        <main className="flex-grow-1">
+          <Outlet />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+}
+
+// Layout for landing page
+function PublicLayout() {
+  return (
+    <div className="d-flex flex-column min-vh-100">
+      <Navbar />
+      <main className="flex-grow-1">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 
 // Page loading fallback
 const PageLoader = () => (
@@ -57,17 +95,25 @@ export default function App() {
   }
 
   return (
-    <div className="d-flex flex-column min-vh-100" style={{ position: 'relative', zIndex: 1 }}>
-      {!isAuthPage && location.pathname !== '/dashboard' && <Navbar />}
-      <main className={isAuthPage ? '' : 'flex-grow-1'}>
-        <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+    <div className="min-vh-100" style={{ position: 'relative', zIndex: 1 }}>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Auth pages have NO layout */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Landing page always gets public layout */}
+            <Route element={<PublicLayout />}>
               <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+            </Route>
+
+            {/* Core pages get conditional Dashboard or Public layout */}
+            <Route element={<AppLayout />}>
               <Route path="/rights" element={<RightsExplorer />} />
               <Route path="/schemes" element={<SchemeFinder />} />
+              <Route path="/lawyers" element={<LawyerMarketplace />} />
+              <Route path="/lawyers/:id" element={<LawyerProfileDetail />} />
 
               {/* Protected User Routes */}
               <Route path="/dashboard" element={
@@ -110,8 +156,6 @@ export default function App() {
                   <NotificationCenter />
                 </ProtectedRoute>
               } />
-              <Route path="/lawyers" element={<LawyerMarketplace />} />
-              <Route path="/lawyers/:id" element={<LawyerProfileDetail />} />
               <Route path="/lawyer/dashboard" element={
                 <ProtectedRoute>
                   <LawyerDashboard />
@@ -129,11 +173,10 @@ export default function App() {
                   <AdminDashboard />
                 </ProtectedRoute>
               } />
-            </Routes>
-          </Suspense>
-        </ErrorBoundary>
-      </main>
-      {!isAuthPage && <Footer />}
+            </Route>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
       
       {installedSuccess && (
         <div className="custom-toast-container" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999 }}>

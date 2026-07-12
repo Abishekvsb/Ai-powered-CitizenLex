@@ -89,6 +89,8 @@ public class GeminiService {
                 }
             }
 
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            logger.error("Gemini API FAILED: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
         } catch (Exception e) {
             logger.error("Gemini API FAILED: {}", e.getMessage());
         }
@@ -244,56 +246,106 @@ public class GeminiService {
 
     public String extractTextFromFileMultimodal(byte[] fileBytes, String contentType) {
         if (apiKey == null || apiKey.trim().isEmpty() || "mock".equalsIgnoreCase(apiKey.trim())) {
-            logger.warn("Gemini API key is missing or set to mock. Returning null for multimodal OCR.");
-            return null;
+            throw new IllegalArgumentException("Gemini API key is not configured or is set to 'mock'. OCR and Document Analysis require a valid Gemini API key.");
         }
 
-        try {
-            String url = apiUrl + "?key=" + apiKey;
+        int maxAttempts = 3;
+        int delayMs = 1000;
+        Exception lastException = null;
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                String url = apiUrl + "?key=" + apiKey;
 
-            Map<String, Object> requestBody = new HashMap<>();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // text part
-            Map<String, Object> textPart = new HashMap<>();
-            textPart.put("text", "Please extract and transcribe all visible text from this document exactly as it is. Do not summarize, do not comment, just return the raw text. Support both English and Tamil text.");
+                Map<String, Object> requestBody = new HashMap<>();
 
-            // inlineData part
-            Map<String, Object> inlineData = new HashMap<>();
-            inlineData.put("mimeType", contentType != null ? contentType : "application/pdf");
-            inlineData.put("data", Base64.getEncoder().encodeToString(fileBytes));
+                // text part
+                Map<String, Object> textPart = new HashMap<>();
+                textPart.put("text", "Please extract and transcribe all visible text from this document exactly as it is. Do not summarize, do not comment, just return the raw text. Support both English and Tamil text.");
 
-            Map<String, Object> filePart = new HashMap<>();
-            filePart.put("inlineData", inlineData);
+                // inlineData part
+                Map<String, Object> inlineData = new HashMap<>();
+                inlineData.put("mimeType", contentType != null ? contentType : "application/pdf");
+                inlineData.put("data", Base64.getEncoder().encodeToString(fileBytes));
 
-            Map<String, Object> content = new HashMap<>();
-            content.put("parts", List.of(textPart, filePart));
+                Map<String, Object> filePart = new HashMap<>();
+                filePart.put("inlineData", inlineData);
 
-            requestBody.put("contents", List.of(content));
+                Map<String, Object> content = new HashMap<>();
+                content.put("parts", List.of(textPart, filePart));
 
-            // config
-            Map<String, Object> config = new HashMap<>();
-            config.put("temperature", 0.1);
-            requestBody.put("generationConfig", config);
+                requestBody.put("contents", List.of(content));
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+                // config
+                Map<String, Object> config = new HashMap<>();
+                config.put("temperature", 0.1);
+                requestBody.put("generationConfig", config);
 
-            logger.info("Calling Gemini Multimodal OCR API for type: {}...", contentType);
-            ResponseEntity<Map> response =
-                    restTemplate.postForEntity(url, entity, Map.class);
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            if (response.getBody() != null) {
-                String result = parseGeminiResponse(response.getBody());
-                if (result != null && !result.trim().isEmpty()) {
-                    return result;
+                logger.info("Calling Gemini Multimodal OCR API (Attempt {}/{}) for type: {}...", attempt, maxAttempts, contentType);
+                ResponseEntity<Map> response =
+                        restTemplate.postForEntity(url, entity, Map.class);
+
+                if (response.getBody() != null) {
+                    String result = parseGeminiResponse(response.getBody());
+                    if (result != null && !result.trim().isEmpty()) {
+                        return result;
+                    }
                 }
+                throw new IllegalArgumentException("No text could be parsed from the Gemini API response.");
+
+            } catch (org.springframework.web.client.HttpStatusCodeException e) {
+                logger.warn("Gemini Multimodal OCR attempt {} failed: status={}, body={}", attempt, e.getStatusCode(), e.getResponseBodyAsString());
+                lastException = e;
+                if (e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE || e.getStatusCode().value() == 429) {
+                    if (attempt < maxAttempts) {
+                        try {
+                            Thread.sleep(delayMs * attempt);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalArgumentException("OCR request was interrupted.");
+                        }
+                        continue;
+                    }
+                }
+                if (e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
+                    throw new IllegalArgumentException("Gemini AI Service is temporarily overloaded (503 Service Unavailable). Please try again in a few moments.");
+                } else if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS || e.getStatusCode().value() == 429) {
+                    throw new IllegalArgumentException("Gemini AI Service rate limit exceeded (429 Too Many Requests). Please wait a moment and try again.");
+                } else if (e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.FORBIDDEN || e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                    throw new IllegalArgumentException("Gemini AI Service authentication failed or request is invalid (status " + e.getStatusCode() + "). Please check your API key configuration.");
+                } else {
+                    throw new IllegalArgumentException("Gemini AI Service error: " + e.getStatusText() + " (status " + e.getStatusCode() + ")");
+                }
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                logger.warn("Gemini Multimodal OCR attempt {} timed out/failed: {}", attempt, e.getMessage());
+                lastException = e;
+                if (attempt < maxAttempts) {
+                    try {
+                        Thread.sleep(delayMs * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalArgumentException("OCR request was interrupted.");
+                    }
+                    continue;
+                }
+                throw new IllegalArgumentException("Connection to Gemini AI Service timed out or was refused. Please check network connectivity and try again.");
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (Exception e) {
+                logger.error("Gemini Multimodal OCR failed at attempt " + attempt, e);
+                lastException = e;
+                if (attempt < maxAttempts) {
+                    continue;
+                }
+                throw new IllegalArgumentException("An unexpected error occurred during OCR: " + e.getMessage());
             }
-        } catch (Exception e) {
-            logger.error("Gemini Multimodal OCR failed: {}", e.getMessage());
         }
-        return null;
+        throw new IllegalArgumentException("OCR process failed after attempts. Last error: " + (lastException != null ? lastException.getMessage() : "Unknown"));
     }
 
     public String extractTextFromImageMultimodal(byte[] imageBytes, String contentType) {
