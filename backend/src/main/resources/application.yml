@@ -16,9 +16,10 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
   servlet:
     multipart:
       max-file-size: 10MB
@@ -65,3 +66,4 @@ cloudinary:
 logging:
   level:
     org.springframework.web.socket.config.WebSocketMessageBrokerStats: WARN
+    org.hibernate.orm.deprecation: WARN
