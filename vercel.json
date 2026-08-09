@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://ai-powered-citizenlex-production.up.railway.app/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://citizenlex-backend.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
