@@ -1,6 +1,6 @@
 # CitizenLex Production Deployment Guide
 
-This guide walks through deploying CitizenLex to production using the recommended stack: **Railway** (backend + database) and **Vercel** (frontend).
+This guide walks through deploying CitizenLex to production using the recommended stack: **Render** (backend + database) and **Vercel** (frontend).
 
 ---
 
@@ -9,9 +9,9 @@ This guide walks through deploying CitizenLex to production using the recommende
 | Service | URL |
 |---------|-----|
 | **Frontend (Vercel)** | https://ai-powered-citizen-lex.vercel.app |
-| **Backend (Railway)** | https://ai-powered-citizenlex-production.up.railway.app |
-| **API Health Check** | https://ai-powered-citizenlex-production.up.railway.app/ |
-| **Swagger UI** | https://ai-powered-citizenlex-production.up.railway.app/swagger-ui/index.html |
+| **Backend (Render)** | https://citizenlex-backend.onrender.com |
+| **API Health Check** | https://citizenlex-backend.onrender.com/ |
+| **Swagger UI** | https://citizenlex-backend.onrender.com/swagger-ui/index.html |
 
 ---
 
@@ -122,14 +122,14 @@ The file `vercel.json` at the project root contains the API proxy and SPA routin
 ```json
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://ai-powered-citizenlex-production.up.railway.app/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://citizenlex-backend.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 ```
 
 This ensures:
-- All `/api/*` requests are proxied to the Railway backend
+- All `/api/*` requests are proxied to the Render backend
 - All other routes serve `index.html` (React SPA client-side routing)
 
 ---
@@ -153,10 +153,10 @@ CloudinaryService initialized. Mock mode: false, Production mode: true
 
 ```bash
 # Check backend health
-curl https://ai-powered-citizenlex-production.up.railway.app/
+curl https://citizenlex-backend.onrender.com/
 
 # Check lawyers seeded
-curl https://ai-powered-citizenlex-production.up.railway.app/api/lawyers?page=0&size=3
+curl https://citizenlex-backend.onrender.com/api/lawyers?page=0&size=3
 
 # Check frontend loads
 open https://ai-powered-citizen-lex.vercel.app

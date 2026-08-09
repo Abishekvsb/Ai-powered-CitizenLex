@@ -1,7 +1,7 @@
 # CitizenLex API Reference
 
 **Version:** 1.0.0  
-**Base URL (Production):** `https://citizenlex-api.railway.app/api`  
+**Base URL (Production):** `https://citizenlex-backend.onrender.com/api`  
 **Base URL (Local):** `http://localhost:8080/api`  
 **Auth:** `Authorization: Bearer <JWT_TOKEN>` on all protected endpoints
 

@@ -65,7 +65,7 @@ interests:
 |---|---|
 | 🌐 **Production Website** | https://ai-powered-citizen-lex.vercel.app |
 | 🎬 **Project Demo Video** | https://go.screenpal.com/watch/cOilXXnUxQb |
-| ⚙️ **Backend API** | https://ai-powered-citizenlex-production.up.railway.app |
+| ⚙️ **Backend API** | https://citizenlex-backend.onrender.com |
 | 📦 **GitHub Repository** | https://github.com/Abishekvsb/Ai-powered-CitizenLex |
 
 ---
@@ -255,8 +255,8 @@ AI-Powered-CitizenLex/
 | Service | Platform | URL |
 |---|---|---|
 | **Frontend** | Vercel | https://ai-powered-citizen-lex.vercel.app |
-| **Backend** | Railway | https://ai-powered-citizenlex-production.up.railway.app |
-| **Database** | Railway MySQL | Managed MySQL 8 on Railway |
+| **Backend** | Render | https://citizenlex-backend.onrender.com |
+| **Database** | Render PostgreSQL | Managed PostgreSQL on Render |
 | **Media Storage** | Cloudinary | Profile photos and generated documents |
 
 Every push to `main` triggers the full pipeline automatically:
