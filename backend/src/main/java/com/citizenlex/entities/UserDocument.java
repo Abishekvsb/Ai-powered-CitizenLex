@@ -23,7 +23,7 @@ public class UserDocument {
     @Column(name = "file_type", nullable = false, length = 100)
     private String fileType;
 
-    @Column(name = "extracted_text", columnDefinition = "LONGTEXT")
+    @Column(name = "extracted_text", columnDefinition = "TEXT")
     private String extractedText;
 
     @Column(columnDefinition = "TEXT")

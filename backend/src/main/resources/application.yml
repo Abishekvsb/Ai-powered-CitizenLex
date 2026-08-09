@@ -1,10 +1,10 @@
 # Force rebuild to sync with migrated database
 spring:
   datasource:
-    url: jdbc:mysql://${DB_HOST:${MYSQLHOST:localhost}}:${DB_PORT:${MYSQLPORT:3306}}/${DB_NAME:${MYSQLDATABASE:CitizenLexDB}}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${DB_USER:${MYSQLUSER:root}}
-    password: ${DB_PASSWORD:${MYSQLPASSWORD:rootpassword}}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:CitizenLexDB}}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -17,9 +17,6 @@ spring:
       ddl-auto: update
     show-sql: false
     open-in-view: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
   servlet:
     multipart:
       max-file-size: 10MB

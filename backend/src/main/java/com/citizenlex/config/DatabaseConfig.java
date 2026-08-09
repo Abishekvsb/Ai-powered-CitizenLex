@@ -31,6 +31,7 @@ public class DatabaseConfig {
         String url = defaultUrl;
         String username = defaultUsername;
         String password = defaultPassword;
+        String driverClassName = "org.postgresql.Driver";
 
         // Check if Railway MYSQL_URL or MYSQL_PRIVATE_URL is present
         String rawUrl = System.getenv("MYSQL_URL");
@@ -41,42 +42,76 @@ public class DatabaseConfig {
             rawUrl = System.getenv("DATABASE_URL");
         }
 
-        if (rawUrl != null && !rawUrl.isBlank() && rawUrl.startsWith("mysql://")) {
-            try {
-                logger.info("Detected Railway native database connection URL. Parsing parameters...");
-                URI uri = new URI(rawUrl);
-                String userInfo = uri.getUserInfo();
-                if (userInfo != null && userInfo.contains(":")) {
-                    String[] userParts = userInfo.split(":");
-                    username = userParts[0];
-                    password = userParts[1];
+        if (rawUrl != null && !rawUrl.isBlank()) {
+            if (rawUrl.startsWith("mysql://")) {
+                try {
+                    logger.info("Detected MySQL database connection URL. Parsing parameters...");
+                    URI uri = new URI(rawUrl);
+                    String userInfo = uri.getUserInfo();
+                    if (userInfo != null && userInfo.contains(":")) {
+                        String[] userParts = userInfo.split(":");
+                        username = userParts[0];
+                        password = userParts[1];
+                    }
+
+                    String host = uri.getHost();
+                    int port = uri.getPort();
+                    if (port == -1) {
+                        port = 3306;
+                    }
+                    String path = uri.getPath();
+                    if (path.startsWith("/")) {
+                        path = path.substring(1);
+                    }
+
+                    // Construct standard JDBC connection url
+                    url = "jdbc:mysql://" + host + ":" + port + "/" + path + "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true";
+                    driverClassName = "com.mysql.cj.jdbc.Driver";
+                    logger.info("Successfully parsed MySQL database target. Target JDBC URL: jdbc:mysql://{}:{}/{}", host, port, path);
+                } catch (Exception e) {
+                    logger.error("Failed to parse MySQL connection URL: {}", rawUrl, e);
                 }
-                
-                String host = uri.getHost();
-                int port = uri.getPort();
-                if (port == -1) {
-                    port = 3306;
+            } else if (rawUrl.startsWith("postgres://") || rawUrl.startsWith("postgresql://")) {
+                try {
+                    logger.info("Detected PostgreSQL database connection URL. Parsing parameters...");
+                    URI uri = new URI(rawUrl);
+                    String userInfo = uri.getUserInfo();
+                    if (userInfo != null && userInfo.contains(":")) {
+                        String[] userParts = userInfo.split(":");
+                        username = userParts[0];
+                        password = userParts[1];
+                    }
+
+                    String host = uri.getHost();
+                    int port = uri.getPort();
+                    if (port == -1) {
+                        port = 5432;
+                    }
+                    String path = uri.getPath();
+                    if (path.startsWith("/")) {
+                        path = path.substring(1);
+                    }
+
+                    // Construct standard JDBC connection url
+                    url = "jdbc:postgresql://" + host + ":" + port + "/" + path;
+                    driverClassName = "org.postgresql.Driver";
+                    logger.info("Successfully parsed PostgreSQL database target. Target JDBC URL: jdbc:postgresql://{}:{}/{}", host, port, path);
+                } catch (Exception e) {
+                    logger.error("Failed to parse PostgreSQL connection URL: {}", rawUrl, e);
                 }
-                String path = uri.getPath();
-                if (path.startsWith("/")) {
-                    path = path.substring(1);
-                }
-                
-                // Construct standard JDBC connection url
-                url = "jdbc:mysql://" + host + ":" + port + "/" + path + "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true";
-                logger.info("Successfully parsed database target. Target JDBC URL: jdbc:mysql://{}:{}/{}", host, port, path);
-            } catch (Exception e) {
-                logger.error("Failed to parse connection URL: {}", rawUrl, e);
             }
         } else {
-            logger.info("Using standard JDBC parameters. Connection Target URL: {}", url);
+            if (url != null && url.startsWith("jdbc:mysql:")) {
+                driverClassName = "com.mysql.cj.jdbc.Driver";
+            }
+            logger.info("Using standard JDBC parameters. Connection Target URL: {}, Driver: {}", url, driverClassName);
         }
 
         return DataSourceBuilder.create()
                 .url(url)
                 .username(username)
                 .password(password)
-                .driverClassName("com.mysql.cj.jdbc.Driver")
+                .driverClassName(driverClassName)
                 .build();
     }
 }
